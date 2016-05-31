@@ -359,6 +359,11 @@ local UpdateBlock = function()
 			end -- quest loop
 		end -- mapzone/id if
 	end -- maps loop
+
+	-- hide buttons if there are more cached than quests available
+	for i = buttonIndex, #buttonCache do
+		buttonCache[i]:Hide()
+	end
 	
 	titleMaxWidth = titleMaxWidth > 250 and 250 or titleMaxWidth
 	for i = 1, (buttonIndex - 1) do

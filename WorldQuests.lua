@@ -156,6 +156,9 @@ end
 
 local UpdateBlock = function()
 	local originalMap = GetCurrentMapAreaID()
+	local originalContinent = GetCurrentMapContinent()
+	local originalDungeonLevel = GetCurrentMapDungeonLevel()
+
 	local buttonIndex = 1
 	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
 	for mapIndex = 1, #mapZones do
@@ -394,7 +397,16 @@ local UpdateBlock = function()
 	BWQ:SetWidth(totalWidth)
 	BWQ:SetHeight((buttonIndex - 1) * 15 + ((#mapZones / 2) * 20) + 25)
 
-	SetMapByID(originalMap) -- set map back to original map before updating
+
+	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
+	if originalMap == 751 then
+		SetMapZoom(WORLDMAP_MAELSTROM_ID)
+	else
+		-- set map back to the original map from before updating
+		SetMapZoom(originalContinent)
+		SetMapByID(originalMap)
+		SetDungeonMapLevel(originalDungeonLevel)
+	end
 end
 
 --BWQ:RegisterEvent("GET_ITEM_INFO_RECEIVED")

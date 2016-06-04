@@ -146,7 +146,12 @@ end
 local Row_OnClick = function(self)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(self.mapId)
-	SetSuperTrackedQuestID(self.questId)
+
+	if IsWorldQuestHardWatched(self.questId) then
+		SetSuperTrackedQuestID(self.questId)
+	else
+		BonusObjectiveTracker_TrackWorldQuest(self.questId)
+	end
 end
 
 local UpdateBlock = function()

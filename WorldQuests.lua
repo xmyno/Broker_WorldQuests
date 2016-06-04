@@ -241,6 +241,8 @@ local UpdateBlock = function()
 					button = buttonCache[buttonIndex]
 				end
 
+				button:Show()
+
 				-- set data for button (this is messy :( maybe improve this later? values needed in click listeners on self)
 				button.mapId = mapZones[mapIndex]
 				button.reward.mapId = button.mapId

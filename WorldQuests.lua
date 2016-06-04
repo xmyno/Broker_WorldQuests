@@ -47,52 +47,55 @@ local RetrieveWorldQuests = function(mapId)
 
 	local quests = {}
 
+	-- set map so api returns proper values for that map
 	SetMapByID(mapId)
 	local questList = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
-	for i = 1, #questList do
+	if questList then 
+		for i = 1, #questList do
 
-		--[[
-		local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
-		
-		tagId = 116
-		tagName = Blacksmithing World Quest
-		worldQuestType = 
-			2 -> profession, 
-			3 -> pve?
-			4 -> pvp
-			5 -> battle pet
-			7 -> dungeon
-		isRare = 
-			1 -> normal
-			2 -> rare
-			3 -> epic
-		isElite = true/false
-		tradeskillLineIndex = some number, no idea of meaning atm
-		]]
-		local tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
-		if worldQuestType ~= nil then
-			local quest = {}
-			-- GetQuestsForPlayerByMapID fields
-			quest.questId = questList[i].questId
-			quest.numObjectives = questList[i].numObjectives
+			--[[
+			local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
+			
+			tagId = 116
+			tagName = Blacksmithing World Quest
+			worldQuestType = 
+				2 -> profession, 
+				3 -> pve?
+				4 -> pvp
+				5 -> battle pet
+				7 -> dungeon
+			isRare = 
+				1 -> normal
+				2 -> rare
+				3 -> epic
+			isElite = true/false
+			tradeskillLineIndex = some number, no idea of meaning atm
+			]]
+			local tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
+			if worldQuestType ~= nil then
+				local quest = {}
+				-- GetQuestsForPlayerByMapID fields
+				quest.questId = questList[i].questId
+				quest.numObjectives = questList[i].numObjectives
 
-			-- GetQuestTagInfo fields
-			quest.tagId = tagId
-			quest.tagName = tagName
-			quest.worldQuestType = worldQuestType
-			quest.isRare = isRare
-			quest.isElite = isElite
-			quest.tradeskillLineIndex = tradeskillLineIndex
+				-- GetQuestTagInfo fields
+				quest.tagId = tagId
+				quest.tagName = tagName
+				quest.worldQuestType = worldQuestType
+				quest.isRare = isRare
+				quest.isElite = isElite
+				quest.tradeskillLineIndex = tradeskillLineIndex
 
-			local title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
-			quest.title = title
-			if factionId then
-				quest.faction = GetFactionInfoByID(factionId)
+				local title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
+				quest.title = title
+				if factionId then
+					quest.faction = GetFactionInfoByID(factionId)
+				end
+				quest.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(quest.questId)
+
+				quests[#quests+1] = quest
 			end
-			quest.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(quest.questId)
-
-			quests[#quests+1] = quest
 		end
 	end
 

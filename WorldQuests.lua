@@ -136,8 +136,6 @@ local ShowQuestObjectiveTooltip = function(row)
 		GameTooltip_InsertFrame(GameTooltip, WorldMapTaskTooltipStatusBar);
 		WorldMapTaskTooltipStatusBar.Bar:SetValue(percent);
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
-		--WorldMapTaskTooltipStatusBar:SetHeight(25)
-		--WorldMapTaskTooltipStatusBar:SetPoint("BOTTOM", GameTooltip, "BOTTOM", 0, 0)
 	end
 
 	GameTooltip:Show()

@@ -282,10 +282,15 @@ local UpdateBlock = function()
 						button.reward.itemQuality = quality
 						button.reward.itemQuantity = quantity
 					
+						local rewardColor = ITEM_QUALITY_COLORS[button.reward.itemQuality].hex
+						local itemSpell = GetItemSpell(button.reward.itemId)
+						if itemSpell and itemSpell == "Empowering" then
+							rewardColor = "|cffe5cc80"
+						end
 						rewardText = string.format(
 							"|T%s$s:14:14|t %s[%s]\124r%s",
 							button.reward.itemTexture,
-							ITEM_QUALITY_COLORS[button.reward.itemQuality].hex,
+							rewardColor,
 							button.reward.itemName,
 							button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
 						)

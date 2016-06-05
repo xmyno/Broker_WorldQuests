@@ -229,6 +229,9 @@ local UpdateBlock = function()
 
 					button:SetScript("OnClick", Row_OnClick)
 
+					button.icon = button:CreateTexture()
+					button.icon:SetTexture("Interface\\QUESTFRAME\\WorldQuest")
+					button.icon:SetSize(12, 12)
 
 					-- create font strings
 					button.titleFS = button:CreateFontString("BWQtitleFS", "OVERLAY", "SystemFont_Shadow_Med1")
@@ -273,7 +276,43 @@ local UpdateBlock = function()
 				end
 				firstRowInZone = false
 				
-				button.titleFS:SetText(string.format("%s%s%s|r", button.quest.isElite and "|cffe6c800ELITE |r" or "", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
+
+				WORLD_QUEST_ICONS_BY_TAG_ID = {
+					[114] = "worldquest-icon-firstaid",
+					[116] = "worldquest-icon-blacksmithing",
+					[117] = "worldquest-icon-leatherworking",
+					[118] = "worldquest-icon-alchemy",
+					[119] = "worldquest-icon-herbalism",
+					[120] = "worldquest-icon-mining",
+					[122] = "worldquest-icon-engineering",
+					[123] = "worldquest-icon-enchanting",
+					[125] = "worldquest-icon-jewelcrafting",
+					[126] = "worldquest-icon-inscription",
+					[129] = "worldquest-icon-archaeology",
+					[130] = "worldquest-icon-fishing",
+					[131] = "worldquest-icon-cooking",
+					[121] = "worldquest-icon-tailoring",
+					[124] = "worldquest-icon-skinning",
+					[137] = "worldquest-icon-dungeon",
+					[113] = "worldquest-icon-pvp-ffa",
+					[115] = "worldquest-icon-petbattle",
+					[111] = "worldquest-questmarker-dragon",
+					[112] = "worldquest-questmarker-dragon",
+					[136] = "worldquest-questmarker-dragon",
+				}
+
+				-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
+				--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
+				if WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId] then
+					button.icon:SetAtlas(WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId], true)
+					button.icon:SetAlpha(1)
+				else
+					button.icon:SetAlpha(0)
+				end
+				button.icon:SetSize(12, 12)
+
+
+				button.titleFS:SetText(string.format("%s%s|r", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
 				local titleWidth = button.titleFS:GetStringWidth()
 				if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 

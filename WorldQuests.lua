@@ -12,8 +12,8 @@ BWQ:SetBackdrop({
 		edgeSize = 2, 
 		insets = { left = 0, right = 0, top = 0, bottom = 0 },
 	})
-BWQ:SetBackdropColor(0,0,0,.85)
-BWQ:SetBackdropBorderColor(0,0,0,.75)
+BWQ:SetBackdropColor(0, 0, 0, .9)
+BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:Hide()
 
 -- local Block_OnEnter = function(self)
@@ -131,14 +131,14 @@ local ShowQuestObjectiveTooltip = function(row)
 
 	for objectiveIndex = 1, row.quest.numObjectives do
 		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(row.questId, objectiveIndex, false);
-		if ( objectiveText and #objectiveText > 0 ) then
+		if objectiveText and #objectiveText > 0 then
 			color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
 			GameTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
 		end
 	end
 
 	local percent = C_TaskQuest.GetQuestProgressBarInfo(row.questId);
-	if ( percent ) then
+	if percent then
 		GameTooltip_InsertFrame(GameTooltip, WorldMapTaskTooltipStatusBar);
 		WorldMapTaskTooltipStatusBar.Bar:SetValue(percent);
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
@@ -187,11 +187,11 @@ local UpdateBlock = function()
 
 			local firstRowInZone = true
 			if mapIndex == 2 then
-				zoneSepCache[mapIndex-1]:SetPoint("TOP", BWQ, "TOP", 10, -10)
-				zoneSepCache[mapIndex]:SetPoint("TOP", BWQ, "TOP", 0, -13)
+				zoneSepCache[mapIndex-1]:SetPoint("TOP", BWQ, "TOP", 15, -10)
+				zoneSepCache[mapIndex]:SetPoint("TOP", BWQ, "TOP", 15, -13)
 			else
-				zoneSepCache[mapIndex-1]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, -5)
-				zoneSepCache[mapIndex]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, -8)
+				zoneSepCache[mapIndex-1]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 15, -5)
+				zoneSepCache[mapIndex]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 5, -8)
 			end
 			zoneSepCache[mapIndex-1]:SetText(mapZones[mapIndex-1])
 
@@ -270,7 +270,7 @@ local UpdateBlock = function()
 
 				
 				if firstRowInZone then
-					button:SetPoint("TOP", zoneSepCache[mapIndex-1], "BOTTOM", 0, -5)
+					button:SetPoint("TOP", zoneSepCache[mapIndex-1], "BOTTOM", -15, -5)
 				else
 					button:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, 0)
 				end
@@ -415,11 +415,12 @@ local UpdateBlock = function()
 				button.reward:SetHeight(button.rewardFS:GetStringHeight())
 				button.reward:SetWidth(button.rewardFS:GetStringWidth())
 
-				button.titleFS:SetPoint("LEFT", button, "LEFT", 0, 0)
-				button.factionFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
-				button.rewardFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
+				button.icon:SetPoint("LEFT", button, "LEFT", 5, 0)
+				button.titleFS:SetPoint("LEFT", button.icon, "RIGHT", 5, 1)
+				button.rewardFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
 				button.reward:SetPoint("LEFT", button.rewardFS, "LEFT", 0, 0)
-				button.timeLeftFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+				button.factionFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+				button.timeLeftFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
 
 				buttonCache[buttonIndex] = button -- save all changes back into the array of buttons
 
@@ -434,7 +435,7 @@ local UpdateBlock = function()
 		buttonCache[i]:Hide()
 	end
 	
-	titleMaxWidth = titleMaxWidth > 250 and 250 or titleMaxWidth
+	titleMaxWidth = titleMaxWidth > 200 and 200 or titleMaxWidth
 	for i = 1, (buttonIndex - 1) do
 		buttonCache[i]:SetHeight(15)
 		buttonCache[i]:SetWidth(titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth)
@@ -445,7 +446,7 @@ local UpdateBlock = function()
 		buttonCache[i].timeLeftFS:SetWidth(timeLeftMaxWidth)
 	end
 
-	local totalWidth = titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 10
+	local totalWidth = 10 + titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 10
 	for i = 1, #mapZones do
 		zoneSepCache[i]:SetWidth(totalWidth)
 	end
@@ -465,7 +466,6 @@ local UpdateBlock = function()
 	end
 end
 
---BWQ:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
 	UpdateBlock()

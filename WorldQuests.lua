@@ -159,6 +159,26 @@ local Row_OnClick = function(self)
 end
 
 local UpdateBlock = function()
+
+	if UnitLevel("player") < 110 then
+		if not BWQ.errorRequiresLv110 then
+			BWQ.errorRequiresLv110 = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
+			BWQ.errorRequiresLv110:SetJustifyH("LEFT")
+			BWQ.errorRequiresLv110:SetTextColor(.9, .8, 0)
+			BWQ.errorRequiresLv110:SetText("World Quests are only available at Level 110.")
+			BWQ.errorRequiresLv110:SetPoint("TOP", BWQ, "TOP", 0, -10)
+
+			BWQ:SetSize(BWQ.errorRequiresLv110:GetStringWidth() + 20, 34)
+		end
+
+		BWQ.errorRequiresLv110:Show()
+		return
+	else
+		if BWQ.errorRequiresLv110 then
+			BWQ.errorRequiresLv110:Hide()
+		end
+	end
+
 	local originalMap = GetCurrentMapAreaID()
 	local originalContinent = GetCurrentMapContinent()
 	local originalDungeonLevel = GetCurrentMapDungeonLevel()

@@ -1,7 +1,7 @@
 ## Interface: 70000
 ## Author: Myno
 ## Title: Broker_WorldQuests
-## Version: r2
+## Version: r2a
 ## Notes: Broker plugin to display world quests as a list.
 
 libs/LibStub.lua

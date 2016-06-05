@@ -12,8 +12,8 @@ BWQ:SetBackdrop({
 		edgeSize = 2, 
 		insets = { left = 0, right = 0, top = 0, bottom = 0 },
 	})
-BWQ:SetBackdropColor(0,0,0,.85)
-BWQ:SetBackdropBorderColor(0,0,0,.75)
+BWQ:SetBackdropColor(0, 0, 0, .9)
+BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:Hide()
 
 -- local Block_OnEnter = function(self)
@@ -47,52 +47,61 @@ local RetrieveWorldQuests = function(mapId)
 
 	local quests = {}
 
+	-- set map so api returns proper values for that map
 	SetMapByID(mapId)
 	local questList = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
-	for i = 1, #questList do
+	if questList then
+		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId = nil, nil, nil, nil, nil, nil, nil, nil, nil
+		for i = 1, #questList do
 
-		--[[
-		local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
-		
-		tagId = 116
-		tagName = Blacksmithing World Quest
-		worldQuestType = 
-			2 -> profession, 
-			3 -> pve?
-			4 -> pvp
-			5 -> battle pet
-			7 -> dungeon
-		isRare = 
-			1 -> normal
-			2 -> rare
-			3 -> epic
-		isElite = true/false
-		tradeskillLineIndex = some number, no idea of meaning atm
-		]]
-		local tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
-		if worldQuestType ~= nil then
-			local quest = {}
-			-- GetQuestsForPlayerByMapID fields
-			quest.questId = questList[i].questId
-			quest.numObjectives = questList[i].numObjectives
+			--[[
+			local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
+			
+			tagId = 116
+			tagName = Blacksmithing World Quest
+			worldQuestType = 
+				2 -> profession, 
+				3 -> pve?
+				4 -> pvp
+				5 -> battle pet
+				7 -> dungeon
+			isRare = 
+				1 -> normal
+				2 -> rare
+				3 -> epic
+			isElite = true/false
+			tradeskillLineIndex = some number, no idea of meaning atm
+			]]
 
-			-- GetQuestTagInfo fields
-			quest.tagId = tagId
-			quest.tagName = tagName
-			quest.worldQuestType = worldQuestType
-			quest.isRare = isRare
-			quest.isElite = isElite
-			quest.tradeskillLineIndex = tradeskillLineIndex
+			timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)
+			if timeLeft ~= 0 then -- only show available quests
+				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
+				if worldQuestType ~= nil then
+					local quest = {}
+					-- GetQuestsForPlayerByMapID fields
+					quest.questId = questList[i].questId
+					quest.numObjectives = questList[i].numObjectives
 
-			local title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
-			quest.title = title
-			if factionId then
-				quest.faction = GetFactionInfoByID(factionId)
+					-- GetQuestTagInfo fields
+					quest.tagId = tagId
+					quest.tagName = tagName
+					quest.worldQuestType = worldQuestType
+					quest.isRare = isRare
+					quest.isElite = isElite
+					quest.tradeskillLineIndex = tradeskillLineIndex
+
+					title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
+					quest.title = title
+					if factionId then
+						quest.faction = GetFactionInfoByID(factionId)
+					end
+					quest.timeLeft = timeLeft
+
+					quests[#quests+1] = quest
+				end
 			end
-			quest.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(quest.questId)
-
-			quests[#quests+1] = quest
 		end
 	end
 
@@ -122,19 +131,17 @@ local ShowQuestObjectiveTooltip = function(row)
 
 	for objectiveIndex = 1, row.quest.numObjectives do
 		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(row.questId, objectiveIndex, false);
-		if ( objectiveText and #objectiveText > 0 ) then
+		if objectiveText and #objectiveText > 0 then
 			color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
 			GameTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
 		end
 	end
 
 	local percent = C_TaskQuest.GetQuestProgressBarInfo(row.questId);
-	if ( percent ) then
+	if percent then
 		GameTooltip_InsertFrame(GameTooltip, WorldMapTaskTooltipStatusBar);
 		WorldMapTaskTooltipStatusBar.Bar:SetValue(percent);
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
-		WorldMapTaskTooltipStatusBar:SetHeight(10)
-		WorldMapTaskTooltipStatusBar:SetPoint("BOTTOM", GameTooltip, "BOTTOM")
 	end
 
 	GameTooltip:Show()
@@ -143,11 +150,39 @@ end
 local Row_OnClick = function(self)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(self.mapId)
-	SetSuperTrackedQuestID(self.questId)
+
+	if IsWorldQuestHardWatched(self.questId) then
+		SetSuperTrackedQuestID(self.questId)
+	else
+		BonusObjectiveTracker_TrackWorldQuest(self.questId)
+	end
 end
 
 local UpdateBlock = function()
+
+	if UnitLevel("player") < 110 then
+		if not BWQ.errorRequiresLv110 then
+			BWQ.errorRequiresLv110 = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
+			BWQ.errorRequiresLv110:SetJustifyH("LEFT")
+			BWQ.errorRequiresLv110:SetTextColor(.9, .8, 0)
+			BWQ.errorRequiresLv110:SetText("World Quests are only available at Level 110.")
+			BWQ.errorRequiresLv110:SetPoint("TOP", BWQ, "TOP", 0, -10)
+
+			BWQ:SetSize(BWQ.errorRequiresLv110:GetStringWidth() + 20, 34)
+		end
+
+		BWQ.errorRequiresLv110:Show()
+		return
+	else
+		if BWQ.errorRequiresLv110 then
+			BWQ.errorRequiresLv110:Hide()
+		end
+	end
+
 	local originalMap = GetCurrentMapAreaID()
+	local originalContinent = GetCurrentMapContinent()
+	local originalDungeonLevel = GetCurrentMapDungeonLevel()
+
 	local buttonIndex = 1
 	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
 	for mapIndex = 1, #mapZones do
@@ -172,11 +207,11 @@ local UpdateBlock = function()
 
 			local firstRowInZone = true
 			if mapIndex == 2 then
-				zoneSepCache[mapIndex-1]:SetPoint("TOP", BWQ, "TOP", 10, -10)
-				zoneSepCache[mapIndex]:SetPoint("TOP", BWQ, "TOP", 0, -13)
+				zoneSepCache[mapIndex-1]:SetPoint("TOP", BWQ, "TOP", 15, -10)
+				zoneSepCache[mapIndex]:SetPoint("TOP", BWQ, "TOP", 15, -13)
 			else
-				zoneSepCache[mapIndex-1]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, -5)
-				zoneSepCache[mapIndex]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, -8)
+				zoneSepCache[mapIndex-1]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 15, -5)
+				zoneSepCache[mapIndex]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 5, -8)
 			end
 			zoneSepCache[mapIndex-1]:SetText(mapZones[mapIndex-1])
 
@@ -194,6 +229,14 @@ local UpdateBlock = function()
 					button.highlight:SetAlpha(0)
 					button.highlight:SetAllPoints(button)
 
+					if buttonIndex % 2 == 1 then
+						button.rowHighlight = button:CreateTexture()
+						button.rowHighlight:SetTexture("Interface\\Buttons\\WHITE8x8")
+						button.rowHighlight:SetBlendMode("ADD")
+						button.rowHighlight:SetAlpha(0.05)
+						button.rowHighlight:SetAllPoints(button)
+					end
+
 					button:SetScript("OnLeave", function(self)
 						Block_OnLeave()
 						self.highlight:SetAlpha(0)
@@ -206,6 +249,9 @@ local UpdateBlock = function()
 
 					button:SetScript("OnClick", Row_OnClick)
 
+					button.icon = button:CreateTexture()
+					button.icon:SetTexture("Interface\\QUESTFRAME\\WorldQuest")
+					button.icon:SetSize(12, 12)
 
 					-- create font strings
 					button.titleFS = button:CreateFontString("BWQtitleFS", "OVERLAY", "SystemFont_Shadow_Med1")
@@ -233,6 +279,8 @@ local UpdateBlock = function()
 					button = buttonCache[buttonIndex]
 				end
 
+				button:Show()
+
 				-- set data for button (this is messy :( maybe improve this later? values needed in click listeners on self)
 				button.mapId = mapZones[mapIndex]
 				button.reward.mapId = button.mapId
@@ -242,13 +290,49 @@ local UpdateBlock = function()
 
 				
 				if firstRowInZone then
-					button:SetPoint("TOP", zoneSepCache[mapIndex-1], "BOTTOM", 0, -5)
+					button:SetPoint("TOP", zoneSepCache[mapIndex-1], "BOTTOM", -15, -5)
 				else
 					button:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, 0)
 				end
 				firstRowInZone = false
 				
-				button.titleFS:SetText(string.format("%s%s%s|r", button.quest.isElite and "|cffe6c800ELITE |r" or "", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
+
+				WORLD_QUEST_ICONS_BY_TAG_ID = {
+					[114] = "worldquest-icon-firstaid",
+					[116] = "worldquest-icon-blacksmithing",
+					[117] = "worldquest-icon-leatherworking",
+					[118] = "worldquest-icon-alchemy",
+					[119] = "worldquest-icon-herbalism",
+					[120] = "worldquest-icon-mining",
+					[122] = "worldquest-icon-engineering",
+					[123] = "worldquest-icon-enchanting",
+					[125] = "worldquest-icon-jewelcrafting",
+					[126] = "worldquest-icon-inscription",
+					[129] = "worldquest-icon-archaeology",
+					[130] = "worldquest-icon-fishing",
+					[131] = "worldquest-icon-cooking",
+					[121] = "worldquest-icon-tailoring",
+					[124] = "worldquest-icon-skinning",
+					[137] = "worldquest-icon-dungeon",
+					[113] = "worldquest-icon-pvp-ffa",
+					[115] = "worldquest-icon-petbattle",
+					[111] = "worldquest-questmarker-dragon",
+					[112] = "worldquest-questmarker-dragon",
+					[136] = "worldquest-questmarker-dragon",
+				}
+
+				-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
+				--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
+				if WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId] then
+					button.icon:SetAtlas(WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId], true)
+					button.icon:SetAlpha(1)
+				else
+					button.icon:SetAlpha(0)
+				end
+				button.icon:SetSize(12, 12)
+
+
+				button.titleFS:SetText(string.format("%s%s|r", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
 				local titleWidth = button.titleFS:GetStringWidth()
 				if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 
@@ -271,10 +355,15 @@ local UpdateBlock = function()
 						button.reward.itemQuality = quality
 						button.reward.itemQuantity = quantity
 					
+						local rewardColor = ITEM_QUALITY_COLORS[button.reward.itemQuality].hex
+						local itemSpell = GetItemSpell(button.reward.itemId)
+						if itemSpell and itemSpell == "Empowering" then
+							rewardColor = "|cffe5cc80"
+						end
 						rewardText = string.format(
 							"|T%s$s:14:14|t %s[%s]\124r%s",
 							button.reward.itemTexture,
-							ITEM_QUALITY_COLORS[button.reward.itemQuality].hex,
+							rewardColor,
 							button.reward.itemName,
 							button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
 						)
@@ -346,11 +435,12 @@ local UpdateBlock = function()
 				button.reward:SetHeight(button.rewardFS:GetStringHeight())
 				button.reward:SetWidth(button.rewardFS:GetStringWidth())
 
-				button.titleFS:SetPoint("LEFT", button, "LEFT", 0, 0)
-				button.factionFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
-				button.rewardFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
+				button.icon:SetPoint("LEFT", button, "LEFT", 5, 0)
+				button.titleFS:SetPoint("LEFT", button.icon, "RIGHT", 5, 1)
+				button.rewardFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
 				button.reward:SetPoint("LEFT", button.rewardFS, "LEFT", 0, 0)
-				button.timeLeftFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+				button.factionFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+				button.timeLeftFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
 
 				buttonCache[buttonIndex] = button -- save all changes back into the array of buttons
 
@@ -359,8 +449,13 @@ local UpdateBlock = function()
 			end -- quest loop
 		end -- mapzone/id if
 	end -- maps loop
+
+	-- hide buttons if there are more cached than quests available
+	for i = buttonIndex, #buttonCache do
+		buttonCache[i]:Hide()
+	end
 	
-	titleMaxWidth = titleMaxWidth > 250 and 250 or titleMaxWidth
+	titleMaxWidth = titleMaxWidth > 200 and 200 or titleMaxWidth
 	for i = 1, (buttonIndex - 1) do
 		buttonCache[i]:SetHeight(15)
 		buttonCache[i]:SetWidth(titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth)
@@ -371,7 +466,7 @@ local UpdateBlock = function()
 		buttonCache[i].timeLeftFS:SetWidth(timeLeftMaxWidth)
 	end
 
-	local totalWidth = titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 10
+	local totalWidth = 10 + titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 10
 	for i = 1, #mapZones do
 		zoneSepCache[i]:SetWidth(totalWidth)
 	end
@@ -379,10 +474,18 @@ local UpdateBlock = function()
 	BWQ:SetWidth(totalWidth)
 	BWQ:SetHeight((buttonIndex - 1) * 15 + ((#mapZones / 2) * 20) + 25)
 
-	SetMapByID(originalMap) -- set map back to original map before updating
+
+	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
+	if originalMap == 751 then
+		SetMapZoom(WORLDMAP_MAELSTROM_ID)
+	else
+		-- set map back to the original map from before updating
+		SetMapZoom(originalContinent)
+		SetMapByID(originalMap)
+		SetDungeonMapLevel(originalDungeonLevel)
+	end
 end
 
---BWQ:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
 	UpdateBlock()

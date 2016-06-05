@@ -209,6 +209,14 @@ local UpdateBlock = function()
 					button.highlight:SetAlpha(0)
 					button.highlight:SetAllPoints(button)
 
+					if buttonIndex % 2 == 1 then
+						button.rowHighlight = button:CreateTexture()
+						button.rowHighlight:SetTexture("Interface\\Buttons\\WHITE8x8")
+						button.rowHighlight:SetBlendMode("ADD")
+						button.rowHighlight:SetAlpha(0.05)
+						button.rowHighlight:SetAllPoints(button)
+					end
+
 					button:SetScript("OnLeave", function(self)
 						Block_OnLeave()
 						self.highlight:SetAlpha(0)

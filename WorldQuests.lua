@@ -50,8 +50,10 @@ local RetrieveWorldQuests = function(mapId)
 	-- set map so api returns proper values for that map
 	SetMapByID(mapId)
 	local questList = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
-	if questList then 
+	if questList then
+		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId = nil, nil, nil, nil, nil, nil, nil, nil, nil
 		for i = 1, #questList do
 
 			--[[
@@ -72,29 +74,33 @@ local RetrieveWorldQuests = function(mapId)
 			isElite = true/false
 			tradeskillLineIndex = some number, no idea of meaning atm
 			]]
-			local tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
-			if worldQuestType ~= nil then
-				local quest = {}
-				-- GetQuestsForPlayerByMapID fields
-				quest.questId = questList[i].questId
-				quest.numObjectives = questList[i].numObjectives
 
-				-- GetQuestTagInfo fields
-				quest.tagId = tagId
-				quest.tagName = tagName
-				quest.worldQuestType = worldQuestType
-				quest.isRare = isRare
-				quest.isElite = isElite
-				quest.tradeskillLineIndex = tradeskillLineIndex
+			timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)
+			if timeLeft ~= 0 then -- only show available quests
+				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
+				if worldQuestType ~= nil then
+					local quest = {}
+					-- GetQuestsForPlayerByMapID fields
+					quest.questId = questList[i].questId
+					quest.numObjectives = questList[i].numObjectives
 
-				local title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
-				quest.title = title
-				if factionId then
-					quest.faction = GetFactionInfoByID(factionId)
+					-- GetQuestTagInfo fields
+					quest.tagId = tagId
+					quest.tagName = tagName
+					quest.worldQuestType = worldQuestType
+					quest.isRare = isRare
+					quest.isElite = isElite
+					quest.tradeskillLineIndex = tradeskillLineIndex
+
+					title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
+					quest.title = title
+					if factionId then
+						quest.faction = GetFactionInfoByID(factionId)
+					end
+					quest.timeLeft = timeLeft
+
+					quests[#quests+1] = quest
 				end
-				quest.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(quest.questId)
-
-				quests[#quests+1] = quest
 			end
 		end
 	end

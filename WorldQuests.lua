@@ -191,7 +191,7 @@ end
 
 local UpdateBlock = function()
 
-	if not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
+	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
 		if not BWQ.errorRequiresLv110 then
 			BWQ.errorRequiresLv110 = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
 			BWQ.errorRequiresLv110:SetJustifyH("CENTER")

@@ -1,5 +1,48 @@
 
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS = ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS
+local GetQuestsForPlayerByMapID = C_TaskQuest.GetQuestsForPlayerByMapID
+local GetQuestTimeLeftMinutes = C_TaskQuest.GetQuestTimeLeftMinutes
+local GetQuestTagInfo = GetQuestTagInfo
+local GetQuestInfoByQuestID = C_TaskQuest.GetQuestInfoByQuestID
+local GetFactionInfoByID = GetFactionInfoByID
+local GetQuestObjectiveInfo = GetQuestObjectiveInfo
+local GetQuestProgressBarInfo = C_TaskQuest.GetQuestProgressBarInfo
+local UnitLevel, IsQuestFlaggedCompleted = UnitLevel, IsQuestFlaggedCompleted
+local GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel = GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
+local GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney = GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney
+local GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo = GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
+
+local WORLD_QUEST_ICONS_BY_TAG_ID = {
+	[114] = "worldquest-icon-firstaid",
+	[116] = "worldquest-icon-blacksmithing",
+	[117] = "worldquest-icon-leatherworking",
+	[118] = "worldquest-icon-alchemy",
+	[119] = "worldquest-icon-herbalism",
+	[120] = "worldquest-icon-mining",
+	[122] = "worldquest-icon-engineering",
+	[123] = "worldquest-icon-enchanting",
+	[125] = "worldquest-icon-jewelcrafting",
+	[126] = "worldquest-icon-inscription",
+	[129] = "worldquest-icon-archaeology",
+	[130] = "worldquest-icon-fishing",
+	[131] = "worldquest-icon-cooking",
+	[121] = "worldquest-icon-tailoring",
+	[124] = "worldquest-icon-skinning",
+	[137] = "worldquest-icon-dungeon",
+	[113] = "worldquest-icon-pvp-ffa",
+	[115] = "worldquest-icon-petbattle",
+	[111] = "worldquest-questmarker-dragon",
+	[112] = "worldquest-questmarker-dragon",
+	[136] = "worldquest-questmarker-dragon",
+}
+
+local MAP_ZONES = {
+	GetMapNameByID(1015), 1015,  -- Aszuna
+	GetMapNameByID(1018), 1018,  -- Val'sharah
+	GetMapNameByID(1024), 1024,  -- Highmountain
+	GetMapNameByID(1017), 1017,  -- Stormheim
+	GetMapNameByID(1033), 1033,  -- Suramar
+}
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
 BWQ:SetFrameStrata("HIGH")
@@ -28,20 +71,8 @@ end
 --BWQ:SetScript("OnEnter", Block_OnEnter)
 BWQ:SetScript("OnLeave", Block_OnLeave)
 
-local continentId = 8
-local mapZones = {
-	GetMapNameByID(1015), 1015,  -- Aszuna
-	GetMapNameByID(1018), 1018,  -- Val'sharah
-	GetMapNameByID(1024), 1024,  -- Highmountain
-	GetMapNameByID(1017), 1017,  -- Stormheim
-	GetMapNameByID(1033), 1033,  -- Suramar
-}
-
-local needsRefreshForItemUpdate = false
 local buttonCache = {}
 local zoneSepCache = {}
-
---42652 (some world quest id)
 
 local RetrieveWorldQuests = function(mapId)
 
@@ -49,7 +80,7 @@ local RetrieveWorldQuests = function(mapId)
 
 	-- set map so api returns proper values for that map
 	SetMapByID(mapId)
-	local questList = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+	local questList = GetQuestsForPlayerByMapID(mapId)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -75,7 +106,7 @@ local RetrieveWorldQuests = function(mapId)
 			tradeskillLineIndex = some number, no idea of meaning atm
 			]]
 
-			timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)
+			timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
 			if timeLeft ~= 0 then -- only show available quests
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
 				if worldQuestType ~= nil then
@@ -92,7 +123,7 @@ local RetrieveWorldQuests = function(mapId)
 					quest.isElite = isElite
 					quest.tradeskillLineIndex = tradeskillLineIndex
 
-					title, factionId = C_TaskQuest.GetQuestInfoByQuestID(quest.questId)
+					title, factionId = GetQuestInfoByQuestID(quest.questId)
 					quest.title = title
 					if factionId then
 						quest.faction = GetFactionInfoByID(factionId)
@@ -137,7 +168,7 @@ local ShowQuestObjectiveTooltip = function(row)
 		end
 	end
 
-	local percent = C_TaskQuest.GetQuestProgressBarInfo(row.questId);
+	local percent = GetQuestProgressBarInfo(row.questId);
 	if percent then
 		GameTooltip_InsertFrame(GameTooltip, WorldMapTaskTooltipStatusBar);
 		WorldMapTaskTooltipStatusBar.Bar:SetValue(percent);
@@ -185,7 +216,7 @@ local UpdateBlock = function()
 
 	local buttonIndex = 1
 	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
-	for mapIndex = 1, #mapZones do
+	for mapIndex = 1, #MAP_ZONES do
 
 		if mapIndex % 2 == 1 then -- uneven are zone names, even are ids
 			
@@ -203,7 +234,7 @@ local UpdateBlock = function()
 
 		else
 
-			local quests = RetrieveWorldQuests(mapZones[mapIndex])
+			local quests = RetrieveWorldQuests(MAP_ZONES[mapIndex])
 
 			local firstRowInZone = true
 			if mapIndex == 2 then
@@ -213,7 +244,7 @@ local UpdateBlock = function()
 				zoneSepCache[mapIndex-1]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 15, -5)
 				zoneSepCache[mapIndex]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 5, -8)
 			end
-			zoneSepCache[mapIndex-1]:SetText(mapZones[mapIndex-1])
+			zoneSepCache[mapIndex-1]:SetText(MAP_ZONES[mapIndex-1])
 
 			for questIndex = 1, #quests do
 
@@ -282,7 +313,7 @@ local UpdateBlock = function()
 				button:Show()
 
 				-- set data for button (this is messy :( maybe improve this later? values needed in click listeners on self)
-				button.mapId = mapZones[mapIndex]
+				button.mapId = MAP_ZONES[mapIndex]
 				button.reward.mapId = button.mapId
 				button.quest = quests[questIndex]
 				button.reward.questId = button.quest.questId
@@ -297,29 +328,7 @@ local UpdateBlock = function()
 				firstRowInZone = false
 				
 
-				WORLD_QUEST_ICONS_BY_TAG_ID = {
-					[114] = "worldquest-icon-firstaid",
-					[116] = "worldquest-icon-blacksmithing",
-					[117] = "worldquest-icon-leatherworking",
-					[118] = "worldquest-icon-alchemy",
-					[119] = "worldquest-icon-herbalism",
-					[120] = "worldquest-icon-mining",
-					[122] = "worldquest-icon-engineering",
-					[123] = "worldquest-icon-enchanting",
-					[125] = "worldquest-icon-jewelcrafting",
-					[126] = "worldquest-icon-inscription",
-					[129] = "worldquest-icon-archaeology",
-					[130] = "worldquest-icon-fishing",
-					[131] = "worldquest-icon-cooking",
-					[121] = "worldquest-icon-tailoring",
-					[124] = "worldquest-icon-skinning",
-					[137] = "worldquest-icon-dungeon",
-					[113] = "worldquest-icon-pvp-ffa",
-					[115] = "worldquest-icon-petbattle",
-					[111] = "worldquest-questmarker-dragon",
-					[112] = "worldquest-questmarker-dragon",
-					[136] = "worldquest-questmarker-dragon",
-				}
+				
 
 				-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
 				--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
@@ -383,9 +392,6 @@ local UpdateBlock = function()
 							GameTooltip:Hide()
 							Block_OnLeave()
 						end)
-
-					else
-						needsRefreshForItemUpdate = true
 					end
 				else
 					button.reward:SetScript("OnEnter", function(self)
@@ -467,12 +473,12 @@ local UpdateBlock = function()
 	end
 
 	local totalWidth = 10 + titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 10
-	for i = 1, #mapZones do
+	for i = 1, #MAP_ZONES do
 		zoneSepCache[i]:SetWidth(totalWidth)
 	end
 
 	BWQ:SetWidth(totalWidth)
-	BWQ:SetHeight((buttonIndex - 1) * 15 + ((#mapZones / 2) * 20) + 25)
+	BWQ:SetHeight((buttonIndex - 1) * 15 + ((#MAP_ZONES / 2) * 20) + 25)
 
 
 	-- setting the maelstrom continent map via SetMapByID would make it non-interactive

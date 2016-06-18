@@ -512,7 +512,7 @@ local skipNextUpdate = false
 BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
-	if event == "WORLD_MAP_UPDATE" then
+	if event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
 	elseif event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
@@ -527,6 +527,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	label = "World Quests",
 	icon = nil,
 	OnEnter = function(self)
+		UpdateBlock()
 		BWQ:SetPoint("TOP", self, "BOTTOM", 0, 0)
 		BWQ:Show()
 	end,

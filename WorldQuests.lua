@@ -492,9 +492,21 @@ local UpdateBlock = function()
 	end
 end
 
+--[[
+Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
+To avoid setting the currently shown map again, which would hide the quest details,
+skip updating after a WORLD_MAP_UPDATE event happened 
+--]]
+local skipNextUpdate = false
 BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
-	UpdateBlock()
+	if event == "WORLD_MAP_UPDATE" then
+		skipNextUpdate = true
+	elseif event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
+		skipNextUpdate = false
+		UpdateBlock()
+	end
 end)
 
 -- data broker object

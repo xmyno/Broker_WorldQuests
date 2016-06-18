@@ -85,6 +85,28 @@ BWQ:SetScript("OnLeave", Block_OnLeave)
 local buttonCache = {}
 local zoneSepCache = {}
 
+local WorldQuestsUnlocked = function()
+	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
+		if not BWQ.errorRequiresLv110 then
+			BWQ.errorRequiresLv110 = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
+			BWQ.errorRequiresLv110:SetJustifyH("CENTER")
+			BWQ.errorRequiresLv110:SetTextColor(.9, .8, 0)
+			BWQ.errorRequiresLv110:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
+			BWQ.errorRequiresLv110:SetPoint("TOP", BWQ, "TOP", 0, -10)
+
+			BWQ:SetSize(BWQ.errorRequiresLv110:GetStringWidth() + 20, 45)
+		end
+
+		BWQ.errorRequiresLv110:Show()
+		return false
+	else
+		if BWQ.errorRequiresLv110 then
+			BWQ.errorRequiresLv110:Hide()
+		end
+		return true
+	end
+end
+
 local RetrieveWorldQuests = function(mapId)
 
 	local quests = {}
@@ -202,24 +224,7 @@ end
 
 local UpdateBlock = function()
 
-	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
-		if not BWQ.errorRequiresLv110 then
-			BWQ.errorRequiresLv110 = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
-			BWQ.errorRequiresLv110:SetJustifyH("CENTER")
-			BWQ.errorRequiresLv110:SetTextColor(.9, .8, 0)
-			BWQ.errorRequiresLv110:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
-			BWQ.errorRequiresLv110:SetPoint("TOP", BWQ, "TOP", 0, -10)
-
-			BWQ:SetSize(BWQ.errorRequiresLv110:GetStringWidth() + 20, 45)
-		end
-
-		BWQ.errorRequiresLv110:Show()
-		return
-	else
-		if BWQ.errorRequiresLv110 then
-			BWQ.errorRequiresLv110:Hide()
-		end
-	end
+	if not WorldQuestsUnlocked() then return end
 
 	local originalMap = GetCurrentMapAreaID()
 	local originalContinent = GetCurrentMapContinent()

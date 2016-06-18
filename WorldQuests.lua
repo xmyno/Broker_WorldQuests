@@ -1,3 +1,14 @@
+--[[----
+--
+-- Broker_WorldQuests
+--
+-- World of Warcraft addon to display Legion world quests in convenient list form.
+-- Doesn't do anything on its own; requires a data broker addon!
+--
+-- Author: myno
+-- Version: r2a
+--
+--]]----
 
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS = ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS
 local GetQuestsForPlayerByMapID = C_TaskQuest.GetQuestsForPlayerByMapID

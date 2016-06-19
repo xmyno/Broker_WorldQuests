@@ -84,6 +84,7 @@ BWQ:SetScript("OnLeave", Block_OnLeave)
 
 local buttonCache = {}
 local zoneSepCache = {}
+local numQuests, numZonesWithQuests, offsetY = 0, 0, 0
 
 local WorldQuestsUnlocked = function()
 	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
@@ -232,6 +233,9 @@ local UpdateBlock = function()
 
 	local buttonIndex = 1
 	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
+
+	offsetY = -10 -- initial padding from top
+
 	for mapIndex = 1, #MAP_ZONES do
 
 		if mapIndex % 2 == 1 then -- uneven are zone names, even are ids
@@ -251,16 +255,20 @@ local UpdateBlock = function()
 		else
 
 			local quests = RetrieveWorldQuests(MAP_ZONES[mapIndex])
+			if #quests > 0 then
+				zoneSepCache[mapIndex-1]:Show()
+				zoneSepCache[mapIndex]:Show()
+				zoneSepCache[mapIndex-1]:SetPoint("TOP", BWQ, "TOP", 15, offsetY)
+				zoneSepCache[mapIndex]:SetPoint("TOP", BWQ, "TOP", 5, offsetY - 3)
+				
+				zoneSepCache[mapIndex-1]:SetText(MAP_ZONES[mapIndex-1])
 
-			local firstRowInZone = true
-			if mapIndex == 2 then
-				zoneSepCache[mapIndex-1]:SetPoint("TOP", BWQ, "TOP", 15, -10)
-				zoneSepCache[mapIndex]:SetPoint("TOP", BWQ, "TOP", 15, -13)
+				offsetY = offsetY - 16
+				numZonesWithQuests = numZonesWithQuests + 1
 			else
-				zoneSepCache[mapIndex-1]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 15, -5)
-				zoneSepCache[mapIndex]:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 5, -8)
+				zoneSepCache[mapIndex-1]:Hide()
+				zoneSepCache[mapIndex]:Hide()
 			end
-			zoneSepCache[mapIndex-1]:SetText(MAP_ZONES[mapIndex-1])
 
 			for questIndex = 1, #quests do
 
@@ -347,16 +355,8 @@ local UpdateBlock = function()
 				button.reward.questId = button.quest.questId
 				button.questId = button.quest.questId
 
-				
-				if firstRowInZone then
-					button:SetPoint("TOP", zoneSepCache[mapIndex-1], "BOTTOM", -15, -5)
-				else
-					button:SetPoint("TOP", buttonCache[buttonIndex-1], "BOTTOM", 0, 0)
-				end
-				firstRowInZone = false
-				
-
-				
+				button:SetPoint("TOP", BWQ, "TOP", 0, offsetY)
+				offsetY = offsetY - 16
 
 				-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
 				--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
@@ -510,8 +510,6 @@ local UpdateBlock = function()
 	end
 
 	BWQ:SetWidth(totalWidth)
-	BWQ:SetHeight((buttonIndex - 1) * 15 + ((#MAP_ZONES / 2) * 20) + 25)
-
 
 	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
 	if originalMap == 751 then
@@ -522,6 +520,7 @@ local UpdateBlock = function()
 		SetMapByID(originalMap)
 		SetDungeonMapLevel(originalDungeonLevel)
 	end
+	BWQ:SetHeight(-1 * offsetY + 10)
 end
 
 --[[

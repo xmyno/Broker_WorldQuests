@@ -86,30 +86,38 @@ local buttonCache = {}
 local zoneSepCache = {}
 local numQuests, numZonesWithQuests, offsetY = 0, 0, 0
 
+local CreateErrorFS = function()
+	BWQ.errorFS = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
+	BWQ.errorFS:SetJustifyH("CENTER")
+	BWQ.errorFS:SetTextColor(.9, .8, 0)
+	BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
+end
+
 local WorldQuestsUnlocked = function()
 	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
-		if not BWQ.errorRequiresLv110 then
-			BWQ.errorRequiresLv110 = BWQ:CreateFontString("BWQerrorLv110FS", "OVERLAY", "SystemFont_Shadow_Med1")
-			BWQ.errorRequiresLv110:SetJustifyH("CENTER")
-			BWQ.errorRequiresLv110:SetTextColor(.9, .8, 0)
-			BWQ.errorRequiresLv110:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
-			BWQ.errorRequiresLv110:SetPoint("TOP", BWQ, "TOP", 0, -10)
+		if not BWQ.errorFS then CreateErrorFS() end
 
-			BWQ:SetSize(BWQ.errorRequiresLv110:GetStringWidth() + 20, 45)
-		end
-
-		BWQ.errorRequiresLv110:Show()
+		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
+		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
+		BWQ.errorFS:Show()
 		return false
 	else
-		if BWQ.errorRequiresLv110 then
-			BWQ.errorRequiresLv110:Hide()
+		if BWQ.errorFS then
+			BWQ.errorFS:Hide()
 		end
 		return true
 	end
 end
 
-local RetrieveWorldQuests = function(mapId)
+local ShowNoWorldQuestsInfo = function()
+	if not BWQ.errorFS then CreateErrorFS() end
 
+	BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
+	BWQ.errorFS:SetText("No more world quests available!\nWhat kind of sorcery is this?!")
+	BWQ.errorFS:Show()
+end
+
+local RetrieveWorldQuests = function(mapId)
 	local quests = {}
 
 	-- set map so api returns proper values for that map
@@ -235,6 +243,7 @@ local UpdateBlock = function()
 	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
 
 	offsetY = -10 -- initial padding from top
+	numZonesWithQuests = 0
 
 	for mapIndex = 1, #MAP_ZONES do
 
@@ -255,6 +264,8 @@ local UpdateBlock = function()
 		else
 
 			local quests = RetrieveWorldQuests(MAP_ZONES[mapIndex])
+			numQuests = numQuests + #quests -- count quests to show text when none are in list
+				
 			if #quests > 0 then
 				zoneSepCache[mapIndex-1]:Show()
 				zoneSepCache[mapIndex]:Show()
@@ -487,6 +498,23 @@ local UpdateBlock = function()
 		end -- mapzone/id if
 	end -- maps loop
 
+	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
+	if originalMap == 751 then
+		SetMapZoom(WORLDMAP_MAELSTROM_ID)
+	else
+		-- set map back to the original map from before updating
+		SetMapZoom(originalContinent)
+		SetMapByID(originalMap)
+		SetDungeonMapLevel(originalDungeonLevel)
+	end
+
+	if numQuests == 0 then
+		ShowNoWorldQuestsInfo()
+		return
+	else
+		if BWQ.errorFS then BWQ.errorFS:Hide() end
+	end
+
 	-- hide buttons if there are more cached than quests available
 	for i = buttonIndex, #buttonCache do
 		buttonCache[i]:Hide()
@@ -510,16 +538,6 @@ local UpdateBlock = function()
 	end
 
 	BWQ:SetWidth(totalWidth)
-
-	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
-	if originalMap == 751 then
-		SetMapZoom(WORLDMAP_MAELSTROM_ID)
-	else
-		-- set map back to the original map from before updating
-		SetMapZoom(originalContinent)
-		SetMapByID(originalMap)
-		SetDungeonMapLevel(originalDungeonLevel)
-	end
 	BWQ:SetHeight(-1 * offsetY + 10)
 end
 

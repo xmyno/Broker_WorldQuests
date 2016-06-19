@@ -211,14 +211,14 @@ local ShowQuestObjectiveTooltip = function(row)
 	GameTooltip:AddLine(row.quest.title, color.r, color.g, color.b, true)
 
 	for objectiveIndex = 1, row.quest.numObjectives do
-		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(row.questId, objectiveIndex, false);
+		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(row.quest.questId, objectiveIndex, false);
 		if objectiveText and #objectiveText > 0 then
 			color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
 			GameTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
 		end
 	end
 
-	local percent = GetQuestProgressBarInfo(row.questId);
+	local percent = GetQuestProgressBarInfo(row.quest.questId);
 	if percent then
 		GameTooltip_InsertFrame(GameTooltip, WorldMapTaskTooltipStatusBar);
 		WorldMapTaskTooltipStatusBar.Bar:SetValue(percent);
@@ -228,19 +228,18 @@ local ShowQuestObjectiveTooltip = function(row)
 	GameTooltip:Show()
 end
 
-local Row_OnClick = function(self)
+local Row_OnClick = function(row)
 	ShowUIPanel(WorldMapFrame)
-	SetMapByID(self.mapId)
+	SetMapByID(row.mapId)
 
-	if IsWorldQuestHardWatched(self.questId) then
-		SetSuperTrackedQuestID(self.questId)
+	if IsWorldQuestHardWatched(row.quest.questId) then
+		SetSuperTrackedQuestID(row.quest.questId)
 	else
-		BonusObjectiveTracker_TrackWorldQuest(self.questId)
+		BonusObjectiveTracker_TrackWorldQuest(row.quest.questId)
 	end
 end
 
 local UpdateBlock = function()
-
 	if not WorldQuestsUnlocked() then return end
 
 	local originalMap = GetCurrentMapAreaID()
@@ -311,13 +310,15 @@ local UpdateBlock = function()
 					
 					button:SetScript("OnLeave", function(self)
 						Block_OnLeave()
-						self.highlight:SetAlpha(0)
+						button.highlight:SetAlpha(0)
 					end)
 					button:SetScript("OnEnter", function(self)
-						self.highlight:SetAlpha(1)
+						button.highlight:SetAlpha(1)
 					end)
 
-					button:SetScript("OnClick", Row_OnClick)
+					button:SetScript("OnClick", function(self)
+						Row_OnClick(button)
+					end)
 
 					button.icon = button:CreateTexture()
 					button.icon:SetTexture("Interface\\QUESTFRAME\\WorldQuest")
@@ -325,7 +326,9 @@ local UpdateBlock = function()
 
 					-- create font strings
 					button.title = CreateFrame("Button", nil, button)
-					button.title:SetScript("OnClick", Row_OnClick)
+					button.title:SetScript("OnClick", function(self)
+						Row_OnClick(button)
+					end)
 					button.title:SetScript("OnEnter", function(self)
 						button.highlight:SetAlpha(1)
 
@@ -348,7 +351,9 @@ local UpdateBlock = function()
 					button.factionFS:SetTextColor(1, 1, 1)
 
 					button.reward = CreateFrame("Button", nil, button)
-					button.reward:SetScript("OnClick", Row_OnClick)
+					button.reward:SetScript("OnClick", function(self)
+						Row_OnClick(button)
+					end)
 
 					button.rewardFS = button.reward:CreateFontString("BWQrewardFS", "OVERLAY", "SystemFont_Shadow_Med1")
 					button.rewardFS:SetJustifyH("LEFT")
@@ -398,8 +403,8 @@ local UpdateBlock = function()
 						button.reward:SetScript("OnEnter", function(self)
 							button.highlight:SetAlpha(1)
 
-							GameTooltip:SetOwner(self, "ANCHOR_CURSOR", 0, -5)
-							GameTooltip:SetQuestLogItem("reward", 1, self.questId)
+							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
+							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
 							--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
 							GameTooltip:Show()
 						end)

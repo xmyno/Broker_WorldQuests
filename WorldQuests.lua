@@ -6,7 +6,7 @@
 -- Doesn't do anything on its own; requires a data broker addon!
 --
 -- Author: myno
--- Version: r2a
+-- Version: r3
 --
 --]]----
 

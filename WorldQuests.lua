@@ -709,6 +709,7 @@ BWQ:RegisterEvent("ADDON_LOADED")
 BWQ:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" and arg1 == "Broker_WorldQuests" then
 		InitializeFilterButtons()
+		self:UnregisterEvent("ADDON_LOADED")
 	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
 	elseif event == "QUEST_LOG_UPDATE" and not skipNextUpdate then

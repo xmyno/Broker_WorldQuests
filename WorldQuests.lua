@@ -394,9 +394,18 @@ local UpdateBlock = function()
 							button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
 						)
 
+						button.reward:SetScript("OnEvent", function(self, event)
+							if event == "MODIFIER_STATE_CHANGED" then
+								GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
+								GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+								GameTooltip:Show()
+							end
+						end)
+
 						button.reward:SetScript("OnEnter", function(self)
 							button.highlight:SetAlpha(1)
 
+							self:RegisterEvent("MODIFIER_STATE_CHANGED")
 							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
 							--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
@@ -406,6 +415,7 @@ local UpdateBlock = function()
 						button.reward:SetScript("OnLeave", function(self)
 							button.highlight:SetAlpha(0)
 
+							self:UnregisterEvent("MODIFIER_STATE_CHANGED")
 							GameTooltip:Hide()
 							Block_OnLeave()
 						end)

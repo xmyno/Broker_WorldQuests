@@ -70,6 +70,8 @@ BWQ:SetBackdropColor(0, 0, 0, .9)
 BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:Hide()
 
+local FilterButtonWrapper = CreateFrame("Frame", "BWQ_FilterButtonWrapper", BWQ)
+
 -- local Block_OnEnter = function(self)
 	
 -- end
@@ -101,11 +103,15 @@ local WorldQuestsUnlocked = function()
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
 		BWQ.errorFS:Show()
+
+		FilterButtonWrapper:Hide()
 		return false
 	else
 		if BWQ.errorFS then
 			BWQ.errorFS:Hide()
 		end
+		
+		FilterButtonWrapper:Show()
 		return true
 	end
 end
@@ -626,7 +632,6 @@ local ToggleFilterButton = function(button, active)
 end
 
 
-local FilterButtonWrapper = CreateFrame("Frame", "FilterButtonWrapper", BWQ)
 FilterButtonWrapper:SetHeight(25)
 FilterButtonWrapper:SetWidth(555)
 FilterButtonWrapper:SetPoint("TOP", BWQ, "TOP", 10, -10)

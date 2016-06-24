@@ -49,10 +49,12 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 
 local MAP_ZONES = {
 	GetMapNameByID(1015), 1015,  -- Aszuna
+	GetMapNameByID(1096), 1096,  -- Eye of Azshara
 	GetMapNameByID(1018), 1018,  -- Val'sharah
 	GetMapNameByID(1024), 1024,  -- Highmountain
 	GetMapNameByID(1017), 1017,  -- Stormheim
 	GetMapNameByID(1033), 1033,  -- Suramar
+	GetMapNameByID(1014), 1014,  -- Dalaran
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)

@@ -82,6 +82,9 @@ local Block_OnLeave = function(self)
 	if not BWQ:IsMouseOver() then
 		BWQ:Hide()
 	end
+
+	BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
+	BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
 end
 
 --BWQ:SetScript("OnEnter", Block_OnEnter)
@@ -729,8 +732,6 @@ To avoid setting the currently shown map again, which would hide the quest detai
 skip updating after a WORLD_MAP_UPDATE event happened 
 --]]
 local skipNextUpdate = false
-BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 BWQ:RegisterEvent("ADDON_LOADED")
 BWQ:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" and arg1 == "Broker_WorldQuests" then
@@ -752,6 +753,9 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	label = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
+		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+
 		BWQ:UpdateBlock()
 		local showDownwards = select(2, self:GetCenter()) > UIParent:GetHeight() / 2
 		BWQ:ClearAllPoints()

@@ -89,6 +89,7 @@ BWQ:SetScript("OnLeave", Block_OnLeave)
 local buttonCache = {}
 local zoneSepCache = {}
 local numQuestsTotal, numQuestsZone, offsetY = 0, 0, 0
+local notFinishedLoading = false
 local highlightedRow = true
 
 local CreateErrorFS = function(offsetY)
@@ -240,7 +241,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-local UpdateBlock = function()
+BWQ.UpdateBlock = function()
 	if not WorldQuestsUnlocked() then return end
 
 	local originalMap = GetCurrentMapAreaID()
@@ -250,6 +251,7 @@ local UpdateBlock = function()
 	local buttonIndex = 1
 	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
 
+	notFinishedLoading = false
 	offsetY = -45 -- initial padding from top
 	numQuestsTotal = 0
 	highlightedRow = true
@@ -427,6 +429,8 @@ local UpdateBlock = function()
 							GameTooltip:Hide()
 							Block_OnLeave()
 						end)
+					else
+						notFinishedLoading = true
 					end
 				else
 					button.reward:SetScript("OnEnter", function(self)
@@ -590,6 +594,10 @@ local UpdateBlock = function()
 
 	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
 	BWQ:SetHeight(-1 * offsetY + 10)
+
+	if notFinishedLoading then
+		C_Timer.After(.1, BWQ.UpdateBlock)
+	end
 end
 
 
@@ -647,7 +655,7 @@ FilterButtonArtifactPowerFS:SetText("Artifact Power")
 FilterButtonArtifactPower:SetScript("OnClick", function(self)
 	BWQcfg.showArtifactPower = not BWQcfg.showArtifactPower
 	ToggleFilterButton(FilterButtonArtifactPower, BWQcfg.showArtifactPower)
-	UpdateBlock()
+	BWQ:UpdateBlock()
 end)
 
 local FilterButtonLowGold = CreateFilterButton("BWQ_FilterButtonLowGold", FilterButtonArtifactPower, false)
@@ -659,7 +667,7 @@ FilterButtonLowGoldFS:SetText("Low Gold")
 FilterButtonLowGold:SetScript("OnClick", function(self)
 	BWQcfg.showLowGold = not BWQcfg.showLowGold
 	ToggleFilterButton(FilterButtonLowGold, BWQcfg.showLowGold)
-	UpdateBlock()
+	BWQ:UpdateBlock()
 end)
 
 local FilterButtonHighGold = CreateFilterButton("BWQ_FilterButtonHighGold", FilterButtonLowGold, false)
@@ -671,7 +679,7 @@ FilterButtonHighGoldFS:SetText("High Gold")
 FilterButtonHighGold:SetScript("OnClick", function(self)
 	BWQcfg.showHighGold = not BWQcfg.showHighGold
 	ToggleFilterButton(FilterButtonHighGold, BWQcfg.showHighGold)
-	UpdateBlock()
+	BWQ:UpdateBlock()
 end)
 
 local FilterButtonResources = CreateFilterButton("BWQ_FilterButtonResources", FilterButtonHighGold, false)
@@ -683,7 +691,7 @@ FilterButtonResourcesFS:SetText("Resources")
 FilterButtonResources:SetScript("OnClick", function(self)
 	BWQcfg.showResources = not BWQcfg.showResources
 	ToggleFilterButton(FilterButtonResources, BWQcfg.showResources)
-	UpdateBlock()
+	BWQ:UpdateBlock()
 end)
 
 local FilterButtonItems = CreateFilterButton("BWQ_FilterButtonItems", FilterButtonResources, false)
@@ -695,7 +703,7 @@ FilterButtonItemsFS:SetText("Items")
 FilterButtonItems:SetScript("OnClick", function(self)
 	BWQcfg.showItems = not BWQcfg.showItems
 	ToggleFilterButton(FilterButtonItems, BWQcfg.showItems)
-	UpdateBlock()
+	BWQ:UpdateBlock()
 end)
 
 local InitializeFilterButtons = function()
@@ -727,11 +735,12 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" and arg1 == "Broker_WorldQuests" then
 		InitializeFilterButtons()
 		self:UnregisterEvent("ADDON_LOADED")
+	-- skip updating when world map is open
 	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
 	elseif event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
-		UpdateBlock()
+		BWQ:UpdateBlock()
 	end
 end)
 
@@ -742,12 +751,12 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	label = "World Quests",
 	icon = nil,
 	OnEnter = function(self)
-		UpdateBlock()
 		BWQ:SetPoint("TOP", self, "BOTTOM", 0, 0)
+		BWQ:UpdateBlock()
 		BWQ:Show()
 	end,
 	OnLeave = Block_OnLeave,
 	OnClick = function(self, button)
-		UpdateBlock()
+		BWQ:UpdateBlock()
 	end,
 })

@@ -538,7 +538,7 @@ local UpdateBlock = function()
 				buttonIndex = buttonIndex + 1
 			end -- quest loop
 
-			if numQuestsZone == 0 then
+			if #quests > 0 and numQuestsZone == 0 then
 				zoneSepCache[mapIndex-1]:Hide()
 				zoneSepCache[mapIndex]:Hide()
 				offsetY = offsetY + 16

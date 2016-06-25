@@ -70,6 +70,7 @@ BWQ:SetBackdrop({
 	})
 BWQ:SetBackdropColor(0, 0, 0, .9)
 BWQ:SetBackdropBorderColor(0, 0, 0, 1)
+BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 local FilterButtonWrapper = CreateFrame("Frame", "BWQ_FilterButtonWrapper", BWQ)
@@ -749,10 +750,12 @@ local ldb = LibStub("LibDataBroker-1.1")
 BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	type = "launcher",
 	label = "World Quests",
-	icon = nil,
+	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
-		BWQ:SetPoint("TOP", self, "BOTTOM", 0, 0)
 		BWQ:UpdateBlock()
+		local showDownwards = select(2, self:GetCenter()) > UIParent:GetHeight() / 2
+		BWQ:ClearAllPoints()
+		BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
 		BWQ:Show()
 	end,
 	OnLeave = Block_OnLeave,

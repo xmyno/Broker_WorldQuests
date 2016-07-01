@@ -57,6 +57,30 @@ local MAP_ZONES = {
 	GetMapNameByID(1014), 1014,  -- Dalaran
 }
 
+local defaultConfig = {
+	-- general
+	alwaysShowBountyQuests = true,
+	hidePetBattleBountyQuests = false,
+	-- reward type
+	showArtifactPower = true,
+	showItems = true,
+		showGear = true,
+		showRelics = true,
+		showCraftingMaterials = true,
+		showOtherItems = true,
+	showLowGold = true,
+	showHighGold = true,
+	showResources = true,
+		showOrderHallResources = true,
+		showAncientMana = true,
+		showOtherResources = true,
+	-- quest type
+	showProfession = true,
+	showPetBattle = true,
+	showDungeon = true,
+	showPvP = true,
+}
+
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
 BWQ:SetFrameStrata("HIGH")
 BWQ:EnableMouse(true)
@@ -73,11 +97,6 @@ BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
-local FilterButtonWrapper = CreateFrame("Frame", "BWQ_FilterButtonWrapper", BWQ)
-
--- local Block_OnEnter = function(self)
-	
--- end
 local Block_OnLeave = function(self)
 	if not BWQ:IsMouseOver() then
 		BWQ:Hide()
@@ -86,9 +105,8 @@ local Block_OnLeave = function(self)
 	BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
 	BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
 end
-
---BWQ:SetScript("OnEnter", Block_OnEnter)
 BWQ:SetScript("OnLeave", Block_OnLeave)
+
 
 local buttonCache = {}
 local zoneSepCache = {}
@@ -96,36 +114,47 @@ local numQuestsTotal, numQuestsZone, offsetY = 0, 0, 0
 local notFinishedLoading = false
 local highlightedRow = true
 
-local CreateErrorFS = function(offsetY)
+local CreateBountyBoardFS = function(offsetY)
+	BWQ.bountyBoardFS = BWQ:CreateFontString("BWQbountyBoardFS", "OVERLAY", "SystemFont_Shadow_Med1")
+	BWQ.bountyBoardFS:SetJustifyH("CENTER")
+	BWQ.bountyBoardFS:SetTextColor(0.95, 0.95, 0.95)
+	BWQ.bountyBoardFS:SetPoint("TOP", BWQ, "TOP", 0, offsetY)
+end
+
+local CreateErrorFS = function()
 	BWQ.errorFS = BWQ:CreateFontString("BWQerrorFS", "OVERLAY", "SystemFont_Shadow_Med1")
 	BWQ.errorFS:SetJustifyH("CENTER")
 	BWQ.errorFS:SetTextColor(.9, .8, 0)
-	BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, offsetY)
 end
 
 local WorldQuestsUnlocked = function()
 	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
-		if not BWQ.errorFS then CreateErrorFS(-10) end
+		if not BWQ.errorFS then CreateErrorFS() end
 
+	BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
 		BWQ.errorFS:Show()
 
-		FilterButtonWrapper:Hide()
 		return false
 	else
 		if BWQ.errorFS then
 			BWQ.errorFS:Hide()
 		end
-		
-		FilterButtonWrapper:Show()
+
 		return true
 	end
 end
 
 local ShowNoWorldQuestsInfo = function()
-	if not BWQ.errorFS then CreateErrorFS(-45) end
+	if not BWQ.errorFS then CreateErrorFS() end
 
+	BWQ.errorFS:ClearAllPoints()
+	if BWQ.bountyBoardFS:IsShown() then
+		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -40)
+	else
+		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -13)
+	end
 	BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 	BWQ.errorFS:SetText("There are no world quests available that match your filter settings.")
 	BWQ.errorFS:Show()
@@ -185,6 +214,7 @@ local RetrieveWorldQuests = function(mapId)
 						quest.faction = GetFactionInfoByID(factionId)
 					end
 					quest.timeLeft = timeLeft
+					quest.bounties = {}
 
 					quests[#quests+1] = quest
 				end
@@ -193,6 +223,14 @@ local RetrieveWorldQuests = function(mapId)
 	end
 
 	return quests
+end
+
+local ArtifactPowerScanTooltip = CreateFrame ("GameTooltip", "ArtifactPowerScanTooltip", nil, "GameTooltipTemplate")
+function BWQ:GetArtifactPowerValue(itemId)
+	_, itemLink = GetItemInfo(itemId)
+	ArtifactPowerScanTooltip:SetOwner (BWQ, "ANCHOR_NONE")
+	ArtifactPowerScanTooltip:SetHyperlink (itemLink)
+	return _G["ArtifactPowerScanTooltipTextLeft4"]:GetText():match("%d.-%s") or ""
 end
 
 local FormatTimeLeftString = function(timeLeft)
@@ -245,7 +283,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-BWQ.UpdateBlock = function()
+function BWQ:UpdateBlock()
 	if not WorldQuestsUnlocked() then return end
 
 	local originalMap = GetCurrentMapAreaID()
@@ -253,12 +291,34 @@ BWQ.UpdateBlock = function()
 	local originalDungeonLevel = GetCurrentMapDungeonLevel()
 
 	local buttonIndex = 1
-	local titleMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0
+	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 
 	notFinishedLoading = false
-	offsetY = -45 -- initial padding from top
+	offsetY = -15 -- initial padding from top
 	numQuestsTotal = 0
 	highlightedRow = true
+
+	local bounties = GetQuestBountyInfoForMapID(1014)
+	local bountyBoardText = ""
+	for bountyIndex, bounty in ipairs(bounties) do
+		local questIndex = GetQuestLogIndexByID(bounty.questID);
+		local title = GetQuestLogTitle(questIndex);
+		local _, _, finished, numFulfilled, numRequired = GetQuestObjectiveInfo(bounty.questID, 1, false)
+
+		bountyBoardText = string.format("%s|T%s$s:20:20|t %s   %d/%d", bountyBoardText, bounty.icon, title, numFulfilled, numRequired)
+		if bountyIndex < #bounties then
+			bountyBoardText = string.format("%s        ", bountyBoardText)
+		end
+	end
+
+	if not BWQ.bountyBoardFS then CreateBountyBoardFS(offsetY) end
+	if #bounties > 0 then
+		BWQ.bountyBoardFS:Show()
+		BWQ.bountyBoardFS:SetText(bountyBoardText)
+		offsetY = offsetY - 25
+	else
+		BWQ.bountyBoardFS:Hide()
+	end
 
 	for mapIndex = 1, #MAP_ZONES do
 
@@ -354,9 +414,14 @@ BWQ.UpdateBlock = function()
 					button.titleFS:SetTextColor(.9, .9, .9)
 					button.titleFS:SetWordWrap(false)
 
+					button.bountyFS = button:CreateFontString("BWQbountyFS", "OVERLAY", "SystemFont_Shadow_Med1")
+					button.bountyFS:SetJustifyH("LEFT")
+					button.bountyFS:SetWordWrap(false)
+
 					button.factionFS = button:CreateFontString("BWQfactionFS", "OVERLAY", "SystemFont_Shadow_Med1")
 					button.factionFS:SetJustifyH("LEFT")
 					button.factionFS:SetTextColor(.9, .9, .9)
+					button.factionFS:SetWordWrap(false)
 
 					button.reward = CreateFrame("Button", nil, button)
 					button.reward:SetScript("OnClick", function(self)
@@ -366,10 +431,12 @@ BWQ.UpdateBlock = function()
 					button.rewardFS = button.reward:CreateFontString("BWQrewardFS", "OVERLAY", "SystemFont_Shadow_Med1")
 					button.rewardFS:SetJustifyH("LEFT")
 					button.rewardFS:SetTextColor(.9, .9, .9)
+					button.rewardFS:SetWordWrap(false)
 
 					button.timeLeftFS = button:CreateFontString("BWQtimeLeftFS", "OVERLAY", "SystemFont_Shadow_Med1")
 					button.timeLeftFS:SetJustifyH("LEFT")
 					button.timeLeftFS:SetTextColor(.9, .9, .9)
+					button.timeLeftFS:SetWordWrap(false)
 
 					buttonCache[buttonIndex] = button
 				else
@@ -391,48 +458,66 @@ BWQ.UpdateBlock = function()
 						button.reward.itemId = itemId
 						button.reward.itemQuality = quality
 						button.reward.itemQuantity = quantity
-					
-						local rewardColor = ITEM_QUALITY_COLORS[button.reward.itemQuality].hex
+
+
+						local itemText
 						local itemSpell = GetItemSpell(button.reward.itemId)
 						if itemSpell and itemSpell == "Empowering" then
-							rewardColor = "|cffe5cc80"
-							if BWQcfg.showArtifactPower then hideQuest = false end
-						else
-							if BWQcfg.showItems then hideQuest = false end
-						end
-						rewardText = string.format(
-							"|T%s$s:14:14|t %s[%s]\124r%s",
-							button.reward.itemTexture,
-							rewardColor,
-							button.reward.itemName,
-							button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
-						)
+							if BWQcfg.showArtifactPower then
+								hideQuest = false
+								itemText = string.format("|cffe5cc80[%sArtifact Power]|r", BWQ:GetArtifactPowerValue(itemId))
 
-						button.reward:SetScript("OnEvent", function(self, event)
-							if event == "MODIFIER_STATE_CHANGED" then
+							end
+						else
+							if BWQcfg.showItems then
+								_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(itemId)
+								if class == "Tradeskill" then
+									if BWQcfg.showCraftingMaterials then hideQuest = false end
+								elseif equipSlot ~= "" then
+									if BWQcfg.showGear then hideQuest = false end
+								elseif subClass == "Artifact Relic" then
+									if BWQcfg.showRelics then hideQuest = false end
+								else 
+									if BWQcfg.showOtherItems then hideQuest = false end
+								end
+								itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.reward.itemQuality].hex, itemName)
+							end
+						end
+
+						if not hideQuest then
+							rewardText = string.format(
+								"|T%s$s:14:14|t %s%s",
+								button.reward.itemTexture,
+								itemText,
+								button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
+							)
+
+							button.reward:SetScript("OnEvent", function(self, event)
+								if event == "MODIFIER_STATE_CHANGED" then
+									GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
+									GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+									GameTooltip:Show()
+								end
+							end)
+
+							button.reward:SetScript("OnEnter", function(self)
+								button.highlight:SetAlpha(1)
+
+								self:RegisterEvent("MODIFIER_STATE_CHANGED")
 								GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 								GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+								--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
 								GameTooltip:Show()
-							end
-						end)
+							end)
 
-						button.reward:SetScript("OnEnter", function(self)
-							button.highlight:SetAlpha(1)
+							button.reward:SetScript("OnLeave", function(self)
+								button.highlight:SetAlpha(0)
 
-							self:RegisterEvent("MODIFIER_STATE_CHANGED")
-							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-							--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
-							GameTooltip:Show()
-						end)
-
-						button.reward:SetScript("OnLeave", function(self)
-							button.highlight:SetAlpha(0)
-
-							self:UnregisterEvent("MODIFIER_STATE_CHANGED")
-							GameTooltip:Hide()
-							Block_OnLeave()
-						end)
+								self:UnregisterEvent("MODIFIER_STATE_CHANGED")
+								GameTooltip:Hide()
+								Block_OnLeave()
+							end)
+						end
 					else
 						notFinishedLoading = true
 					end
@@ -450,7 +535,7 @@ BWQ.UpdateBlock = function()
 
 				local money = GetQuestLogRewardMoney(button.quest.questId);
 				if money > 0 then
-					if money < 1500000 then
+					if money < 1000000 then
 						if BWQcfg.showLowGold then hideQuest = false end
 					else
 						if BWQcfg.showHighGold then hideQuest = false end
@@ -467,22 +552,55 @@ BWQ.UpdateBlock = function()
 
 				local numQuestCurrencies = GetNumQuestLogRewardCurrencies(button.quest.questId)
 				for i = 1, numQuestCurrencies do
-					if BWQcfg.showResources then hideQuest = false end
 
 					local name, texture, numItems = GetQuestLogRewardCurrencyInfo(i, button.quest.questId)
-					local currencyText = string.format(
-						"|T%1$s:14:14|t %2$d %3$s",
-						texture,
-						numItems,
-						name
-					)
+					if name and BWQcfg.showResources then
+						if name == "Ancient Mana" then
+							if BWQcfg.showAncientMana then hideQuest = false end
+						elseif name == "Order Resources" then
+							if BWQcfg.showOrderHallResources then hideQuest = false end
+						else
+							if BWQcfg.showOtherResources then hideQuest = false end
+						end
 
-					rewardText = string.format(
-						"%s%s%s",
-						rewardText,
-						rewardText ~= "" and "   " or "", -- insert some space between rewards
-						currencyText
-					)
+						local currencyText = string.format(
+							"|T%1$s:14:14|t %2$d %3$s",
+							texture,
+							numItems,
+							name
+						)
+
+						rewardText = string.format(
+							"%s%s%s",
+							rewardText,
+							rewardText ~= "" and "   " or "", -- insert some space between rewards
+							currencyText
+						)
+					end
+
+				end
+
+				button.quest.bountyIcons = {}
+				for _, bounty in ipairs(bounties) do
+					if IsQuestCriteriaForBounty(button.quest.questId, bounty.questID) then
+						button.quest.bountyIcons[#button.quest.bountyIcons + 1] = bounty.icon
+					end
+				end
+
+				-- quest type filters
+				if not BWQcfg.showPetBattle and button.quest.worldQuestType == 5 then hideQuest = true
+				elseif not BWQcfg.showProfession and button.quest.worldQuestType == 2 then hideQuest = true
+				elseif not BWQcfg.showPvP and button.quest.worldQuestType == 4 then hideQuest = true
+				elseif not BWQcfg.showDungeon and button.quest.worldQuestType == 7 then hideQuest = true
+				end
+				-- always show bounty quests filter
+				if BWQcfg.alwaysShowBountyQuests and #button.quest.bountyIcons > 0 then
+					-- pet battle override
+					if BWQcfg.hidePetBattleBountyQuests and button.quest.worldQuestType == 5 then
+						hideQuest = true
+					else
+						hideQuest = false
+					end
 				end
 
 				if hideQuest then
@@ -512,17 +630,24 @@ BWQ.UpdateBlock = function()
 
 
 					button.titleFS:SetText(string.format("%s%s|r", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
-					local titleWidth = button.titleFS:GetStringWidth()
-					if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
+					--local titleWidth = button.titleFS:GetStringWidth()
+					--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
+
+					local bountyText = ""
+					for _, bountyIcon in ipairs(button.quest.bountyIcons) do
+						bountyText = string.format("%s |T%s$s:14:14|t", bountyText, bountyIcon)
+					end
+					button.bountyFS:SetText(bountyText)
+					local bountyWidth = button.bountyFS:GetStringWidth()
+					if bountyWidth > bountyMaxWidth then bountyMaxWidth = bountyWidth end
 
 					button.factionFS:SetText(button.quest.faction)
 					local factionWidth = button.factionFS:GetStringWidth()
 					if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
 
 					button.timeLeftFS:SetText(FormatTimeLeftString(button.quest.timeLeft))
-					local timeLeftWidth = button.factionFS:GetStringWidth()
-					if timeLeftWidth > timeLeftMaxWidth then timeLeftMaxWidth = timeLeftWidth end
-
+					--local timeLeftWidth = button.factionFS:GetStringWidth()
+					--if timeLeftWidth > timeLeftMaxWidth then timeLeftMaxWidth = timeLeftWidth end
 
 
 					button.rewardFS:SetText(rewardText)
@@ -533,23 +658,24 @@ BWQ.UpdateBlock = function()
 					button.title:SetHeight(button.titleFS:GetStringHeight())
 
 					button.icon:SetPoint("LEFT", button, "LEFT", 5, 0)
-					button.titleFS:SetPoint("LEFT", button.icon, "RIGHT", 5, 1)
+					button.titleFS:SetPoint("LEFT", button.icon, "RIGHT", 5, 0)
 					button.title:SetPoint("LEFT", button.titleFS, "LEFT", 0, 0)
 					button.rewardFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
 					button.reward:SetPoint("LEFT", button.rewardFS, "LEFT", 0, 0)
-					button.factionFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+					button.bountyFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+					button.factionFS:SetPoint("LEFT", button.bountyFS, "RIGHT", 10, 0)
 					button.timeLeftFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
-
-					--buttonCache[buttonIndex] = button -- save all changes back into the array of buttons
 				end
 
 				buttonIndex = buttonIndex + 1
 			end -- quest loop
 
-			if #quests > 0 and numQuestsZone == 0 then
+			if numQuestsZone == 0 then
 				zoneSepCache[mapIndex-1]:Hide()
 				zoneSepCache[mapIndex]:Hide()
-				offsetY = offsetY + 16
+				if #quests > 0 then
+					offsetY = offsetY + 16
+				end
 			else
 				zoneSepCache[mapIndex-1]:Show()
 				zoneSepCache[mapIndex]:Show()
@@ -567,6 +693,7 @@ BWQ.UpdateBlock = function()
 		SetDungeonMapLevel(originalDungeonLevel)
 	end
 
+	-- all quests filtered or all done (haha.)
 	if numQuestsTotal == 0 then
 		ShowNoWorldQuestsInfo()
 		offsetY = offsetY - 15
@@ -574,24 +701,39 @@ BWQ.UpdateBlock = function()
 		if BWQ.errorFS then BWQ.errorFS:Hide() end
 	end
 
-	-- hide buttons if there are more cached than quests available
+	-- hide buttons if there are more cached buttons than quests available
 	for i = buttonIndex, #buttonCache do
 		buttonCache[i]:Hide()
 	end
 	
-	titleMaxWidth = titleMaxWidth > 200 and 200 or titleMaxWidth
-	for i = 1, (buttonIndex - 1) do
-		buttonCache[i]:SetHeight(15)
-		buttonCache[i]:SetWidth(titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth)
-		buttonCache[i].title:SetWidth(titleMaxWidth)
-		buttonCache[i].titleFS:SetWidth(titleMaxWidth)
-		buttonCache[i].factionFS:SetWidth(factionMaxWidth)
-		buttonCache[i].reward:SetWidth(rewardMaxWidth)
-		buttonCache[i].rewardFS:SetWidth(rewardMaxWidth)
-		buttonCache[i].timeLeftFS:SetWidth(timeLeftMaxWidth)
+	titleMaxWidth = 200
+	rewardMaxWidth = rewardMaxWidth < 150 and 150 or rewardMaxWidth
+	factionMaxWidth = factionMaxWidth < 100 and 100 or factionMaxWidth
+	timeLeftMaxWidth = 65
+	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 70
+
+	local bountyBoardWidth = BWQ.bountyBoardFS:GetStringWidth()
+	if totalWidth < bountyBoardWidth then
+		local diff = bountyBoardWidth - totalWidth
+		totalWidth = bountyBoardWidth
+		rewardMaxWidth = rewardMaxWidth + diff
 	end
 
-	local totalWidth = 10 + titleMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 10
+	for i = 1, (buttonIndex - 1) do
+		if buttonCache[i]:IsShown() then -- dont care about the hidden ones
+			buttonCache[i]:SetHeight(15)
+			buttonCache[i]:SetWidth(totalWidth)
+			buttonCache[i].title:SetWidth(titleMaxWidth)
+			buttonCache[i].titleFS:SetWidth(titleMaxWidth)
+			buttonCache[i].bountyFS:SetWidth(bountyMaxWidth)
+			buttonCache[i].factionFS:SetWidth(factionMaxWidth)
+			buttonCache[i].reward:SetWidth(rewardMaxWidth)
+			buttonCache[i].rewardFS:SetWidth(rewardMaxWidth)
+			buttonCache[i].timeLeftFS:SetWidth(timeLeftMaxWidth)
+		end
+	end
+
+	local totalWidth = totalWidth + 20
 	for i = 1, #MAP_ZONES do
 		zoneSepCache[i]:SetWidth(totalWidth)
 	end
@@ -600,149 +742,117 @@ BWQ.UpdateBlock = function()
 	BWQ:SetHeight(-1 * offsetY + 10)
 
 	if notFinishedLoading then
-		C_Timer.After(.1, BWQ.UpdateBlock)
+		C_Timer.After(.5, BWQ.UpdateBlock)
 	end
 end
 
 
-local CreateFilterButton = function(buttonName, anchor, firstButton)
-	local button = CreateFrame("Button", buttonName, anchor)
-	button:SetWidth(100)
-	button:SetHeight(25)
-	button:SetPoint("LEFT", anchor, firstButton and "LEFT" or "RIGHT", 5, 0)
-	button:SetBackdrop({
-		bgFile = "Interface\\ChatFrame\\ChatFrameBackground", 
-		edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
-		tile = false,
-		tileSize = 0, 
-		edgeSize = 1, 
-		insets = { left = 0, right = 0, top = 0, bottom = 0 },
-	})
-	return button
-end
-local CreateFilterButtonFS = function(fsName, anchor)
-	local fs = anchor:CreateFontString(fsName, "OVERLAY", "SystemFont_Shadow_Med1")
-	fs:SetJustifyH("CENTER")
-	fs:SetTextColor(.9, .8, 0)
-	fs:SetPoint("CENTER", anchor, "CENTER")
-	return fs
-end
-local ActivateFilterButton = function(button)
-	button:SetBackdropColor(.9, .8, 0, .1)
-	button:SetBackdropBorderColor(.9, .8, 0, .7)
-	_G[button:GetName().."FS"]:SetTextColor(.9, .8, 0)
-end
-local DeactivateFilterButton = function(button)
-	button:SetBackdropColor(.3, .3, .3, .1)
-	button:SetBackdropBorderColor(.3, .3, .3, .7)
-	_G[button:GetName().."FS"]:SetTextColor(.4, .4, .4)
-end
-local ToggleFilterButton = function(button, active)
-	if active then
-		ActivateFilterButton(button)
-	else
-		DeactivateFilterButton(button)
+local configMenu
+local info = {}
+function BWQ:SetupConfigMenu()
+	configMenu = CreateFrame("Frame", "BWQ_ConfigMenu")
+	configMenu.displayMode = "MENU"
+
+	options = {
+		{ text = "Always show quests for active bounty", check = "alwaysShowBountyQuests" },
+		{ text = "Hide pet battle quests even when active bounty", check = "hidePetBattleBountyQuests" },
+		{ text = "" },
+		{ text = "Filter by reward...", isTitle = true },
+		{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_enchant_shardradientlarge"), check = "showArtifactPower" },
+		{ text = ("|T%1$s:16:16|t  Items"):format("Interface\\Minimap\\Tracking\\Banker"), check = "showItems", submenu = {
+				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "showGear" },
+				{ text = ("|T%1$s:16:16|t  Artifact Relics"):format("Interface\\Icons\\inv_misc_statue_01"), check = "showRelics" },
+				{ text = ("|T%s$s:16:16|t  Crafting Materials"):format("1417744"), check = "showCraftingMaterials" },
+				{ text = "Other", check = "showOtherItems" },
+			}
+		},
+		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
+		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
+		{ text = "Resources", check = "showResources", submenu = {
+				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showOrderHallResources" },
+				{ text = ("|T%1$s:16:16|t  Ancient Mana"):format("Interface\\Icons\\inv_misc_ancient_mana"), check = "showAncientMana" },
+				{ text = "Other", check = "showOtherResources" },
+			}
+		},
+		{ text = "" },
+		{ text = "Filter by type...", isTitle = true },
+		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession" },
+		{ text = ("|T%1$s:16:16|t  Pet Battle Quests"):format("Interface\\Icons\\tracking_wildpet"), check = "showPetBattle" },
+		{ text = "Dungeon Quests", check = "showDungeon" },
+		{ text = ("|T%1$s:16:16|t  PvP Quests"):format("Interface\\Minimap\\Tracking\\BattleMaster"), check = "showPvP" },
+
+	}
+
+	configMenu.initialize = function(self, level)
+		if not level then return end
+		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or options
+		if type(opt)=="string" and opt:find("^align") then
+			for _, pos in ipairs(aligns) do
+				info = wipe(info)
+				info.text = pos
+				info.checked = BWQcfg[opt] == pos
+				info.func, info.arg1, info.arg2 = SetOption, opt, pos
+				info.keepShownOnClick = true
+				UIDropDownMenu_AddButton( info, level )
+			end
+			return
+		end
+		for i, v in ipairs(opt) do
+			info = wipe(info)
+			info.text = v.text
+			info.isTitle = v.isTitle
+			
+			if v.check then
+				info.checked = v.inv and not BWQcfg[v.check] or not v.inv and BWQcfg[v.check]
+				info.func, info.arg1 = SetOption, v.check
+				info.isNotRadio = true
+				info.keepShownOnClick = true
+			else
+				info.disabled = true
+			end
+			info.hasArrow, info.value = v.submenu, v.submenu
+			UIDropDownMenu_AddButton( info, level )
+		end
 	end
-end
 
-
-FilterButtonWrapper:SetHeight(25)
-FilterButtonWrapper:SetWidth(555)
-FilterButtonWrapper:SetPoint("TOP", BWQ, "TOP", 10, -10)
-
-local FilterButtonArtifactPower = CreateFilterButton("BWQ_FilterButtonArtifactPower", FilterButtonWrapper, true)
-FilterButtonArtifactPower:SetBackdropColor(.9, .8, 0, .05)
-FilterButtonArtifactPower:SetBackdropBorderColor(.9, .8, 0, .5)
-local FilterButtonArtifactPowerFS = CreateFilterButtonFS("BWQ_FilterButtonArtifactPowerFS", FilterButtonArtifactPower)
-FilterButtonArtifactPowerFS:SetText("Artifact Power")
-
-FilterButtonArtifactPower:SetScript("OnClick", function(self)
-	BWQcfg.showArtifactPower = not BWQcfg.showArtifactPower
-	ToggleFilterButton(FilterButtonArtifactPower, BWQcfg.showArtifactPower)
-	BWQ:UpdateBlock()
-end)
-
-local FilterButtonLowGold = CreateFilterButton("BWQ_FilterButtonLowGold", FilterButtonArtifactPower, false)
-FilterButtonLowGold:SetBackdropColor(.9, .8, 0, .05)
-FilterButtonLowGold:SetBackdropBorderColor(.9, .8, 0, .5)
-local FilterButtonLowGoldFS = CreateFilterButtonFS("BWQ_FilterButtonLowGoldFS", FilterButtonLowGold)
-FilterButtonLowGoldFS:SetText("Low Gold")
-
-FilterButtonLowGold:SetScript("OnClick", function(self)
-	BWQcfg.showLowGold = not BWQcfg.showLowGold
-	ToggleFilterButton(FilterButtonLowGold, BWQcfg.showLowGold)
-	BWQ:UpdateBlock()
-end)
-
-local FilterButtonHighGold = CreateFilterButton("BWQ_FilterButtonHighGold", FilterButtonLowGold, false)
-FilterButtonHighGold:SetBackdropColor(.9, .8, 0, .05)
-FilterButtonHighGold:SetBackdropBorderColor(.9, .8, 0, .5)
-local FilterButtonHighGoldFS = CreateFilterButtonFS("BWQ_FilterButtonHighGoldFS", FilterButtonHighGold)
-FilterButtonHighGoldFS:SetText("High Gold")
-
-FilterButtonHighGold:SetScript("OnClick", function(self)
-	BWQcfg.showHighGold = not BWQcfg.showHighGold
-	ToggleFilterButton(FilterButtonHighGold, BWQcfg.showHighGold)
-	BWQ:UpdateBlock()
-end)
-
-local FilterButtonResources = CreateFilterButton("BWQ_FilterButtonResources", FilterButtonHighGold, false)
-FilterButtonResources:SetBackdropColor(.9, .8, 0, .05)
-FilterButtonResources:SetBackdropBorderColor(.9, .8, 0, .5)
-local FilterButtonResourcesFS = CreateFilterButtonFS("BWQ_FilterButtonResourcesFS", FilterButtonResources)
-FilterButtonResourcesFS:SetText("Resources")
-
-FilterButtonResources:SetScript("OnClick", function(self)
-	BWQcfg.showResources = not BWQcfg.showResources
-	ToggleFilterButton(FilterButtonResources, BWQcfg.showResources)
-	BWQ:UpdateBlock()
-end)
-
-local FilterButtonItems = CreateFilterButton("BWQ_FilterButtonItems", FilterButtonResources, false)
-FilterButtonItems:SetBackdropColor(.9, .8, 0, .05)
-FilterButtonItems:SetBackdropBorderColor(.9, .8, 0, .5)
-local FilterButtonItemsFS = CreateFilterButtonFS("BWQ_FilterButtonItemsFS", FilterButtonItems)
-FilterButtonItemsFS:SetText("Items")
-
-FilterButtonItems:SetScript("OnClick", function(self)
-	BWQcfg.showItems = not BWQcfg.showItems
-	ToggleFilterButton(FilterButtonItems, BWQcfg.showItems)
-	BWQ:UpdateBlock()
-end)
-
-local InitializeFilterButtons = function()
-	if not BWQcfg then
-		BWQcfg = {}
-		BWQcfg.showArtifactPower = true
-		BWQcfg.showItems = true
-		BWQcfg.showLowGold = true
-		BWQcfg.showHighGold = true
-		BWQcfg.showResources = true
+	SetOption = function(bt, var, val)
+		BWQcfg[var] = val or not BWQcfg[var]
+		BWQ:UpdateBlock()
+		if WorldMapFrame:IsShown() then
+			BWQ:OpenConfigMenu(nil)
+		end
 	end
-	ToggleFilterButton(FilterButtonArtifactPower, BWQcfg.showArtifactPower)
-	ToggleFilterButton(FilterButtonLowGold, BWQcfg.showLowGold)
-	ToggleFilterButton(FilterButtonHighGold, BWQcfg.showHighGold)
-	ToggleFilterButton(FilterButtonResources, BWQcfg.showResources)
-	ToggleFilterButton(FilterButtonItems, BWQcfg.showItems)
+
+	BWQ.SetupConfigMenu = nil
 end
 
---[[
-Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
-To avoid setting the currently shown map again, which would hide the quest details,
-skip updating after a WORLD_MAP_UPDATE event happened 
---]]
+
+function BWQ:OpenConfigMenu(anchor)
+	if not configMenu and anchor then
+		BWQ:SetupConfigMenu()
+		configMenu.anchor = anchor
+	end
+	--BWQ:Hide()
+	ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
+end
+
 local skipNextUpdate = false
-BWQ:RegisterEvent("ADDON_LOADED")
-BWQ:SetScript("OnEvent", function(self, event, arg1)
-	if event == "ADDON_LOADED" and arg1 == "Broker_WorldQuests" then
-		InitializeFilterButtons()
-		self:UnregisterEvent("ADDON_LOADED")
-	-- skip updating when world map is open
-	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
-		skipNextUpdate = true
-	elseif event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
+BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
+BWQ:SetScript("OnEvent", function(self, event)
+	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
 		BWQ:UpdateBlock()
+	--[[
+	Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
+	To avoid setting the currently shown map again, which would hide the quest details,
+	skip updating after a WORLD_MAP_UPDATE event happened 
+	--]]
+	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
+		skipNextUpdate = true
+	elseif event == "PLAYER_ENTERING_WORLD" then
+		BWQcfg = BWQcfg or defaultConfig
+		BWQ:UpdateBlock()
+		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
 	end
 end)
 
@@ -753,6 +863,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	label = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
+		CloseDropDownMenus()
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 
@@ -764,6 +875,10 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	end,
 	OnLeave = Block_OnLeave,
 	OnClick = function(self, button)
-		BWQ:UpdateBlock()
+		if button == "LeftButton" then
+			BWQ:UpdateBlock()
+		elseif button == "RightButton" then
+			BWQ:OpenConfigMenu(self)
+		end
 	end,
 })

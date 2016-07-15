@@ -463,11 +463,8 @@ function BWQ:UpdateBlock()
 						local itemText
 						local itemSpell = GetItemSpell(button.reward.itemId)
 						if itemSpell and itemSpell == "Empowering" then
-							if BWQcfg.showArtifactPower then
-								hideQuest = false
-								itemText = string.format("|cffe5cc80[%sArtifact Power]|r", BWQ:GetArtifactPowerValue(itemId))
-
-							end
+							if BWQcfg.showArtifactPower then hideQuest = false end
+							itemText = string.format("|cffe5cc80[%sArtifact Power]|r", BWQ:GetArtifactPowerValue(itemId))
 						else
 							if BWQcfg.showItems then
 								_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(itemId)
@@ -480,44 +477,42 @@ function BWQ:UpdateBlock()
 								else 
 									if BWQcfg.showOtherItems then hideQuest = false end
 								end
-								itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.reward.itemQuality].hex, itemName)
 							end
+							itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.reward.itemQuality].hex, itemName)
 						end
+							
+						rewardText = string.format(
+							"|T%s$s:14:14|t %s%s",
+							button.reward.itemTexture,
+							itemText,
+							button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
+						)
 
-						if not hideQuest then
-							rewardText = string.format(
-								"|T%s$s:14:14|t %s%s",
-								button.reward.itemTexture,
-								itemText,
-								button.reward.itemQuantity > 1 and " x" .. button.reward.itemQuantity or ""
-							)
-
-							button.reward:SetScript("OnEvent", function(self, event)
-								if event == "MODIFIER_STATE_CHANGED" then
-									GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-									GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-									GameTooltip:Show()
-								end
-							end)
-
-							button.reward:SetScript("OnEnter", function(self)
-								button.highlight:SetAlpha(1)
-
-								self:RegisterEvent("MODIFIER_STATE_CHANGED")
+						button.reward:SetScript("OnEvent", function(self, event)
+							if event == "MODIFIER_STATE_CHANGED" then
 								GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 								GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-								--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
 								GameTooltip:Show()
-							end)
+							end
+						end)
 
-							button.reward:SetScript("OnLeave", function(self)
-								button.highlight:SetAlpha(0)
+						button.reward:SetScript("OnEnter", function(self)
+							button.highlight:SetAlpha(1)
 
-								self:UnregisterEvent("MODIFIER_STATE_CHANGED")
-								GameTooltip:Hide()
-								Block_OnLeave()
-							end)
-						end
+							self:RegisterEvent("MODIFIER_STATE_CHANGED")
+							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
+							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+							--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
+							GameTooltip:Show()
+						end)
+
+						button.reward:SetScript("OnLeave", function(self)
+							button.highlight:SetAlpha(0)
+
+							self:UnregisterEvent("MODIFIER_STATE_CHANGED")
+							GameTooltip:Hide()
+							Block_OnLeave()
+						end)
 					else
 						notFinishedLoading = true
 					end
@@ -554,13 +549,16 @@ function BWQ:UpdateBlock()
 				for i = 1, numQuestCurrencies do
 
 					local name, texture, numItems = GetQuestLogRewardCurrencyInfo(i, button.quest.questId)
-					if name and BWQcfg.showResources then
-						if name == "Ancient Mana" then
-							if BWQcfg.showAncientMana then hideQuest = false end
-						elseif name == "Order Resources" then
-							if BWQcfg.showOrderHallResources then hideQuest = false end
-						else
-							if BWQcfg.showOtherResources then hideQuest = false end
+					if name then
+						
+						if BWQcfg.showResources then
+							if name == "Ancient Mana" then
+								if BWQcfg.showAncientMana then hideQuest = false end
+							elseif name == "Order Resources" then
+								if BWQcfg.showOrderHallResources then hideQuest = false end
+							else
+								if BWQcfg.showOtherResources then hideQuest = false end
+							end
 						end
 
 						local currencyText = string.format(
@@ -596,7 +594,7 @@ function BWQ:UpdateBlock()
 				-- always show bounty quests filter
 				if BWQcfg.alwaysShowBountyQuests and #button.quest.bountyIcons > 0 then
 					-- pet battle override
-					if BWQcfg.hidePetBattleBountyQuests and button.quest.worldQuestType == 5 then
+					if BWQcfg.hidePetBattleBountyQuests and not BWQcfg.showPetBattle and button.quest.worldQuestType == 5 then
 						hideQuest = true
 					else
 						hideQuest = false

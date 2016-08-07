@@ -532,9 +532,10 @@ function BWQ:RenderRows()
 		end
 
 		highlightedRow = true
+		local buttonIndex = 1
 		for _, button in ipairs(MAP_ZONES[mapIndex].buttons) do
 
-			if not button.quest.hide then
+			if not button.quest.hide and buttonIndex <= MAP_ZONES[mapIndex].numQuests then
 				if rowIndex < sliderval  or rowIndex > sliderval + maxEntries then
 					button:Hide()
 				else
@@ -549,6 +550,7 @@ function BWQ:RenderRows()
 					end
 				end
 				highlightedRow = not highlightedRow
+				buttonIndex = buttonIndex + 1
 				rowIndex = rowIndex + 1
 			else
 				button:Hide()
@@ -566,7 +568,7 @@ function BWQ:UpdateBlock()
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapIndex = 1, #MAP_ZONES do
-			local buttonIndex = 1
+		local buttonIndex = 1
 
 		if not MAP_ZONES[mapIndex].zoneSep then
 			local zoneSep = {
@@ -803,11 +805,6 @@ function BWQ:UpdateBlock()
 				buttonIndex = buttonIndex + 1
 			--end
 		end -- quest loop
-		-- hide buttons if there are more cached buttons than quests available
-		for i = buttonIndex, #MAP_ZONES[mapIndex].buttons do
-			buttonCache[i]:Hide()
-		end
-
 	end -- maps loop
 
 	titleMaxWidth = 200

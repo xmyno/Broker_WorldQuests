@@ -6,7 +6,6 @@
 -- Doesn't do anything on its own; requires a data broker addon!
 --
 -- Author: myno
--- Version: r3
 --
 --]]----
 
@@ -97,14 +96,14 @@ local defaultConfig = {
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
-BWQ:SetFrameStrata("HIGH")
+BWQ:SetFrameStrata("TOOLTIP")
 BWQ:EnableMouse(true)
 BWQ:SetBackdrop({
-		bgFile = "Interface\\ChatFrame\\ChatFrameBackground", 
+		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
 		edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
 		tile = false,
-		tileSize = 0, 
-		edgeSize = 2, 
+		tileSize = 0,
+		edgeSize = 2,
 		insets = { left = 0, right = 0, top = 0, bottom = 0 },
 	})
 BWQ:SetBackdropColor(0, 0, 0, .9)
@@ -232,6 +231,7 @@ local ShowQuestObjectiveTooltip = function(row)
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
 	end
 
+	GameTooltip:SetFrameLevel(10)
 	GameTooltip:Show()
 end
 
@@ -262,16 +262,16 @@ local RetrieveWorldQuests = function(mapId)
 
 			--[[
 			local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
-			
+
 			tagId = 116
 			tagName = Blacksmithing World Quest
-			worldQuestType = 
-				2 -> profession, 
+			worldQuestType =
+				2 -> profession,
 				3 -> pve?
 				4 -> pvp
 				5 -> battle pet
 				7 -> dungeon
-			isRare = 
+			isRare =
 				1 -> normal
 				2 -> rare
 				3 -> epic
@@ -285,7 +285,7 @@ local RetrieveWorldQuests = function(mapId)
 				if worldQuestType ~= nil then
 					local quest = {}
 					quest.hide = true
-					
+
 					-- GetQuestsForPlayerByMapID fields
 					quest.questId = questList[i].questId
 					quest.numObjectives = questList[i].numObjectives
@@ -322,7 +322,7 @@ local RetrieveWorldQuests = function(mapId)
 								if BWQcfg.showArtifactPower then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
-								
+
 								if BWQcfg.showItems then
 									_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 									if class == "Tradeskill" then
@@ -331,7 +331,7 @@ local RetrieveWorldQuests = function(mapId)
 										if BWQcfg.showGear then quest.hide = false end
 									elseif subClass == "Artifact Relic" then
 										if BWQcfg.showRelics then quest.hide = false end
-									else 
+									else
 										if BWQcfg.showOtherItems then quest.hide = false end
 									end
 								end
@@ -357,7 +357,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.resourceName = name
 							quest.reward.resourceTexture = texture
 							quest.reward.resourceAmount = numItems
-							
+
 							if BWQcfg.showResources then
 								if name == "Ancient Mana" then
 									if BWQcfg.showAncientMana then quest.hide = false end
@@ -474,7 +474,7 @@ end
 
 function BWQ:RenderRows()
 	local screenHeight = UIParent:GetHeight()
-	local availableHeight = 0 
+	local availableHeight = 0
 	if showDownwards then availableHeight = screenHeight - (screenHeight - blockYPos) - 30
 	else availableHeight = screenHeight - blockYPos - 30 end
 
@@ -498,7 +498,7 @@ function BWQ:RenderRows()
 		BWQ.slider:SetHeight((ROW_HEIGHT * -1) * (maxEntries + 1))
 		BWQ.slider:SetMinMaxValues(0, numEntries - 1 - maxEntries)
 	end
-	
+
 
 	-- all quests filtered or all done (haha.)
 	if numQuestsTotal == 0 then
@@ -524,7 +524,7 @@ function BWQ:RenderRows()
 			MAP_ZONES[mapIndex].zoneSep.texture:Show()
 			MAP_ZONES[mapIndex].zoneSep.texture:SetPoint("TOP", BWQ, "TOP", 5, offsetTop + ROW_HEIGHT * rowInViewIndex - 3)
 
-			rowInViewIndex = rowInViewIndex + 1 
+			rowInViewIndex = rowInViewIndex + 1
 		end
 
 		if MAP_ZONES[mapIndex].numQuests ~= 0 then
@@ -532,9 +532,10 @@ function BWQ:RenderRows()
 		end
 
 		highlightedRow = true
+		local buttonIndex = 1
 		for _, button in ipairs(MAP_ZONES[mapIndex].buttons) do
 
-			if not button.quest.hide then
+			if not button.quest.hide and buttonIndex <= MAP_ZONES[mapIndex].numQuests then
 				if rowIndex < sliderval  or rowIndex > sliderval + maxEntries then
 					button:Hide()
 				else
@@ -549,6 +550,7 @@ function BWQ:RenderRows()
 					end
 				end
 				highlightedRow = not highlightedRow
+				buttonIndex = buttonIndex + 1
 				rowIndex = rowIndex + 1
 			else
 				button:Hide()
@@ -566,7 +568,7 @@ function BWQ:UpdateBlock()
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapIndex = 1, #MAP_ZONES do
-			local buttonIndex = 1
+		local buttonIndex = 1
 
 		if not MAP_ZONES[mapIndex].zoneSep then
 			local zoneSep = {
@@ -578,7 +580,7 @@ function BWQ:UpdateBlock()
 			zoneSep.fs:SetText(MAP_ZONES[mapIndex].name)
 			zoneSep.texture:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-OnlineDivider")
 			zoneSep.texture:SetHeight(8)
-			
+
 			MAP_ZONES[mapIndex].zoneSep = zoneSep
 		end
 
@@ -602,7 +604,7 @@ function BWQ:UpdateBlock()
 					button.rowHighlight:SetBlendMode("ADD")
 					button.rowHighlight:SetAlpha(0.05)
 					button.rowHighlight:SetAllPoints(button)
-					
+
 					button:SetScript("OnLeave", function(self)
 						Block_OnLeave()
 						button.highlight:SetAlpha(0)
@@ -683,7 +685,7 @@ function BWQ:UpdateBlock()
 					else
 						itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex, button.quest.reward.itemName)
 					end
-					
+
 					rewardText = string.format(
 						"|T%s$s:14:14|t %s%s",
 						button.quest.reward.itemTexture,
@@ -695,6 +697,7 @@ function BWQ:UpdateBlock()
 						if event == "MODIFIER_STATE_CHANGED" then
 							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+							GameTooltip:SetFrameLevel(10)
 							GameTooltip:Show()
 						end
 					end)
@@ -705,7 +708,7 @@ function BWQ:UpdateBlock()
 						self:RegisterEvent("MODIFIER_STATE_CHANGED")
 						GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 						GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-						--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
+						GameTooltip:SetFrameLevel(10)
 						GameTooltip:Show()
 					end)
 
@@ -802,11 +805,6 @@ function BWQ:UpdateBlock()
 				buttonIndex = buttonIndex + 1
 			--end
 		end -- quest loop
-		-- hide buttons if there are more cached buttons than quests available
-		for i = buttonIndex, #MAP_ZONES[mapIndex].buttons do
-			buttonCache[i]:Hide()
-		end
-		
 	end -- maps loop
 
 	titleMaxWidth = 200
@@ -822,7 +820,7 @@ function BWQ:UpdateBlock()
 		rewardMaxWidth = rewardMaxWidth + diff
 	end
 
-	for mapIndex = 1, #MAP_ZONES do 
+	for mapIndex = 1, #MAP_ZONES do
 		for i = 1, #MAP_ZONES[mapIndex].buttons do
 			if not MAP_ZONES[mapIndex].buttons[i].quest.hide then -- dont care about the hidden ones
 				MAP_ZONES[mapIndex].buttons[i]:SetHeight(15)
@@ -922,7 +920,7 @@ function BWQ:SetupConfigMenu()
 			info = wipe(info)
 			info.text = v.text
 			info.isTitle = v.isTitle
-			
+
 			if v.check then
 				info.checked = v.inv and not BWQcfg[v.check] or not v.inv and BWQcfg[v.check]
 				info.func, info.arg1 = SetOption, v.check
@@ -967,7 +965,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 	--[[
 	Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
 	To avoid setting the currently shown map again, which would hide the quest details,
-	skip updating after a WORLD_MAP_UPDATE event happened 
+	skip updating after a WORLD_MAP_UPDATE event happened
 	--]]
 	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
@@ -981,7 +979,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 		--BWQ:UpdateBlock()
 		BWQ:UpdateBountyData()
 		BWQ:UpdateQuestData()
-		
+
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
 		BWQ.slider:SetScript("OnValueChanged", function(self, value)
 			BWQ:RenderRows()
@@ -1007,7 +1005,6 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 
-		
 		blockYPos = select(2, self:GetCenter())
 		showDownwards = blockYPos > UIParent:GetHeight() / 2
 		BWQ:ClearAllPoints()
@@ -1020,6 +1017,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 		if button == "LeftButton" then
 			BWQ:UpdateBlock()
 		elseif button == "RightButton" then
+			Block_OnLeave()
 			BWQ:OpenConfigMenu(self)
 		end
 	end,

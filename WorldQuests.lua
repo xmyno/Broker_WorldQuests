@@ -96,7 +96,7 @@ local defaultConfig = {
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
-BWQ:SetFrameStrata("HIGH")
+BWQ:SetFrameStrata("TOOLTIP")
 BWQ:EnableMouse(true)
 BWQ:SetBackdrop({
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -231,6 +231,7 @@ local ShowQuestObjectiveTooltip = function(row)
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
 	end
 
+	GameTooltip:SetFrameLevel(10)
 	GameTooltip:Show()
 end
 
@@ -694,6 +695,7 @@ function BWQ:UpdateBlock()
 						if event == "MODIFIER_STATE_CHANGED" then
 							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+							GameTooltip:SetFrameLevel(10)
 							GameTooltip:Show()
 						end
 					end)
@@ -704,7 +706,7 @@ function BWQ:UpdateBlock()
 						self:RegisterEvent("MODIFIER_STATE_CHANGED")
 						GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 						GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-						--GameTooltip:SetHyperlink(string.format("item:%d:0:0:0:0:0:0:0", self.itemId))
+						GameTooltip:SetFrameLevel(10)
 						GameTooltip:Show()
 					end)
 
@@ -1018,6 +1020,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 		if button == "LeftButton" then
 			BWQ:UpdateBlock()
 		elseif button == "RightButton" then
+			Block_OnLeave()
 			BWQ:OpenConfigMenu(self)
 		end
 	end,

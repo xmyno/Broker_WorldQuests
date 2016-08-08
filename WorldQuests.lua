@@ -434,9 +434,11 @@ function BWQ:UpdateBountyData()
 		local title = GetQuestLogTitle(questIndex);
 		local _, _, finished, numFulfilled, numRequired = GetQuestObjectiveInfo(bounty.questID, 1, false)
 
-		bountyBoardText = string.format("%s|T%s$s:20:20|t %s   %d/%d", bountyBoardText, bounty.icon, title, numFulfilled, numRequired)
-		if bountyIndex < #bounties then
-			bountyBoardText = string.format("%s        ", bountyBoardText)
+		if bounty.icon and title then
+			bountyBoardText = string.format("%s|T%s$s:20:20|t %s   %d/%d", bountyBoardText, bounty.icon, title, numFulfilled or 0, numRequired or 0)
+			if bountyIndex < #bounties then
+				bountyBoardText = string.format("%s        ", bountyBoardText)
+			end
 		end
 	end
 

@@ -56,6 +56,16 @@ local MAP_ZONES = {
 	{ id = 1014, name = GetMapNameByID(1014), buttons = {}, },  -- Dalaran
 }
 
+local SORT_ORDER = {
+	ARTIFACTPOWER = 1,
+	RELIC = 2,
+	EQUIP = 3,
+	ITEM = 4,
+	PROFESSION = 5,
+	RESOURCES = 6,
+	MONEY = 7,
+}
+
 local defaultConfig = {
 	-- general
 	alwaysShowBountyQuests = true,
@@ -280,11 +290,12 @@ local RetrieveWorldQuests = function(mapId)
 			]]
 
 			timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
-			if timeLeft ~= 0 then -- only show available quests
+			if timeLeft > 0 then -- only show available quests
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
 				if worldQuestType ~= nil then
 					local quest = {}
 					quest.hide = true
+					quest.sort = 0
 
 					-- GetQuestsForPlayerByMapID fields
 					quest.questId = questList[i].questId
@@ -319,6 +330,7 @@ local RetrieveWorldQuests = function(mapId)
 							local itemSpell = GetItemSpell(quest.reward.itemId)
 							if itemSpell and itemSpell == "Empowering" then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
+								quest.sort = SORT_ORDER.ARTIFACTPOWER
 								if BWQcfg.showArtifactPower then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
@@ -326,12 +338,16 @@ local RetrieveWorldQuests = function(mapId)
 								if BWQcfg.showItems then
 									_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 									if class == "Tradeskill" then
+										quest.sort = SORT_ORDER.PROFESSION
 										if BWQcfg.showCraftingMaterials then quest.hide = false end
 									elseif equipSlot ~= "" then
+										quest.sort = SORT_ORDER.EQUIP
 										if BWQcfg.showGear then quest.hide = false end
 									elseif subClass == "Artifact Relic" then
+										quest.sort = SORT_ORDER.RELIC
 										if BWQcfg.showRelics then quest.hide = false end
 									else
+										quest.sort = SORT_ORDER.ITEM
 										if BWQcfg.showOtherItems then quest.hide = false end
 									end
 								end
@@ -342,6 +358,8 @@ local RetrieveWorldQuests = function(mapId)
 					local money = GetQuestLogRewardMoney(quest.questId);
 					if money > 0 then
 						quest.reward.money = money
+						quest.sort = SORT_ORDER.MONEY
+
 						if money < 1000000 then
 							if BWQcfg.showLowGold then quest.hide = false end
 						else
@@ -357,6 +375,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.resourceName = name
 							quest.reward.resourceTexture = texture
 							quest.reward.resourceAmount = numItems
+							quest.sort = SORT_ORDER.RESOURCES
 
 							if BWQcfg.showResources then
 								if name == "Ancient Mana" then
@@ -420,6 +439,9 @@ local RetrieveWorldQuests = function(mapId)
 				end
 			end
 		end
+
+		table.sort(quests, function(a, b) return a.sort < b.sort end)
+
 	end
 
 	return quests, numQuests

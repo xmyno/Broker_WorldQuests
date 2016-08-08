@@ -982,7 +982,8 @@ end
 
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
-BWQ:SetScript("OnEvent", function(self, event)
+BWQ:RegisterEvent("ADDON_LOADED")
+BWQ:SetScript("OnEvent", function(self, event, arg1)
 	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
 		BWQ:UpdateBlock()
@@ -1014,6 +1015,22 @@ BWQ:SetScript("OnEvent", function(self, event)
 		end)
 
 		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
+	elseif event == "ADDON_LOADED" and arg1 == "TipTac" then
+
+		local tiptacBKG = { tile = false, insets = {} }
+		local cfg = TipTac_Config
+		if cfg.tipBackdropBG and cfg.tipBackdropEdge and cfg.tipColor and cfg.tipBorderColor then
+			tiptacBKG.bgFile = cfg.tipBackdropBG
+			tiptacBKG.edgeFile = cfg.tipBackdropEdge
+			tiptacBKG.edgeSize = cfg.backdropEdgeSize
+			tiptacBKG.insets.left = cfg.backdropInsets
+			tiptacBKG.insets.right = cfg.backdropInsets
+			tiptacBKG.insets.top = cfg.backdropInsets
+			tiptacBKG.insets.bottom = cfg.backdropInsets
+			BWQ:SetBackdrop(tiptacBKG)
+			BWQ:SetBackdropColor(unpack(cfg.tipColor))
+			BWQ:SetBackdropBorderColor(unpack(cfg.tipBorderColor))
+		end
 	end
 end)
 

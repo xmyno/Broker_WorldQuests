@@ -975,6 +975,14 @@ function BWQ:SetupConfigMenu()
 		if WorldMapFrame:IsShown() then
 			BWQ:OpenConfigMenu(nil)
 		end
+
+		-- toggle block when changing attach setting
+		if var == "attachToWorldMap" then
+			BWQ:Hide()
+			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
+				BWQ:AttachToWorldMap()
+			end
+		end
 	end
 
 	BWQ.SetupConfigMenu = nil
@@ -988,6 +996,13 @@ function BWQ:OpenConfigMenu(anchor)
 	end
 	--BWQ:Hide()
 	ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
+end
+
+function BWQ:AttachToWorldMap()
+	BWQ:ClearAllPoints()
+	BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -5)
+	BWQ:SetFrameStrata("HIGH")
+	BWQ:Show()
 end
 
 local skipNextUpdate = false
@@ -1050,10 +1065,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if BWQcfg["attachToWorldMap"] then
 
-				BWQ:ClearAllPoints()
-				BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -5)
-				BWQ:SetFrameStrata("HIGH")
-				BWQ:Show()
+				BWQ:AttachToWorldMap()
 			end
 		end)
 

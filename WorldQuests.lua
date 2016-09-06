@@ -104,6 +104,12 @@ local defaultConfig = {
 	showPetBattle = true,
 	showDungeon = true,
 	showPvP = true,
+	alwaysShowCourtOfFarondis = false,
+	alwaysShowDreamweavers = false,
+	alwaysShowHighmountainTribe = false,
+	alwaysShowNightfallen = false,
+	alwaysShowWardens = false,
+	alwaysShowValarjar = false
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
@@ -435,7 +441,14 @@ local RetrieveWorldQuests = function(mapId)
 					elseif not BWQcfg.showDungeon and quest.worldQuestType == 7 then quest.hide = true
 					end
 					-- always show bounty quests filter
-					if BWQcfg.alwaysShowBountyQuests and #quest.bounties > 0 then
+					if (BWQcfg.alwaysShowBountyQuests and #quest.bounties > 0) or
+						(BWQcfg.alwaysShowCourtOfFarondis and quest.faction == "Court of Farondis") or
+						(BWQcfg.alwaysShowDreamweavers and quest.faction == "Dreamweavers") or
+						(BWQcfg.alwaysShowHighmountainTribe and quest.faction == "Highmountain Tribe") or
+						(BWQcfg.alwaysShowNightfallen and quest.faction == "The Nightfallen") or
+						(BWQcfg.alwaysShowWardens and quest.faction == "The Wardens") or
+						(BWQcfg.alwaysShowValarjar and quest.faction == "Valarjar") then
+
 						-- pet battle override
 						if BWQcfg.hidePetBattleBountyQuests and not BWQcfg.showPetBattle and quest.worldQuestType == 5 then
 							quest.hide = true
@@ -933,6 +946,15 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Pet Battle Quests"):format("Interface\\Icons\\tracking_wildpet"), check = "showPetBattle" },
 		{ text = "Dungeon Quests", check = "showDungeon" },
 		{ text = ("|T%1$s:16:16|t  PvP Quests"):format("Interface\\Minimap\\Tracking\\BattleMaster"), check = "showPvP" },
+		{ text = "" },
+		{ text = "Always show quests for faction...", isTitle = true },
+		{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },
+		{ text = "Dreamweavers", check="alwaysShowDreamweavers" },
+		{ text = "Highmountain Tribe", check="alwaysShowHighmountainTribe" },
+		{ text = "The Nightfallen", check="alwaysShowNightfallen" },
+		{ text = "The Wardens", check="alwaysShowWardens" },
+		{ text = "Valarjar", check="alwaysShowValarjar" },
+
 
 	}
 

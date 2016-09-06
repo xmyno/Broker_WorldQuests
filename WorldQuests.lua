@@ -172,7 +172,7 @@ function BWQ:WorldQuestsUnlocked()
 		if not BWQ.errorFS then CreateErrorFS() end
 
 		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
-		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
+		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[Uniting the Isles]\124h\124r to unlock World Quests.")
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:Show()
 

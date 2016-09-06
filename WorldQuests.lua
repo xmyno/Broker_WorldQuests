@@ -740,6 +740,7 @@ function BWQ:UpdateBlock()
 
 					button.reward:SetScript("OnEnter", function(self)
 						button.highlight:SetAlpha(1)
+						self:RegisterEvent("MODIFIER_STATE_CHANGED")
 
 						ShowQuestLogItemTooltip(button)
 					end)

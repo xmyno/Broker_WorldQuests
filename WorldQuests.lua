@@ -489,6 +489,9 @@ function BWQ:UpdateBountyData()
 end
 
 function BWQ:UpdateQuestData()
+	local _, _, _, isMicroDungeon, _ = GetMapInfo()
+	if isMicroDungeon and WorldMapFrame:IsShown() then return end -- don't update when map is on a micro dungeon, need to rely on updates when map is closed
+
 	local originalMap = GetCurrentMapAreaID()
 	local originalContinent = GetCurrentMapContinent()
 	local originalDungeonLevel = GetCurrentMapDungeonLevel()

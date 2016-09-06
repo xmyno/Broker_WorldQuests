@@ -1064,7 +1064,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if BWQcfg["attachToWorldMap"] then
-
+				BWQ:UpdateBlock()
 				BWQ:AttachToWorldMap()
 			end
 		end)
@@ -1083,6 +1083,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	OnEnter = function(self)
 		if not BWQcfg["attachToWorldMap"] then
 			CloseDropDownMenus()
+			BWQ:UpdateBlock()
 
 			blockYPos = select(2, self:GetCenter())
 			showDownwards = blockYPos > UIParent:GetHeight() / 2

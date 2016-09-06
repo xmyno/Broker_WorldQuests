@@ -245,6 +245,20 @@ local ShowQuestObjectiveTooltip = function(row)
 	GameTooltip:Show()
 end
 
+local ShowQuestLogItemTooltip = function(button)
+	local name, texture = GetQuestLogRewardInfo(1, button.quest.questId)
+	if name and texture then
+		GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
+		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+		GameTooltip:SetFrameLevel(10)
+		GameTooltip:Show()
+
+		if GameTooltip.shoppingTooltips[1] then GameTooltip.shoppingTooltips[1]:SetFrameLevel(10) end
+		if GameTooltip.shoppingTooltips[2] then GameTooltip.shoppingTooltips[2]:SetFrameLevel(10) end
+		if GameTooltip.ttIcon then GameTooltip.ttIcon:SetDrawLayer("BACKGROUND", -8) end
+	end
+end
+
 local Row_OnClick = function(row)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(row.mapId)
@@ -719,21 +733,14 @@ function BWQ:UpdateBlock()
 
 					button.reward:SetScript("OnEvent", function(self, event)
 						if event == "MODIFIER_STATE_CHANGED" then
-							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-							GameTooltip:SetFrameLevel(10)
-							GameTooltip:Show()
+							ShowQuestLogItemTooltip(button)
 						end
 					end)
 
 					button.reward:SetScript("OnEnter", function(self)
 						button.highlight:SetAlpha(1)
 
-						self:RegisterEvent("MODIFIER_STATE_CHANGED")
-						GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-						GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-						GameTooltip:SetFrameLevel(10)
-						GameTooltip:Show()
+						ShowQuestLogItemTooltip(button)
 					end)
 
 					button.reward:SetScript("OnLeave", function(self)

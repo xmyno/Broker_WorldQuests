@@ -68,6 +68,7 @@ local SORT_ORDER = {
 
 local defaultConfig = {
 	-- general
+	attachToWorldMap = false,
 	alwaysShowBountyQuests = true,
 	hidePetBattleBountyQuests = false,
 	-- reward type
@@ -106,7 +107,6 @@ local defaultConfig = {
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
-BWQ:SetFrameStrata("TOOLTIP")
 BWQ:EnableMouse(true)
 BWQ:SetBackdrop({
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -122,12 +122,11 @@ BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 local Block_OnLeave = function(self)
-	if not BWQ:IsMouseOver() then
-		BWQ:Hide()
+	if not BWQcfg["attachToWorldMap"] then
+		if not BWQ:IsMouseOver() then
+			BWQ:Hide()
+		end
 	end
-
-	BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
-	BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
 end
 BWQ:SetScript("OnLeave", Block_OnLeave)
 
@@ -708,7 +707,6 @@ function BWQ:UpdateBlock()
 					button.timeLeftFS:SetTextColor(.9, .9, .9)
 					button.timeLeftFS:SetWordWrap(false)
 
-					--print(buttonIndex)
 					MAP_ZONES[mapIndex].buttons[buttonIndex] = button
 				else
 					button = MAP_ZONES[mapIndex].buttons[buttonIndex]
@@ -888,6 +886,7 @@ function BWQ:SetupConfigMenu()
 	configMenu.displayMode = "MENU"
 
 	options = {
+		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
 		{ text = "Always show quests for active bounty", check = "alwaysShowBountyQuests" },
 		{ text = "Hide pet battle quests even when active bounty", check = "hidePetBattleBountyQuests" },
 		{ text = "" },
@@ -992,6 +991,8 @@ end
 
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
+BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
 	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
@@ -1010,7 +1011,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 				BWQcfg[i] = v
 			end
 		end
-		--BWQ:UpdateBlock()
+
 		BWQ:UpdateBountyData()
 		BWQ:UpdateQuestData()
 
@@ -1040,6 +1041,21 @@ BWQ:SetScript("OnEvent", function(self, event)
 			end
 		end
 
+		hooksecurefunc(WorldMapFrame, "Hide", function(self)
+			if BWQcfg["attachToWorldMap"] then
+				BWQ:Hide()
+			end
+		end)
+		hooksecurefunc(WorldMapFrame, "Show", function(self)
+			if BWQcfg["attachToWorldMap"] then
+
+				BWQ:ClearAllPoints()
+				BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -5)
+				BWQ:SetFrameStrata("HIGH")
+				BWQ:Show()
+			end
+		end)
+
 		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
 	end
 end)
@@ -1052,16 +1068,16 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	text = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
-		CloseDropDownMenus()
-		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+		if not BWQcfg["attachToWorldMap"] then
+			CloseDropDownMenus()
 
-		blockYPos = select(2, self:GetCenter())
-		showDownwards = blockYPos > UIParent:GetHeight() / 2
-		BWQ:ClearAllPoints()
-		BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
-		BWQ:UpdateBlock()
-		BWQ:Show()
+			blockYPos = select(2, self:GetCenter())
+			showDownwards = blockYPos > UIParent:GetHeight() / 2
+			BWQ:ClearAllPoints()
+			BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
+			BWQ:SetFrameStrata("TOOLTIP")
+			BWQ:Show()
+		end
 	end,
 	OnLeave = Block_OnLeave,
 	OnClick = function(self, button)

@@ -56,8 +56,19 @@ local MAP_ZONES = {
 	{ id = 1014, name = GetMapNameByID(1014), buttons = {}, },  -- Dalaran
 }
 
+local SORT_ORDER = {
+	ARTIFACTPOWER = 1,
+	RELIC = 2,
+	EQUIP = 3,
+	ITEM = 4,
+	PROFESSION = 5,
+	RESOURCES = 6,
+	MONEY = 7,
+}
+
 local defaultConfig = {
 	-- general
+	attachToWorldMap = false,
 	alwaysShowBountyQuests = true,
 	hidePetBattleBountyQuests = false,
 	-- reward type
@@ -96,7 +107,6 @@ local defaultConfig = {
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
-BWQ:SetFrameStrata("TOOLTIP")
 BWQ:EnableMouse(true)
 BWQ:SetBackdrop({
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -112,12 +122,11 @@ BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 local Block_OnLeave = function(self)
-	if not BWQ:IsMouseOver() then
-		BWQ:Hide()
+	if not BWQcfg["attachToWorldMap"] then
+		if not BWQ:IsMouseOver() then
+			BWQ:Hide()
+		end
 	end
-
-	BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
-	BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
 end
 BWQ:SetScript("OnLeave", Block_OnLeave)
 
@@ -162,7 +171,7 @@ function BWQ:WorldQuestsUnlocked()
 		if not BWQ.errorFS then CreateErrorFS() end
 
 		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
-		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[A World of Quests]\124h\124r to unlock World Quests.")
+		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[Uniting the Isles]\124h\124r to unlock World Quests.")
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:Show()
 
@@ -235,6 +244,20 @@ local ShowQuestObjectiveTooltip = function(row)
 	GameTooltip:Show()
 end
 
+local ShowQuestLogItemTooltip = function(button)
+	local name, texture = GetQuestLogRewardInfo(1, button.quest.questId)
+	if name and texture then
+		GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
+		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+		GameTooltip:SetFrameLevel(10)
+		GameTooltip:Show()
+
+		if GameTooltip.shoppingTooltips[1] then GameTooltip.shoppingTooltips[1]:SetFrameLevel(10) end
+		if GameTooltip.shoppingTooltips[2] then GameTooltip.shoppingTooltips[2]:SetFrameLevel(10) end
+		if GameTooltip.ttIcon then GameTooltip.ttIcon:SetDrawLayer("BACKGROUND", -8) end
+	end
+end
+
 local Row_OnClick = function(row)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(row.mapId)
@@ -280,11 +303,12 @@ local RetrieveWorldQuests = function(mapId)
 			]]
 
 			timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
-			if timeLeft ~= 0 then -- only show available quests
+			if timeLeft > 0 then -- only show available quests
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
 				if worldQuestType ~= nil then
 					local quest = {}
 					quest.hide = true
+					quest.sort = 0
 
 					-- GetQuestsForPlayerByMapID fields
 					quest.questId = questList[i].questId
@@ -319,6 +343,7 @@ local RetrieveWorldQuests = function(mapId)
 							local itemSpell = GetItemSpell(quest.reward.itemId)
 							if itemSpell and itemSpell == "Empowering" then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
+								quest.sort = SORT_ORDER.ARTIFACTPOWER
 								if BWQcfg.showArtifactPower then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
@@ -326,12 +351,16 @@ local RetrieveWorldQuests = function(mapId)
 								if BWQcfg.showItems then
 									_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 									if class == "Tradeskill" then
+										quest.sort = SORT_ORDER.PROFESSION
 										if BWQcfg.showCraftingMaterials then quest.hide = false end
 									elseif equipSlot ~= "" then
+										quest.sort = SORT_ORDER.EQUIP
 										if BWQcfg.showGear then quest.hide = false end
 									elseif subClass == "Artifact Relic" then
+										quest.sort = SORT_ORDER.RELIC
 										if BWQcfg.showRelics then quest.hide = false end
 									else
+										quest.sort = SORT_ORDER.ITEM
 										if BWQcfg.showOtherItems then quest.hide = false end
 									end
 								end
@@ -342,6 +371,8 @@ local RetrieveWorldQuests = function(mapId)
 					local money = GetQuestLogRewardMoney(quest.questId);
 					if money > 0 then
 						quest.reward.money = money
+						quest.sort = SORT_ORDER.MONEY
+
 						if money < 1000000 then
 							if BWQcfg.showLowGold then quest.hide = false end
 						else
@@ -357,6 +388,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.resourceName = name
 							quest.reward.resourceTexture = texture
 							quest.reward.resourceAmount = numItems
+							quest.sort = SORT_ORDER.RESOURCES
 
 							if BWQcfg.showResources then
 								if name == "Ancient Mana" then
@@ -420,6 +452,9 @@ local RetrieveWorldQuests = function(mapId)
 				end
 			end
 		end
+
+		table.sort(quests, function(a, b) return a.sort < b.sort end)
+
 	end
 
 	return quests, numQuests
@@ -434,9 +469,11 @@ function BWQ:UpdateBountyData()
 		local title = GetQuestLogTitle(questIndex);
 		local _, _, finished, numFulfilled, numRequired = GetQuestObjectiveInfo(bounty.questID, 1, false)
 
-		bountyBoardText = string.format("%s|T%s$s:20:20|t %s   %d/%d", bountyBoardText, bounty.icon, title, numFulfilled, numRequired)
-		if bountyIndex < #bounties then
-			bountyBoardText = string.format("%s        ", bountyBoardText)
+		if bounty.icon and title then
+			bountyBoardText = string.format("%s|T%s$s:20:20|t %s   %d/%d", bountyBoardText, bounty.icon, title, numFulfilled or 0, numRequired or 0)
+			if bountyIndex < #bounties then
+				bountyBoardText = string.format("%s        ", bountyBoardText)
+			end
 		end
 	end
 
@@ -451,6 +488,9 @@ function BWQ:UpdateBountyData()
 end
 
 function BWQ:UpdateQuestData()
+	local _, _, _, isMicroDungeon, _ = GetMapInfo()
+	if isMicroDungeon and WorldMapFrame:IsShown() then return end -- don't update when map is on a micro dungeon, need to rely on updates when map is closed
+
 	local originalMap = GetCurrentMapAreaID()
 	local originalContinent = GetCurrentMapContinent()
 	local originalDungeonLevel = GetCurrentMapDungeonLevel()
@@ -667,7 +707,6 @@ function BWQ:UpdateBlock()
 					button.timeLeftFS:SetTextColor(.9, .9, .9)
 					button.timeLeftFS:SetWordWrap(false)
 
-					--print(buttonIndex)
 					MAP_ZONES[mapIndex].buttons[buttonIndex] = button
 				else
 					button = MAP_ZONES[mapIndex].buttons[buttonIndex]
@@ -695,21 +734,15 @@ function BWQ:UpdateBlock()
 
 					button.reward:SetScript("OnEvent", function(self, event)
 						if event == "MODIFIER_STATE_CHANGED" then
-							GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-							GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-							GameTooltip:SetFrameLevel(10)
-							GameTooltip:Show()
+							ShowQuestLogItemTooltip(button)
 						end
 					end)
 
 					button.reward:SetScript("OnEnter", function(self)
 						button.highlight:SetAlpha(1)
-
 						self:RegisterEvent("MODIFIER_STATE_CHANGED")
-						GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-						GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-						GameTooltip:SetFrameLevel(10)
-						GameTooltip:Show()
+
+						ShowQuestLogItemTooltip(button)
 					end)
 
 					button.reward:SetScript("OnLeave", function(self)
@@ -854,6 +887,7 @@ function BWQ:SetupConfigMenu()
 	configMenu.displayMode = "MENU"
 
 	options = {
+		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
 		{ text = "Always show quests for active bounty", check = "alwaysShowBountyQuests" },
 		{ text = "Hide pet battle quests even when active bounty", check = "hidePetBattleBountyQuests" },
 		{ text = "" },
@@ -941,6 +975,14 @@ function BWQ:SetupConfigMenu()
 		if WorldMapFrame:IsShown() then
 			BWQ:OpenConfigMenu(nil)
 		end
+
+		-- toggle block when changing attach setting
+		if var == "attachToWorldMap" then
+			BWQ:Hide()
+			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
+				BWQ:AttachToWorldMap()
+			end
+		end
 	end
 
 	BWQ.SetupConfigMenu = nil
@@ -956,8 +998,17 @@ function BWQ:OpenConfigMenu(anchor)
 	ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
 end
 
+function BWQ:AttachToWorldMap()
+	BWQ:ClearAllPoints()
+	BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -5)
+	BWQ:SetFrameStrata("HIGH")
+	BWQ:Show()
+end
+
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
+BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
 	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
@@ -976,7 +1027,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 				BWQcfg[i] = v
 			end
 		end
-		--BWQ:UpdateBlock()
+
 		BWQ:UpdateBountyData()
 		BWQ:UpdateQuestData()
 
@@ -987,6 +1038,35 @@ BWQ:SetScript("OnEvent", function(self, event)
 
 		BWQ:SetScript("OnMouseWheel", function(self, delta)
 			BWQ.slider:SetValue(BWQ.slider:GetValue() - delta * 3)
+		end)
+
+		if TipTac then
+			local tiptacBKG = { tile = false, insets = {} }
+			local cfg = TipTac_Config
+			if cfg.tipBackdropBG and cfg.tipBackdropEdge and cfg.tipColor and cfg.tipBorderColor then
+				tiptacBKG.bgFile = cfg.tipBackdropBG
+				tiptacBKG.edgeFile = cfg.tipBackdropEdge
+				tiptacBKG.edgeSize = cfg.backdropEdgeSize
+				tiptacBKG.insets.left = cfg.backdropInsets
+				tiptacBKG.insets.right = cfg.backdropInsets
+				tiptacBKG.insets.top = cfg.backdropInsets
+				tiptacBKG.insets.bottom = cfg.backdropInsets
+				BWQ:SetBackdrop(tiptacBKG)
+				BWQ:SetBackdropColor(unpack(cfg.tipColor))
+				BWQ:SetBackdropBorderColor(unpack(cfg.tipBorderColor))
+			end
+		end
+
+		hooksecurefunc(WorldMapFrame, "Hide", function(self)
+			if BWQcfg["attachToWorldMap"] then
+				BWQ:Hide()
+			end
+		end)
+		hooksecurefunc(WorldMapFrame, "Show", function(self)
+			if BWQcfg["attachToWorldMap"] then
+
+				BWQ:AttachToWorldMap()
+			end
 		end)
 
 		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
@@ -1001,16 +1081,16 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	text = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
-		CloseDropDownMenus()
-		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+		if not BWQcfg["attachToWorldMap"] then
+			CloseDropDownMenus()
 
-		blockYPos = select(2, self:GetCenter())
-		showDownwards = blockYPos > UIParent:GetHeight() / 2
-		BWQ:ClearAllPoints()
-		BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
-		BWQ:UpdateBlock()
-		BWQ:Show()
+			blockYPos = select(2, self:GetCenter())
+			showDownwards = blockYPos > UIParent:GetHeight() / 2
+			BWQ:ClearAllPoints()
+			BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
+			BWQ:SetFrameStrata("TOOLTIP")
+			BWQ:Show()
+		end
 	end,
 	OnLeave = Block_OnLeave,
 	OnClick = function(self, button)

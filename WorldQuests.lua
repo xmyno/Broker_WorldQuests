@@ -257,10 +257,6 @@ local ShowQuestLogItemTooltip = function(button)
 		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
 		GameTooltip:SetFrameLevel(10)
 		GameTooltip:Show()
-
-		if GameTooltip.shoppingTooltips[1] then GameTooltip.shoppingTooltips[1]:SetFrameLevel(10) end
-		if GameTooltip.shoppingTooltips[2] then GameTooltip.shoppingTooltips[2]:SetFrameLevel(10) end
-		if GameTooltip.ttIcon then GameTooltip.ttIcon:SetDrawLayer("BACKGROUND", -8) end
 	end
 end
 
@@ -1111,7 +1107,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 			showDownwards = blockYPos > UIParent:GetHeight() / 2
 			BWQ:ClearAllPoints()
 			BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
-			BWQ:SetFrameStrata("TOOLTIP")
+			BWQ:SetFrameStrata("DIALOG")
 			BWQ:Show()
 		end
 	end,

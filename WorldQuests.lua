@@ -271,7 +271,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-
+local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
 	local quests = {}
 	local numQuests = 0
@@ -334,9 +334,11 @@ local RetrieveWorldQuests = function(mapId)
 
 					quest.reward = {}
 					-- item reward
+					local hasReward = false
 					if GetNumQuestLogRewards(quest.questId) > 0 then
 						local itemName, itemTexture, quantity, quality, isUsable, itemId = GetQuestLogRewardInfo(1, quest.questId)
 						if itemName then
+							hasReward = true
 							quest.reward.itemTexture = itemTexture
 							quest.reward.itemId = itemId
 							quest.reward.itemQuality = quality
@@ -372,6 +374,7 @@ local RetrieveWorldQuests = function(mapId)
 					-- gold reward
 					local money = GetQuestLogRewardMoney(quest.questId);
 					if money > 0 then
+						hasReward = true
 						quest.reward.money = money
 						quest.sort = SORT_ORDER.MONEY
 
@@ -387,6 +390,7 @@ local RetrieveWorldQuests = function(mapId)
 
 						local name, texture, numItems = GetQuestLogRewardCurrencyInfo(i, quest.questId)
 						if name then
+							hasReward = true
 							quest.reward.resourceName = name
 							quest.reward.resourceTexture = texture
 							quest.reward.resourceAmount = numItems
@@ -403,6 +407,8 @@ local RetrieveWorldQuests = function(mapId)
 							end
 						end
 					end
+
+					if not hasReward then needsRefresh = true end -- quests always have a reward, if not api returned bad data
 
 					for _, bounty in ipairs(bounties) do
 						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
@@ -513,6 +519,11 @@ function BWQ:UpdateQuestData()
 	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
 	if originalMap == 751 then
 		SetMapZoom(WORLDMAP_MAELSTROM_ID)
+	if needsRefresh then
+		needsRefresh = false
+		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
+	end
+
 	else
 		-- set map back to the original map from before updating
 		SetMapZoom(originalContinent)

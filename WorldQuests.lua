@@ -128,8 +128,11 @@ BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 local Block_OnLeave = function(self)
-	if not BWQcfg["attachToWorldMap"] then
+	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
 		if not BWQ:IsMouseOver() then
+			BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
+			BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
+
 			BWQ:Hide()
 		end
 	end
@@ -173,7 +176,11 @@ local CreateErrorFS = function()
 end
 
 function BWQ:WorldQuestsUnlocked()
-	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341/a-world-of-quests
+	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341
+		if BWQcfg.attachToWorldMap and WorldMapFrame:IsShown() then -- don't show error box on map
+			BWQ:Hide()
+			return false
+		end
 		if not BWQ.errorFS then CreateErrorFS() end
 
 		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
@@ -1036,8 +1043,6 @@ end
 
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
-BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 BWQ:SetScript("OnEvent", function(self, event)
 	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
 		skipNextUpdate = false
@@ -1088,13 +1093,19 @@ BWQ:SetScript("OnEvent", function(self, event)
 
 		hooksecurefunc(WorldMapFrame, "Hide", function(self)
 			if BWQcfg["attachToWorldMap"] then
+				BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
+				BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
+
 				BWQ:Hide()
 			end
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if BWQcfg["attachToWorldMap"] then
-				BWQ:UpdateBlock()
+				BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+				BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+
 				BWQ:AttachToWorldMap()
+				BWQ:UpdateBlock()
 			end
 		end)
 
@@ -1110,9 +1121,10 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	text = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
-		if not BWQcfg["attachToWorldMap"] then
+		if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
 			CloseDropDownMenus()
-			BWQ:UpdateBlock()
+			BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+			BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 
 			blockYPos = select(2, self:GetCenter())
 			showDownwards = blockYPos > UIParent:GetHeight() / 2
@@ -1120,6 +1132,8 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 			BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
 			BWQ:SetFrameStrata("DIALOG")
 			BWQ:Show()
+
+			BWQ:UpdateBlock()
 		end
 	end,
 	OnLeave = Block_OnLeave,

@@ -509,13 +509,16 @@ function BWQ:UpdateBountyData()
 	end
 end
 
+local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	local _, _, _, isMicroDungeon, _ = GetMapInfo()
-	if isMicroDungeon and WorldMapFrame:IsShown() then return end -- don't update when map is on a micro dungeon, need to rely on updates when map is closed
+	--if isMicroDungeon and WorldMapFrame:IsShown() then return end -- don't update when map is on a micro dungeon, need to rely on updates when map is closed
 
-	local originalMap = GetCurrentMapAreaID()
-	local originalContinent = GetCurrentMapContinent()
-	local originalDungeonLevel = GetCurrentMapDungeonLevel()
+	if not isMicroDungeon then
+		originalMap = GetCurrentMapAreaID()
+		originalContinent = GetCurrentMapContinent()
+		originalDungeonLevel = GetCurrentMapDungeonLevel()
+	end
 
 	numQuestsTotal = 0
 	for mapIndex = 1, #MAP_ZONES do
@@ -523,19 +526,23 @@ function BWQ:UpdateQuestData()
 		numQuestsTotal = numQuestsTotal + MAP_ZONES[mapIndex].numQuests
 	end
 
-	-- setting the maelstrom continent map via SetMapByID would make it non-interactive
-	if originalMap == 751 then
-		SetMapZoom(WORLDMAP_MAELSTROM_ID)
 	if needsRefresh then
 		needsRefresh = false
 		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
 	end
 
+	if not isMicroDungeon then
+		-- setting the maelstrom continent map via SetMapByID would make it non-interactive
+		if originalMap == 751 then
+			SetMapZoom(WORLDMAP_MAELSTROM_ID)
+		else
+			-- set map back to the original map from before updating
+			SetMapZoom(originalContinent)
+			SetMapByID(originalMap)
+			SetDungeonMapLevel(originalDungeonLevel)
+		end
 	else
-		-- set map back to the original map from before updating
-		SetMapZoom(originalContinent)
-		SetMapByID(originalMap)
-		SetDungeonMapLevel(originalDungeonLevel)
+		SetMapToCurrentZone()
 	end
 end
 

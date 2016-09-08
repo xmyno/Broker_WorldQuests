@@ -271,6 +271,12 @@ local Row_OnClick = function(row)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(row.mapId)
 
+	WorldMapPing.Ping:Stop()
+	local x = row.quest.x * WorldMapPlayersFrame:GetWidth()
+	local y = -1 * row.quest.y * WorldMapPlayersFrame:GetHeight()
+	WorldMapPing:SetPoint("CENTER", WorldMapPlayersFrame, "TOPLEFT", x, y);
+	WorldMapPing.Ping:Play()
+
 	if IsWorldQuestHardWatched(row.quest.questId) then
 		SetSuperTrackedQuestID(row.quest.questId)
 	else
@@ -322,6 +328,8 @@ local RetrieveWorldQuests = function(mapId)
 					-- GetQuestsForPlayerByMapID fields
 					quest.questId = questList[i].questId
 					quest.numObjectives = questList[i].numObjectives
+					quest.x = questList[i].x
+					quest.y = questList[i].y
 
 					-- GetQuestTagInfo fields
 					quest.tagId = tagId

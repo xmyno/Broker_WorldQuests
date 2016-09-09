@@ -643,7 +643,7 @@ function BWQ:RenderRows()
 end
 
 function BWQ:UpdateBlock()
-	if not BWQ:WorldQuestsUnlocked() then return end
+	if not BWQ:WorldQuestsUnlocked() or InCombatLockdown() then return end
 
 	offsetTop = -15 -- initial padding from top
 	BWQ:UpdateBountyData()

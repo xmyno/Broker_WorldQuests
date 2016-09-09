@@ -161,6 +161,7 @@ local numQuestsTotal, totalWidth, offsetTop = 0, 0, -15
 local showDownwards = false
 local blockYPos = 0
 local highlightedRow = true
+local artifactPowerSpellName = select(1, GetSpellInfo(228111))
 
 local CreateBountyBoardFS = function()
 	BWQ.bountyBoardFS = BWQ:CreateFontString("BWQbountyBoardFS", "OVERLAY", "SystemFont_Shadow_Med1")
@@ -214,7 +215,7 @@ function BWQ:GetArtifactPowerValue(itemId)
 	_, itemLink = GetItemInfo(itemId)
 	ArtifactPowerScanTooltip:SetOwner (BWQ, "ANCHOR_NONE")
 	ArtifactPowerScanTooltip:SetHyperlink (itemLink)
-	return _G["ArtifactPowerScanTooltipTextLeft4"]:GetText():match("%d.-%s") or ""
+	return _G["ArtifactPowerScanTooltipTextLeft4"]:GetText():gsub("%p", ""):match("%d+") or ""
 end
 
 local FormatTimeLeftString = function(timeLeft)
@@ -352,7 +353,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.itemQuantity = quantity
 
 							local itemSpell = GetItemSpell(quest.reward.itemId)
-							if itemSpell and itemSpell == "Empowering" then
+							if itemSpell and artifactPowerSpellName and itemSpell == artifactPowerSpellName then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
 								if BWQcfg.showArtifactPower then quest.hide = false end
@@ -754,7 +755,7 @@ function BWQ:UpdateBlock()
 				if button.quest.reward.itemName or button.quest.reward.artifactPower then
 					local itemText
 					if button.quest.reward.artifactPower then
-						itemText = string.format("|cffe5cc80[%sArtifact Power]|r", button.quest.reward.artifactPower)
+						itemText = string.format("|cffe5cc80[%s Artifact Power]|r", button.quest.reward.artifactPower)
 					else
 						itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex, button.quest.reward.itemName)
 					end

@@ -331,7 +331,6 @@ local RetrieveWorldQuests = function(mapId)
 	local numQuests = 0
 
 	-- set map so api returns proper values for that map
-	SetMapByID(mapId)
 	local questList = GetQuestsForPlayerByMapID(mapId)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
@@ -567,6 +566,8 @@ function BWQ:UpdateQuestData()
 		originalDungeonLevel = GetCurrentMapDungeonLevel()
 	end
 
+	SetMapByID(1007) -- Broken Isles map, able to query all world quests on it
+
 	numQuestsTotal = 0
 	for mapIndex = 1, #MAP_ZONES do
 		MAP_ZONES[mapIndex].quests, MAP_ZONES[mapIndex].numQuests = RetrieveWorldQuests(MAP_ZONES[mapIndex].id)
@@ -578,15 +579,18 @@ function BWQ:UpdateQuestData()
 		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
 	end
 
+	-- set map back to the original map from before updating
 	if not isMicroDungeon then
 		-- setting the maelstrom continent map via SetMapByID would make it non-interactive
 		if originalMap == 751 then
 			SetMapZoom(WORLDMAP_MAELSTROM_ID)
-		else
-			-- set map back to the original map from before updating
+		elseif originalMap == -1 then
 			SetMapZoom(originalContinent)
+		else
 			SetMapByID(originalMap)
-			SetDungeonMapLevel(originalDungeonLevel)
+			if originalDungeonLevel ~= 0 then
+				SetDungeonMapLevel(originalDungeonLevel)
+			end
 		end
 	else
 		SetMapToCurrentZone()
@@ -1098,9 +1102,11 @@ end
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
 BWQ:SetScript("OnEvent", function(self, event)
-	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
+	if event == "QUEST_LOG_UPDATE" then
+		if not skipNextUpdate then
+			BWQ:UpdateBlock()
+		end
 		skipNextUpdate = false
-		BWQ:UpdateBlock()
 	--[[
 	Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
 	To avoid setting the currently shown map again, which would hide the quest details,

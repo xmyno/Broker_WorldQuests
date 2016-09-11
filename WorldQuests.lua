@@ -254,7 +254,6 @@ local ShowQuestObjectiveTooltip = function(row)
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
 	end
 
-	GameTooltip:SetFrameLevel(10)
 	GameTooltip:Show()
 end
 
@@ -263,7 +262,6 @@ local ShowQuestLogItemTooltip = function(button)
 	if name and texture then
 		GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-		GameTooltip:SetFrameLevel(10)
 		GameTooltip:Show()
 	end
 end

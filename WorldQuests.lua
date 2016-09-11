@@ -127,6 +127,40 @@ BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
+
+-- map ping around objective when clicking quest in list
+local mapPingFrame = CreateFrame("Frame", "BWQ_MapPingFrame", WorldMapPlayersFrame)
+mapPingFrame:SetSize(64, 64)
+mapPingFrame:SetFrameStrata("DIALOG")
+mapPingFrame:SetFrameLevel(2001)
+BWQ.mapPingFrame = mapPingFrame
+local expandingRing = mapPingFrame:CreateTexture("expandingRing")
+expandingRing:SetTexture("Interface\\minimap\\UI-Minimap-Ping-Expand")
+expandingRing:SetSize(25, 25)
+expandingRing:SetPoint("CENTER", mapPingFrame)
+expandingRing:SetBlendMode("ADD")
+mapPingFrame.expandingRing = expandingRing
+local animationGroup = mapPingFrame:CreateAnimationGroup()
+animationGroup:SetLooping("REPEAT")
+animationGroup:SetScript("OnPlay", function(self)
+	BWQ.mapPingFrame:Show()
+end)
+animationGroup:SetScript("OnStop", function(self)
+	BWQ.mapPingFrame:Hide()
+end)
+local expandingAnimation = animationGroup:CreateAnimation("Scale")
+expandingAnimation:SetChildKey("expandingRing")
+expandingAnimation:SetScale(1.75, 1.75)
+expandingAnimation:SetDuration(0.5)
+expandingAnimation:SetOrder(1)
+local shrinkAnimation = animationGroup:CreateAnimation("Scale")
+shrinkAnimation:SetChildKey("expandingRing")
+shrinkAnimation:SetScale(0.7, 0.7)
+shrinkAnimation:SetDuration(0.5)
+shrinkAnimation:SetOrder(2)
+mapPingFrame.animationGroup = animationGroup
+
+
 local Block_OnLeave = function(self)
 	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
 		if not BWQ:IsMouseOver() then
@@ -270,11 +304,19 @@ local Row_OnClick = function(row)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(row.mapId)
 
-	WorldMapPing.Ping:Stop()
-	local x = row.quest.x * WorldMapPlayersFrame:GetWidth()
-	local y = -1 * row.quest.y * WorldMapPlayersFrame:GetHeight()
-	WorldMapPing:SetPoint("CENTER", WorldMapPlayersFrame, "TOPLEFT", x, y);
-	WorldMapPing.Ping:Play()
+	-- we need to get coordinates when on the specific map, broken isles returns coordinates for the broken isles map, not the specific
+	-- todo: improve, to not query on every click
+	local x, y
+	quests = C_TaskQuest.GetQuestsForPlayerByMapID(row.mapId)
+	for _, v in next, quests do
+		if v.questId == row.quest.questId then
+			x = v.x * WorldMapPlayersFrame:GetWidth()
+			y = -1 * v.y * WorldMapPlayersFrame:GetHeight()
+		end
+	end
+	BWQ.mapPingFrame.mapId = row.mapId
+  	BWQ.mapPingFrame:SetPoint("CENTER", WorldMapPlayersFrame, "TOPLEFT", x, y)
+  	BWQ.mapPingFrame.animationGroup:Play()
 
 	if IsWorldQuestHardWatched(row.quest.questId) then
 		SetSuperTrackedQuestID(row.quest.questId)
@@ -327,8 +369,6 @@ local RetrieveWorldQuests = function(mapId)
 					-- GetQuestsForPlayerByMapID fields
 					quest.questId = questList[i].questId
 					quest.numObjectives = questList[i].numObjectives
-					quest.x = questList[i].x
-					quest.y = questList[i].y
 
 					-- GetQuestTagInfo fields
 					quest.tagId = tagId
@@ -1068,6 +1108,9 @@ BWQ:SetScript("OnEvent", function(self, event)
 	--]]
 	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
+		if BWQ.mapPingFrame.mapId and BWQ.mapPingFrame.mapId ~= GetCurrentMapAreaID() then
+			BWQ.mapPingFrame.animationGroup:Stop()
+		end
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQcfg = BWQcfg or defaultConfig
 		for i, v in next, defaultConfig do
@@ -1112,6 +1155,8 @@ BWQ:SetScript("OnEvent", function(self, event)
 
 				BWQ:Hide()
 			end
+
+			BWQ.mapPingFrame.animationGroup:Stop()
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if BWQcfg["attachToWorldMap"] then

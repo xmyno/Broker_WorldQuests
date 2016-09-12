@@ -127,6 +127,40 @@ BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
+
+-- map ping around objective when clicking quest in list
+local mapPingFrame = CreateFrame("Frame", "BWQ_MapPingFrame", WorldMapPlayersFrame)
+mapPingFrame:SetSize(64, 64)
+mapPingFrame:SetFrameStrata("DIALOG")
+mapPingFrame:SetFrameLevel(2001)
+BWQ.mapPingFrame = mapPingFrame
+local expandingRing = mapPingFrame:CreateTexture("expandingRing")
+expandingRing:SetTexture("Interface\\minimap\\UI-Minimap-Ping-Expand")
+expandingRing:SetSize(25, 25)
+expandingRing:SetPoint("CENTER", mapPingFrame)
+expandingRing:SetBlendMode("ADD")
+mapPingFrame.expandingRing = expandingRing
+local animationGroup = mapPingFrame:CreateAnimationGroup()
+animationGroup:SetLooping("REPEAT")
+animationGroup:SetScript("OnPlay", function(self)
+	BWQ.mapPingFrame:Show()
+end)
+animationGroup:SetScript("OnStop", function(self)
+	BWQ.mapPingFrame:Hide()
+end)
+local expandingAnimation = animationGroup:CreateAnimation("Scale")
+expandingAnimation:SetChildKey("expandingRing")
+expandingAnimation:SetScale(1.75, 1.75)
+expandingAnimation:SetDuration(0.5)
+expandingAnimation:SetOrder(1)
+local shrinkAnimation = animationGroup:CreateAnimation("Scale")
+shrinkAnimation:SetChildKey("expandingRing")
+shrinkAnimation:SetScale(0.7, 0.7)
+shrinkAnimation:SetDuration(0.5)
+shrinkAnimation:SetOrder(2)
+mapPingFrame.animationGroup = animationGroup
+
+
 local Block_OnLeave = function(self)
 	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
 		if not BWQ:IsMouseOver() then
@@ -254,7 +288,6 @@ local ShowQuestObjectiveTooltip = function(row)
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
 	end
 
-	GameTooltip:SetFrameLevel(10)
 	GameTooltip:Show()
 end
 
@@ -263,7 +296,6 @@ local ShowQuestLogItemTooltip = function(button)
 	if name and texture then
 		GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
 		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-		GameTooltip:SetFrameLevel(10)
 		GameTooltip:Show()
 	end
 end
@@ -271,6 +303,20 @@ end
 local Row_OnClick = function(row)
 	ShowUIPanel(WorldMapFrame)
 	SetMapByID(row.mapId)
+
+	-- we need to get coordinates when on the specific map, broken isles returns coordinates for the broken isles map, not the specific
+	-- todo: improve, to not query on every click
+	local x, y
+	quests = C_TaskQuest.GetQuestsForPlayerByMapID(row.mapId)
+	for _, v in next, quests do
+		if v.questId == row.quest.questId then
+			x = v.x * WorldMapPlayersFrame:GetWidth()
+			y = -1 * v.y * WorldMapPlayersFrame:GetHeight()
+		end
+	end
+	BWQ.mapPingFrame.mapId = row.mapId
+  	BWQ.mapPingFrame:SetPoint("CENTER", WorldMapPlayersFrame, "TOPLEFT", x, y)
+  	BWQ.mapPingFrame.animationGroup:Play()
 
 	if IsWorldQuestHardWatched(row.quest.questId) then
 		SetSuperTrackedQuestID(row.quest.questId)
@@ -285,7 +331,6 @@ local RetrieveWorldQuests = function(mapId)
 	local numQuests = 0
 
 	-- set map so api returns proper values for that map
-	SetMapByID(mapId)
 	local questList = GetQuestsForPlayerByMapID(mapId)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
@@ -521,6 +566,8 @@ function BWQ:UpdateQuestData()
 		originalDungeonLevel = GetCurrentMapDungeonLevel()
 	end
 
+	SetMapByID(1007) -- Broken Isles map, able to query all world quests on it
+
 	numQuestsTotal = 0
 	for mapIndex = 1, #MAP_ZONES do
 		MAP_ZONES[mapIndex].quests, MAP_ZONES[mapIndex].numQuests = RetrieveWorldQuests(MAP_ZONES[mapIndex].id)
@@ -532,15 +579,18 @@ function BWQ:UpdateQuestData()
 		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
 	end
 
+	-- set map back to the original map from before updating
 	if not isMicroDungeon then
 		-- setting the maelstrom continent map via SetMapByID would make it non-interactive
 		if originalMap == 751 then
 			SetMapZoom(WORLDMAP_MAELSTROM_ID)
-		else
-			-- set map back to the original map from before updating
+		elseif originalMap == -1 then
 			SetMapZoom(originalContinent)
+		else
 			SetMapByID(originalMap)
-			SetDungeonMapLevel(originalDungeonLevel)
+			if originalDungeonLevel ~= 0 then
+				SetDungeonMapLevel(originalDungeonLevel)
+			end
 		end
 	else
 		SetMapToCurrentZone()
@@ -635,7 +685,7 @@ function BWQ:RenderRows()
 end
 
 function BWQ:UpdateBlock()
-	if not BWQ:WorldQuestsUnlocked() then return end
+	if not BWQ:WorldQuestsUnlocked() or InCombatLockdown() then return end
 
 	offsetTop = -15 -- initial padding from top
 	BWQ:UpdateBountyData()
@@ -1052,9 +1102,11 @@ end
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
 BWQ:SetScript("OnEvent", function(self, event)
-	if event == "QUEST_LOG_UPDATE" and not skipNextUpdate then
+	if event == "QUEST_LOG_UPDATE" then
+		if not skipNextUpdate then
+			BWQ:UpdateBlock()
+		end
 		skipNextUpdate = false
-		BWQ:UpdateBlock()
 	--[[
 	Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
 	To avoid setting the currently shown map again, which would hide the quest details,
@@ -1062,6 +1114,9 @@ BWQ:SetScript("OnEvent", function(self, event)
 	--]]
 	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
+		if BWQ.mapPingFrame.mapId and BWQ.mapPingFrame.mapId ~= GetCurrentMapAreaID() then
+			BWQ.mapPingFrame.animationGroup:Stop()
+		end
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQcfg = BWQcfg or defaultConfig
 		for i, v in next, defaultConfig do
@@ -1106,6 +1161,8 @@ BWQ:SetScript("OnEvent", function(self, event)
 
 				BWQ:Hide()
 			end
+
+			BWQ.mapPingFrame.animationGroup:Stop()
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if BWQcfg["attachToWorldMap"] then

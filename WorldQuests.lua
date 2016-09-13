@@ -325,6 +325,8 @@ local Row_OnClick = function(row)
 	end
 end
 
+
+local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
 	local quests = {}
@@ -574,8 +576,9 @@ function BWQ:UpdateQuestData()
 		numQuestsTotal = numQuestsTotal + MAP_ZONES[mapIndex].numQuests
 	end
 
-	if needsRefresh then
+	if needsRefresh and updateTries <= 5 then
 		needsRefresh = false
+		updateTries = updateTries + 1
 		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
 	end
 
@@ -684,8 +687,17 @@ function BWQ:RenderRows()
 	end
 end
 
+function BWQ:RunUpdate()
+	currentTime = GetTime()
+	if currentTime - lastUpdate > 5 then
+		updateTries = 1
+		BWQ:UpdateBlock()
+		lastUpdate = currentTime
+	end
+end
+
 function BWQ:UpdateBlock()
-	if not BWQ:WorldQuestsUnlocked() or InCombatLockdown() then return end
+	if not BWQ:WorldQuestsUnlocked() then return end
 
 	offsetTop = -15 -- initial padding from top
 	BWQ:UpdateBountyData()
@@ -1104,7 +1116,7 @@ BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
 BWQ:SetScript("OnEvent", function(self, event)
 	if event == "QUEST_LOG_UPDATE" then
 		if not skipNextUpdate then
-			BWQ:UpdateBlock()
+			BWQ:RunUpdate()
 		end
 		skipNextUpdate = false
 	--[[
@@ -1170,7 +1182,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 				BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 
 				BWQ:AttachToWorldMap()
-				BWQ:UpdateBlock()
+				BWQ:RunUpdate()
 			end
 		end)
 
@@ -1198,7 +1210,7 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 			BWQ:SetFrameStrata("DIALOG")
 			BWQ:Show()
 
-			BWQ:UpdateBlock()
+			BWQ:RunUpdate()
 		end
 	end,
 	OnLeave = Block_OnLeave,

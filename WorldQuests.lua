@@ -483,7 +483,7 @@ local RetrieveWorldQuests = function(mapId)
 					if firstRun then
 						quest.wasSaved = BWQcache.questIds[questId] ~= nil
 					end
-					if quest.wasSaved or currentTime - quest.timeAdded > 30 then
+					if quest.wasSaved or currentTime - quest.timeAdded > 900 then
 						quest.isNew = false
 					else
 						quest.isNew = true

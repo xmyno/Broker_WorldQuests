@@ -256,7 +256,7 @@ local FormatTimeLeftString = function(timeLeft)
 	-- 	timeLeftStr = string.format("%.0fd", timeLeft / 60 / 24)
 	-- end
 	if timeLeft >= 60 then -- hours
-		timeLeftStr = string.format("%.0fh", timeLeft / 60)
+		timeLeftStr = string.format("%.0fh", math.floor(timeLeft / 60))
 	end
 	timeLeftStr = string.format("%s%s%sm", timeLeftStr, timeLeftStr ~= "" and " " or "", timeLeft % 60) -- always show minutes
 

@@ -251,7 +251,7 @@ end
 
 local ArtifactPowerScanTooltip = CreateFrame ("GameTooltip", "ArtifactPowerScanTooltip", nil, "GameTooltipTemplate")
 function BWQ:GetArtifactPowerValue(itemId)
-	_, itemLink = GetItemInfo(itemId)
+	local _, itemLink = GetItemInfo(itemId)
 	ArtifactPowerScanTooltip:SetOwner (BWQ, "ANCHOR_NONE")
 	ArtifactPowerScanTooltip:SetHyperlink (itemLink)
 	return _G["ArtifactPowerScanTooltipTextLeft4"]:GetText():gsub("%p", ""):match("%d+") or ""
@@ -273,16 +273,18 @@ local FormatTimeLeftString = function(timeLeft)
 	return timeLeftStr
 end
 
+
+local tip = GameTooltip
 local ShowQuestObjectiveTooltip = function(row)
-	GameTooltip:SetOwner(row, "ANCHOR_CURSOR", 0, -5)
+	tip:SetOwner(row, "ANCHOR_CURSOR")
 	local color = WORLD_QUEST_QUALITY_COLORS[row.quest.isRare]
-	GameTooltip:AddLine(row.quest.title, color.r, color.g, color.b, true)
+	tip:AddLine(row.quest.title, color.r, color.g, color.b, true)
 
 	for objectiveIndex = 1, row.quest.numObjectives do
 		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(row.quest.questId, objectiveIndex, false);
 		if objectiveText and #objectiveText > 0 then
 			color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
-			GameTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
+			tip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
 		end
 	end
 
@@ -293,15 +295,15 @@ local ShowQuestObjectiveTooltip = function(row)
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
 	end
 
-	GameTooltip:Show()
+	tip:Show()
 end
 
 local ShowQuestLogItemTooltip = function(button)
 	local name, texture = GetQuestLogRewardInfo(1, button.quest.questId)
 	if name and texture then
-		GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-		GameTooltip:Show()
+		tip:SetOwner(button.reward, "ANCHOR_CURSOR")
+		tip:SetQuestLogItem("reward", 1, button.quest.questId)
+		tip:Show()
 	end
 end
 
@@ -405,6 +407,8 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.itemQuantity = quantity
 
 							local itemSpell = GetItemSpell(quest.reward.itemId)
+							local _, itemLink, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
+							quest.reward.itemLink = itemLink
 							if itemSpell and artifactPowerSpellName and itemSpell == artifactPowerSpellName then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
@@ -413,7 +417,6 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.itemName = itemName
 
 								if BWQcfg.showItems then
-									_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 									if class == "Tradeskill" then
 										quest.sort = SORT_ORDER.PROFESSION
 										if BWQcfg.showCraftingMaterials then quest.hide = false end
@@ -477,24 +480,26 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					-- quest type filters
-					if not BWQcfg.showPetBattle and quest.worldQuestType == 5 then quest.hide = true
+					if quest.worldQuestType == 5 then
+						if not BWQcfg.showPetBattle then quest.hide = true end
 					elseif quest.worldQuestType == 2 then
 						if BWQcfg.showProfession then
-							if not BWQcfg.showProfessionAlchemy and quest.tagId == 118 then quest.hide = true
-							elseif not BWQcfg.showProfessionArchaeology and quest.tagId == 129 then quest.hide = true
-							elseif not BWQcfg.showProfessionBlacksmithing and quest.tagId == 116 then quest.hide = true
-							elseif not BWQcfg.showProfessionCooking and quest.tagId == 131 then quest.hide = true
-							elseif not BWQcfg.showProfessionEnchanting and quest.tagId == 123 then quest.hide = true
-							elseif not BWQcfg.showProfessionEngineering and quest.tagId == 122 then quest.hide = true
-							elseif not BWQcfg.showProfessionFirstAid and quest.tagId == 114 then quest.hide = true
-							elseif not BWQcfg.showProfessionFishing and quest.tagId == 130 then quest.hide = true
-							elseif not BWQcfg.showProfessionHerbalism and quest.tagId == 119 then quest.hide = true
-							elseif not BWQcfg.showProfessionInscription and quest.tagId == 126 then quest.hide = true
-							elseif not BWQcfg.showProfessionJewelcrafting and quest.tagId == 125 then quest.hide = true
-							elseif not BWQcfg.showProfessionLeatherworking and quest.tagId == 117 then quest.hide = true
-							elseif not BWQcfg.showProfessionMining and quest.tagId == 120 then quest.hide = true
-							elseif not BWQcfg.showProfessionSkinning and quest.tagId == 124 then quest.hide = true
-							elseif not BWQcfg.showProfessionTailoring and quest.tagId == 121 then quest.hide = true
+
+							if     quest.tagId == 118 then 	if BWQcfg.showProfessionAlchemy 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 129 then	if BWQcfg.showProfessionArchaeology 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 116 then 	if BWQcfg.showProfessionBlacksmithing 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 131 then 	if BWQcfg.showProfessionCooking 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 123 then 	if BWQcfg.showProfessionEnchanting 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 122 then 	if BWQcfg.showProfessionEngineering 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 114 then 	if BWQcfg.showProfessionFirstAid 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 130 then 	if BWQcfg.showProfessionFishing 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 119 then 	if BWQcfg.showProfessionHerbalism 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 126 then 	if BWQcfg.showProfessionInscription 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 125 then 	if BWQcfg.showProfessionJewelcrafting 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 117 then 	if BWQcfg.showProfessionLeatherworking 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 120 then 	if BWQcfg.showProfessionMining 			then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 124 then 	if BWQcfg.showProfessionSkinning 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 121 then 	if BWQcfg.showProfessionTailoring 		then quest.hide = false else quest.hide = true end
 							end
 						else
 							quest.hide = true
@@ -504,12 +509,12 @@ local RetrieveWorldQuests = function(mapId)
 					end
 					-- always show bounty quests filter
 					if (BWQcfg.alwaysShowBountyQuests and #quest.bounties > 0) or
-						(BWQcfg.alwaysShowCourtOfFarondis and quest.faction == "Court of Farondis") or
-						(BWQcfg.alwaysShowDreamweavers and quest.faction == "Dreamweavers") or
-						(BWQcfg.alwaysShowHighmountainTribe and quest.faction == "Highmountain Tribe") or
-						(BWQcfg.alwaysShowNightfallen and quest.faction == "The Nightfallen") or
-						(BWQcfg.alwaysShowWardens and quest.faction == "The Wardens") or
-						(BWQcfg.alwaysShowValarjar and quest.faction == "Valarjar") then
+					   (BWQcfg.alwaysShowCourtOfFarondis 	and (mapId == 1015 or mapId == 1096)) or
+					   (BWQcfg.alwaysShowDreamweavers 		and mapId == 1018) or
+					   (BWQcfg.alwaysShowHighmountainTribe 	and mapId == 1024) or
+					   (BWQcfg.alwaysShowNightfallen 		and mapId == 1033) or
+					   (BWQcfg.alwaysShowWardens 			and quest.faction == "The Wardens") or
+					   (BWQcfg.alwaysShowValarjar 			and mapId == 1017) then
 
 						-- pet battle override
 						if BWQcfg.hidePetBattleBountyQuests and not BWQcfg.showPetBattle and quest.worldQuestType == 5 then
@@ -552,7 +557,7 @@ function BWQ:UpdateBountyData()
 		end
 	end
 
-	if not BWQ.bountyBoardFS then CreateBountyBoardFS(offsetY) end
+	if not BWQ.bountyBoardFS then CreateBountyBoardFS(offsetTop) end
 	if #bounties > 0 then
 		BWQ.bountyBoardFS:Show()
 		BWQ.bountyBoardFS:SetText(bountyBoardText)
@@ -988,8 +993,10 @@ function BWQ:SetupConfigMenu()
 	configMenu = CreateFrame("Frame", "BWQ_ConfigMenu")
 	configMenu.displayMode = "MENU"
 
-	options = {
+	local options = {
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
+		{ text = "Show list frame on click", check = "showOnClick" },
+		{ text = "" },
 		{ text = "Always show quests for active bounty", check = "alwaysShowBountyQuests" },
 		{ text = "Hide pet battle quests even when active bounty", check = "hidePetBattleBountyQuests" },
 		{ text = "" },
@@ -1043,24 +1050,27 @@ function BWQ:SetupConfigMenu()
 		{ text = "The Nightfallen", check="alwaysShowNightfallen" },
 		{ text = "The Wardens", check="alwaysShowWardens" },
 		{ text = "Valarjar", check="alwaysShowValarjar" },
-
-
 	}
+
+	local SetOption = function(bt, var, val)
+		BWQcfg[var] = val or not BWQcfg[var]
+		BWQ:UpdateBlock()
+		if WorldMapFrame:IsShown() then
+			BWQ:OpenConfigMenu(nil)
+		end
+
+		-- toggle block when changing attach setting
+		if var == "attachToWorldMap" then
+			BWQ:Hide()
+			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
+				BWQ:AttachToWorldMap()
+			end
+		end
+	end
 
 	configMenu.initialize = function(self, level)
 		if not level then return end
 		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or options
-		if type(opt)=="string" and opt:find("^align") then
-			for _, pos in ipairs(aligns) do
-				info = wipe(info)
-				info.text = pos
-				info.checked = BWQcfg[opt] == pos
-				info.func, info.arg1, info.arg2 = SetOption, opt, pos
-				info.keepShownOnClick = true
-				UIDropDownMenu_AddButton( info, level )
-			end
-			return
-		end
 		for i, v in ipairs(opt) do
 			info = wipe(info)
 			info.text = v.text
@@ -1077,22 +1087,6 @@ function BWQ:SetupConfigMenu()
 			end
 			info.hasArrow, info.value = v.submenu, v.submenu
 			UIDropDownMenu_AddButton( info, level )
-		end
-	end
-
-	SetOption = function(bt, var, val)
-		BWQcfg[var] = val or not BWQcfg[var]
-		BWQ:UpdateBlock()
-		if WorldMapFrame:IsShown() then
-			BWQ:OpenConfigMenu(nil)
-		end
-
-		-- toggle block when changing attach setting
-		if var == "attachToWorldMap" then
-			BWQ:Hide()
-			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
-				BWQ:AttachToWorldMap()
-			end
 		end
 	end
 

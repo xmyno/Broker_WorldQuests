@@ -689,7 +689,7 @@ end
 
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
-	BWQcache.questIds = {}--BWQcache.questIds or {}
+	BWQcache.questIds = BWQcache.questIds or {}
 	if not InCombatLockdown() then
 		local _, _, _, isMicroDungeon, _ = GetMapInfo()
 		if not isMicroDungeon then

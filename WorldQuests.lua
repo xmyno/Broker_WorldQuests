@@ -221,6 +221,13 @@ function BWQ:WorldQuestsUnlocked()
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:Show()
 
+		-- TODO: improve this, don't always check this when character has it once
+		for mapId in next, MAP_ZONES do
+			for _, button in next, MAP_ZONES[mapId].buttons do
+				button:Hide()
+			end
+		end
+
 		return false
 	else
 		if BWQ.errorFS then

@@ -475,7 +475,7 @@ local RetrieveWorldQuests = function(mapId)
 			if timeLeft > 0 then -- only show available quests
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
 				if worldQuestType ~= nil then
-					questId = questList[i].questId
+					local questId = questList[i].questId
 					table.insert(MAP_ZONES[mapId].questsSort, questId)
 					local quest = MAP_ZONES[mapId].quests[questId] or {}
 

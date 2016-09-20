@@ -3,6 +3,7 @@
 ## Title: Broker_WorldQuests
 ## Version: r14
 ## SavedVariables: BWQcfg
+## SavedVariablesPerCharacter: BWQcache
 ## Notes: Broker plugin to display world quests as a list.
 
 libs/LibStub.lua

@@ -47,13 +47,16 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 }
 
 local MAP_ZONES = {
-	{ id = 1015, name = GetMapNameByID(1015), buttons = {}, },  -- Aszuna
-	{ id = 1096, name = GetMapNameByID(1096), buttons = {}, },  -- Eye of Azshara
-	{ id = 1018, name = GetMapNameByID(1018), buttons = {}, },  -- Val'sharah
-	{ id = 1024, name = GetMapNameByID(1024), buttons = {}, },  -- Highmountain
-	{ id = 1017, name = GetMapNameByID(1017), buttons = {}, },  -- Stormheim
-	{ id = 1033, name = GetMapNameByID(1033), buttons = {}, },  -- Suramar
-	{ id = 1014, name = GetMapNameByID(1014), buttons = {}, },  -- Dalaran
+	[1015] = { id = 1015, name = GetMapNameByID(1015), quests = {}, buttons = {}, glows = {}, },  -- Aszuna
+	[1096] = { id = 1096, name = GetMapNameByID(1096), quests = {}, buttons = {}, glows = {}, },  -- Eye of Azshara
+	[1018] = { id = 1018, name = GetMapNameByID(1018), quests = {}, buttons = {}, glows = {}, },  -- Val'sharah
+	[1024] = { id = 1024, name = GetMapNameByID(1024), quests = {}, buttons = {}, glows = {}, },  -- Highmountain
+	[1017] = { id = 1017, name = GetMapNameByID(1017), quests = {}, buttons = {}, glows = {}, },  -- Stormheim
+	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, glows = {}, },  -- Suramar
+	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, glows = {}, },  -- Dalaran
+}
+local MAP_ZONES_SORT = {
+	1015, 1096, 1018, 1024, 1017, 1033, 1014
 }
 
 local SORT_ORDER = {
@@ -69,6 +72,7 @@ local SORT_ORDER = {
 local defaultConfig = {
 	-- general
 	attachToWorldMap = false,
+	showOnClick = false,
 	alwaysShowBountyQuests = true,
 	hidePetBattleBountyQuests = false,
 	-- reward type
@@ -109,7 +113,7 @@ local defaultConfig = {
 	alwaysShowHighmountainTribe = false,
 	alwaysShowNightfallen = false,
 	alwaysShowWardens = false,
-	alwaysShowValarjar = false
+	alwaysShowValarjar = false,
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
@@ -128,45 +132,9 @@ BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 
--- map ping around objective when clicking quest in list
-local mapPingFrame = CreateFrame("Frame", "BWQ_MapPingFrame", WorldMapPlayersFrame)
-mapPingFrame:SetSize(64, 64)
-mapPingFrame:SetFrameStrata("DIALOG")
-mapPingFrame:SetFrameLevel(2001)
-BWQ.mapPingFrame = mapPingFrame
-local expandingRing = mapPingFrame:CreateTexture("expandingRing")
-expandingRing:SetTexture("Interface\\minimap\\UI-Minimap-Ping-Expand")
-expandingRing:SetSize(25, 25)
-expandingRing:SetPoint("CENTER", mapPingFrame)
-expandingRing:SetBlendMode("ADD")
-mapPingFrame.expandingRing = expandingRing
-local animationGroup = mapPingFrame:CreateAnimationGroup()
-animationGroup:SetLooping("REPEAT")
-animationGroup:SetScript("OnPlay", function(self)
-	BWQ.mapPingFrame:Show()
-end)
-animationGroup:SetScript("OnStop", function(self)
-	BWQ.mapPingFrame:Hide()
-end)
-local expandingAnimation = animationGroup:CreateAnimation("Scale")
-expandingAnimation:SetChildKey("expandingRing")
-expandingAnimation:SetScale(1.75, 1.75)
-expandingAnimation:SetDuration(0.5)
-expandingAnimation:SetOrder(1)
-local shrinkAnimation = animationGroup:CreateAnimation("Scale")
-shrinkAnimation:SetChildKey("expandingRing")
-shrinkAnimation:SetScale(0.7, 0.7)
-shrinkAnimation:SetDuration(0.5)
-shrinkAnimation:SetOrder(2)
-mapPingFrame.animationGroup = animationGroup
-
-
 local Block_OnLeave = function(self)
 	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
 		if not BWQ:IsMouseOver() then
-			BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
-			BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
-
 			BWQ:Hide()
 		end
 	end
@@ -191,6 +159,7 @@ BWQ.slider:Hide()
 
 
 local bounties = {}
+local questIds = {}
 local numQuestsTotal, totalWidth, offsetTop = 0, 0, -15
 local showDownwards = false
 local blockYPos = 0
@@ -223,6 +192,13 @@ function BWQ:WorldQuestsUnlocked()
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:Show()
 
+		-- TODO: improve this, don't always check this when character has it once
+		for mapId in next, MAP_ZONES do
+			for _, button in next, MAP_ZONES[mapId].buttons do
+				button:Hide()
+			end
+		end
+
 		return false
 	else
 		if BWQ.errorFS then
@@ -246,7 +222,7 @@ end
 
 local ArtifactPowerScanTooltip = CreateFrame ("GameTooltip", "ArtifactPowerScanTooltip", nil, "GameTooltipTemplate")
 function BWQ:GetArtifactPowerValue(itemId)
-	_, itemLink = GetItemInfo(itemId)
+	local _, itemLink = GetItemInfo(itemId)
 	ArtifactPowerScanTooltip:SetOwner (BWQ, "ANCHOR_NONE")
 	ArtifactPowerScanTooltip:SetHyperlink (itemLink)
 	return _G["ArtifactPowerScanTooltipTextLeft4"]:GetText():gsub("%p", ""):match("%d+") or ""
@@ -258,7 +234,7 @@ local FormatTimeLeftString = function(timeLeft)
 	-- 	timeLeftStr = string.format("%.0fd", timeLeft / 60 / 24)
 	-- end
 	if timeLeft >= 60 then -- hours
-		timeLeftStr = string.format("%.0fh", timeLeft / 60)
+		timeLeftStr = string.format("%.0fh", math.floor(timeLeft / 60))
 	end
 	timeLeftStr = string.format("%s%s%sm", timeLeftStr, timeLeftStr ~= "" and " " or "", timeLeft % 60) -- always show minutes
 
@@ -268,16 +244,18 @@ local FormatTimeLeftString = function(timeLeft)
 	return timeLeftStr
 end
 
+
+local tip = GameTooltip
 local ShowQuestObjectiveTooltip = function(row)
-	GameTooltip:SetOwner(row, "ANCHOR_CURSOR", 0, -5)
+	tip:SetOwner(row, "ANCHOR_CURSOR")
 	local color = WORLD_QUEST_QUALITY_COLORS[row.quest.isRare]
-	GameTooltip:AddLine(row.quest.title, color.r, color.g, color.b, true)
+	tip:AddLine(row.quest.title, color.r, color.g, color.b, true)
 
 	for objectiveIndex = 1, row.quest.numObjectives do
 		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(row.quest.questId, objectiveIndex, false);
 		if objectiveText and #objectiveText > 0 then
 			color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
-			GameTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
+			tip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
 		end
 	end
 
@@ -288,52 +266,186 @@ local ShowQuestObjectiveTooltip = function(row)
 		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
 	end
 
-	GameTooltip:Show()
+	tip:Show()
 end
 
 local ShowQuestLogItemTooltip = function(button)
 	local name, texture = GetQuestLogRewardInfo(1, button.quest.questId)
 	if name and texture then
-		GameTooltip:SetOwner(button.reward, "ANCHOR_CURSOR", 0, -5)
-		GameTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
-		GameTooltip:Show()
+		tip:SetOwner(button.reward, "ANCHOR_CURSOR")
+		tip:SetQuestLogItem("reward", 1, button.quest.questId)
+		tip:Show()
+	end
+end
+
+
+-- super track map ping
+local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapButton)
+mapTextures:SetSize(64, 64)
+mapTextures:SetFrameStrata("DIALOG")
+mapTextures:SetFrameLevel(2001)
+local highlightArrow = mapTextures:CreateTexture("highlightArrow")
+highlightArrow:SetTexture("Interface\\minimap\\MiniMap-DeadArrow")
+highlightArrow:SetSize(56, 56)
+highlightArrow:SetRotation(3.14)
+highlightArrow:SetPoint("CENTER", mapTextures)
+highlightArrow:SetDrawLayer("ARTWORK", 1)
+mapTextures.highlightArrow = highlightArrow
+local animationGroup = mapTextures:CreateAnimationGroup()
+animationGroup:SetLooping("REPEAT")
+animationGroup:SetScript("OnPlay", function(self)
+	mapTextures.highlightArrow:Show()
+end)
+animationGroup:SetScript("OnStop", function(self)
+	mapTextures.highlightArrow:Hide()
+end)
+local downAnimation = animationGroup:CreateAnimation("Translation")
+downAnimation:SetChildKey("highlightArrow")
+downAnimation:SetOffset(0, -10)
+downAnimation:SetDuration(0.4)
+downAnimation:SetOrder(1)
+local upAnimation = animationGroup:CreateAnimation("Translation")
+upAnimation:SetChildKey("highlightArrow")
+upAnimation:SetOffset(0, 10)
+upAnimation:SetDuration(0.4)
+upAnimation:SetOrder(2)
+mapTextures.animationGroup = animationGroup
+BWQ.mapTextures = mapTextures
+
+
+function BWQ:QueryZoneQuestCoordinates(mapId)
+	if mapId == GetCurrentMapAreaID() then
+		local quests = GetQuestsForPlayerByMapID(mapId)
+		for _, v in next, quests do
+			if MAP_ZONES[mapId].quests[v.questId] then
+				MAP_ZONES[mapId].quests[v.questId].x = v.x
+				MAP_ZONES[mapId].quests[v.questId].y = v.y
+			end
+		end
+	end
+end
+
+function BWQ:CalculateMapPosition(x, y)
+	return x * WorldMapPlayersFrame:GetWidth(), -1 * y * WorldMapPlayersFrame:GetHeight()
+end
+
+function BWQ:CreateWatchGlow()
+	local texture = BWQ.mapTextures:CreateTexture("glowTexture")
+	texture:SetAtlas("worldquest-questmarker-glow", true);
+	texture:SetSize(48, 48)
+	texture:SetDesaturated(1)
+	texture:SetBlendMode("ADD")
+	texture:SetDrawLayer("BORDER", -1)
+	texture:SetVertexColor(1, 1, 1, 0.9)
+
+	return texture
+end
+
+function BWQ:UpdateWatchGlows(mapId)
+	if not MAP_ZONES[mapId] or not MAP_ZONES[mapId].questsSort then return end
+
+	for _, questId in next, MAP_ZONES[mapId].questsSort do
+		if IsWorldQuestHardWatched(questId) then
+			BWQ:AddWatchGlow(mapId, questId)
+			BWQ:ShowWatchGlow(mapId, questId)
+		else
+			BWQ:HideWatchGlow(mapId, questId)
+		end
+	end
+end
+
+function BWQ:ShowAllWatchGlows(mapId)
+	if not MAP_ZONES[mapId] then return end
+
+	for questId, glow in next, MAP_ZONES[mapId].glows do
+		if glow.active then
+			BWQ:ShowWatchGlow(mapId, questId)
+		end
+	end
+end
+
+function BWQ:ShowWatchGlow(mapId, questId)
+	if not MAP_ZONES[mapId] or not MAP_ZONES[mapId].glows then return end
+
+	MAP_ZONES[mapId].glows[questId].active = true
+	local glow = MAP_ZONES[mapId].glows[questId]
+	local quest = MAP_ZONES[mapId].quests[questId]
+	if not quest.x or not quest.y then
+		BWQ:QueryZoneQuestCoordinates(mapId)
+	end
+	quest = MAP_ZONES[mapId].quests[questId]
+
+	local x, y = BWQ:CalculateMapPosition(quest.x, quest.y)
+	glow.texture:ClearAllPoints()
+	glow.texture:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y)
+	glow.texture:Show()
+end
+
+function BWQ:AddWatchGlow(mapId, questId)
+	if not MAP_ZONES[mapId] then return end
+
+	local glow = MAP_ZONES[mapId].glows[questId] or {}
+	if not glow.texture then
+		glow.texture = BWQ:CreateWatchGlow()
+	end
+	MAP_ZONES[mapId].glows[questId] = glow
+end
+
+function BWQ:HideAllWatchGlows(mapId)
+	if not MAP_ZONES[mapId] then return end
+
+	for questId in next, MAP_ZONES[mapId].glows do
+		BWQ:HideWatchGlow(mapId, questId)
+	end
+end
+
+function BWQ:HideWatchGlow(mapId, questId)
+	if not MAP_ZONES[mapId] then return end
+
+	if MAP_ZONES[mapId].glows[questId] then
+		MAP_ZONES[mapId].glows[questId].texture:Hide()
+		MAP_ZONES[mapId].glows[questId].active = false
+	end
+end
+
+function BWQ:DisableWatchGlow(mapId, questId)
+	if not MAP_ZONES[mapId] then return end
+
+	if MAP_ZONES[mapId].glows[questId] then
+		MAP_ZONES[mapId].glows[questId].active = false
+		MAP_ZONES[mapId].glows[questId].texture:Hide()
 	end
 end
 
 local Row_OnClick = function(row)
-	ShowUIPanel(WorldMapFrame)
-	SetMapByID(row.mapId)
+	if not WorldMapFrame:IsShown() then ToggleWorldMap() end
+	if not InCombatLockdown() then SetMapByID(row.mapId) end
 
-	-- we need to get coordinates when on the specific map, broken isles returns coordinates for the broken isles map, not the specific
-	-- todo: improve, to not query on every click
-	local x, y
-	quests = C_TaskQuest.GetQuestsForPlayerByMapID(row.mapId)
-	for _, v in next, quests do
-		if v.questId == row.quest.questId then
-			x = v.x * WorldMapPlayersFrame:GetWidth()
-			y = -1 * v.y * WorldMapPlayersFrame:GetHeight()
+	if IsShiftKeyDown() then
+		if IsWorldQuestHardWatched(row.quest.questId) or (IsWorldQuestWatched(row.quest.questId) and GetSuperTrackedQuestID() == row.quest.questId) then
+			BonusObjectiveTracker_UntrackWorldQuest(row.quest.questId)
+		else
+			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
 		end
-	end
-	BWQ.mapPingFrame.mapId = row.mapId
-  	BWQ.mapPingFrame:SetPoint("CENTER", WorldMapPlayersFrame, "TOPLEFT", x, y)
-  	BWQ.mapPingFrame.animationGroup:Play()
-
-	if IsWorldQuestHardWatched(row.quest.questId) then
-		SetSuperTrackedQuestID(row.quest.questId)
 	else
-		BonusObjectiveTracker_TrackWorldQuest(row.quest.questId)
+		if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
+		local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
+		BWQ.mapTextures:ClearAllPoints()
+		BWQ.mapTextures:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y + 25)
+  		BWQ.mapTextures.animationGroup:Play()
 	end
 end
 
 
+local firstRun = true
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
-	local quests = {}
-	local numQuests = 0
 
-	-- set map so api returns proper values for that map
+	local numQuests = 0
+	local currentTime = GetTime()
 	local questList = GetQuestsForPlayerByMapID(mapId)
+	MAP_ZONES[mapId].questsSort = {}
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -363,13 +475,28 @@ local RetrieveWorldQuests = function(mapId)
 			if timeLeft > 0 then -- only show available quests
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
 				if worldQuestType ~= nil then
-					local quest = {}
+					questId = questList[i].questId
+					table.insert(MAP_ZONES[mapId].questsSort, questId)
+					local quest = MAP_ZONES[mapId].quests[questId] or {}
+
+					quest.timeAdded = quest.timeAdded or currentTime
+					if firstRun then
+						quest.wasSaved = BWQcache.questIds[questId] ~= nil
+					end
+					if quest.wasSaved or currentTime - quest.timeAdded > 30 then
+						quest.isNew = false
+					else
+						quest.isNew = true
+					end
+
 					quest.hide = true
 					quest.sort = 0
 
 					-- GetQuestsForPlayerByMapID fields
-					quest.questId = questList[i].questId
+					quest.questId = questId
 					quest.numObjectives = questList[i].numObjectives
+					quest.xFlight = questList[i].x
+					quest.yFlight = questList[i].y
 
 					-- GetQuestTagInfo fields
 					quest.tagId = tagId
@@ -400,6 +527,8 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.itemQuantity = quantity
 
 							local itemSpell = GetItemSpell(quest.reward.itemId)
+							local _, itemLink, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
+							quest.reward.itemLink = itemLink
 							if itemSpell and artifactPowerSpellName and itemSpell == artifactPowerSpellName then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
@@ -408,7 +537,6 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.itemName = itemName
 
 								if BWQcfg.showItems then
-									_, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 									if class == "Tradeskill" then
 										quest.sort = SORT_ORDER.PROFESSION
 										if BWQcfg.showCraftingMaterials then quest.hide = false end
@@ -472,24 +600,26 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					-- quest type filters
-					if not BWQcfg.showPetBattle and quest.worldQuestType == 5 then quest.hide = true
+					if quest.worldQuestType == 5 then
+						if not BWQcfg.showPetBattle then quest.hide = true end
 					elseif quest.worldQuestType == 2 then
 						if BWQcfg.showProfession then
-							if not BWQcfg.showProfessionAlchemy and quest.tagId == 118 then quest.hide = true
-							elseif not BWQcfg.showProfessionArchaeology and quest.tagId == 129 then quest.hide = true
-							elseif not BWQcfg.showProfessionBlacksmithing and quest.tagId == 116 then quest.hide = true
-							elseif not BWQcfg.showProfessionCooking and quest.tagId == 131 then quest.hide = true
-							elseif not BWQcfg.showProfessionEnchanting and quest.tagId == 123 then quest.hide = true
-							elseif not BWQcfg.showProfessionEngineering and quest.tagId == 122 then quest.hide = true
-							elseif not BWQcfg.showProfessionFirstAid and quest.tagId == 114 then quest.hide = true
-							elseif not BWQcfg.showProfessionFishing and quest.tagId == 130 then quest.hide = true
-							elseif not BWQcfg.showProfessionHerbalism and quest.tagId == 119 then quest.hide = true
-							elseif not BWQcfg.showProfessionInscription and quest.tagId == 126 then quest.hide = true
-							elseif not BWQcfg.showProfessionJewelcrafting and quest.tagId == 125 then quest.hide = true
-							elseif not BWQcfg.showProfessionLeatherworking and quest.tagId == 117 then quest.hide = true
-							elseif not BWQcfg.showProfessionMining and quest.tagId == 120 then quest.hide = true
-							elseif not BWQcfg.showProfessionSkinning and quest.tagId == 124 then quest.hide = true
-							elseif not BWQcfg.showProfessionTailoring and quest.tagId == 121 then quest.hide = true
+
+							if     quest.tagId == 118 then 	if BWQcfg.showProfessionAlchemy 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 129 then	if BWQcfg.showProfessionArchaeology 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 116 then 	if BWQcfg.showProfessionBlacksmithing 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 131 then 	if BWQcfg.showProfessionCooking 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 123 then 	if BWQcfg.showProfessionEnchanting 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 122 then 	if BWQcfg.showProfessionEngineering 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 114 then 	if BWQcfg.showProfessionFirstAid 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 130 then 	if BWQcfg.showProfessionFishing 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 119 then 	if BWQcfg.showProfessionHerbalism 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 126 then 	if BWQcfg.showProfessionInscription 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 125 then 	if BWQcfg.showProfessionJewelcrafting 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 117 then 	if BWQcfg.showProfessionLeatherworking 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 120 then 	if BWQcfg.showProfessionMining 			then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 124 then 	if BWQcfg.showProfessionSkinning 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 121 then 	if BWQcfg.showProfessionTailoring 		then quest.hide = false else quest.hide = true end
 							end
 						else
 							quest.hide = true
@@ -499,12 +629,12 @@ local RetrieveWorldQuests = function(mapId)
 					end
 					-- always show bounty quests filter
 					if (BWQcfg.alwaysShowBountyQuests and #quest.bounties > 0) or
-						(BWQcfg.alwaysShowCourtOfFarondis and quest.faction == "Court of Farondis") or
-						(BWQcfg.alwaysShowDreamweavers and quest.faction == "Dreamweavers") or
-						(BWQcfg.alwaysShowHighmountainTribe and quest.faction == "Highmountain Tribe") or
-						(BWQcfg.alwaysShowNightfallen and quest.faction == "The Nightfallen") or
-						(BWQcfg.alwaysShowWardens and quest.faction == "The Wardens") or
-						(BWQcfg.alwaysShowValarjar and quest.faction == "Valarjar") then
+					   (BWQcfg.alwaysShowCourtOfFarondis 	and (mapId == 1015 or mapId == 1096)) or
+					   (BWQcfg.alwaysShowDreamweavers 		and mapId == 1018) or
+					   (BWQcfg.alwaysShowHighmountainTribe 	and mapId == 1024) or
+					   (BWQcfg.alwaysShowNightfallen 		and mapId == 1033) or
+					   (BWQcfg.alwaysShowWardens 			and quest.faction == "The Wardens") or
+					   (BWQcfg.alwaysShowValarjar 			and mapId == 1017) then
 
 						-- pet battle override
 						if BWQcfg.hidePetBattleBountyQuests and not BWQcfg.showPetBattle and quest.worldQuestType == 5 then
@@ -514,7 +644,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 
-					quests[#quests+1] = quest
+					MAP_ZONES[mapId].quests[questId] = quest
 
 					if not quest.hide then
 						numQuests = numQuests + 1
@@ -523,11 +653,11 @@ local RetrieveWorldQuests = function(mapId)
 			end
 		end
 
-		table.sort(quests, function(a, b) return a.sort < b.sort end)
+		table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].sort < MAP_ZONES[mapId].quests[b].sort end)
 
 	end
 
-	return quests, numQuests
+	MAP_ZONES[mapId].numQuests = numQuests
 end
 
 
@@ -547,7 +677,7 @@ function BWQ:UpdateBountyData()
 		end
 	end
 
-	if not BWQ.bountyBoardFS then CreateBountyBoardFS(offsetY) end
+	if not BWQ.bountyBoardFS then CreateBountyBoardFS(offsetTop) end
 	if #bounties > 0 then
 		BWQ.bountyBoardFS:Show()
 		BWQ.bountyBoardFS:SetText(bountyBoardText)
@@ -559,44 +689,58 @@ end
 
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
-	local _, _, _, isMicroDungeon, _ = GetMapInfo()
-	--if isMicroDungeon and WorldMapFrame:IsShown() then return end -- don't update when map is on a micro dungeon, need to rely on updates when map is closed
+	BWQcache.questIds = {}--BWQcache.questIds or {}
+	if not InCombatLockdown() then
+		local _, _, _, isMicroDungeon, _ = GetMapInfo()
+		if not isMicroDungeon then
+			originalMap = GetCurrentMapAreaID()
+			originalContinent = GetCurrentMapContinent()
+			originalDungeonLevel = GetCurrentMapDungeonLevel()
+		end
 
-	if not isMicroDungeon then
-		originalMap = GetCurrentMapAreaID()
-		originalContinent = GetCurrentMapContinent()
-		originalDungeonLevel = GetCurrentMapDungeonLevel()
+		SetMapByID(1007) -- Broken Isles map, able to query all world quests on it
+		for mapId in next, MAP_ZONES do
+			if mapId ~= 1014 then
+				RetrieveWorldQuests(mapId)
+			end
+		end
+		-- we need to do Dalaran separately
+		SetMapByID(1014)
+		RetrieveWorldQuests(1014)
+
+		-- set map back to the original map from before updating
+		if not isMicroDungeon then
+			-- setting the maelstrom continent map via SetMapByID would make it non-interactive
+			if originalMap == 751 then
+				SetMapZoom(WORLDMAP_MAELSTROM_ID)
+			elseif originalMap == -1 then
+				SetMapZoom(originalContinent)
+			else
+				SetMapByID(originalMap)
+				if originalDungeonLevel ~= 0 then
+					SetDungeonMapLevel(originalDungeonLevel)
+				end
+			end
+		else
+			SetMapToCurrentZone()
+		end
+	else
+		local mapId = GetCurrentMapAreaID()
+		if MAP_ZONES[mapId] ~= nil then
+			RetrieveWorldQuests(mapId)
+		end
 	end
-
-	SetMapByID(1007) -- Broken Isles map, able to query all world quests on it
 
 	numQuestsTotal = 0
-	for mapIndex = 1, #MAP_ZONES do
-		MAP_ZONES[mapIndex].quests, MAP_ZONES[mapIndex].numQuests = RetrieveWorldQuests(MAP_ZONES[mapIndex].id)
-		numQuestsTotal = numQuestsTotal + MAP_ZONES[mapIndex].numQuests
+	for mapId in next, MAP_ZONES do
+		numQuestsTotal = numQuestsTotal + MAP_ZONES[mapId].numQuests
 	end
+	firstRun = nil
 
 	if needsRefresh and updateTries <= 5 then
 		needsRefresh = false
 		updateTries = updateTries + 1
 		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
-	end
-
-	-- set map back to the original map from before updating
-	if not isMicroDungeon then
-		-- setting the maelstrom continent map via SetMapByID would make it non-interactive
-		if originalMap == 751 then
-			SetMapZoom(WORLDMAP_MAELSTROM_ID)
-		elseif originalMap == -1 then
-			SetMapZoom(originalContinent)
-		else
-			SetMapByID(originalMap)
-			if originalDungeonLevel ~= 0 then
-				SetDungeonMapLevel(originalDungeonLevel)
-			end
-		end
-	else
-		SetMapToCurrentZone()
 	end
 end
 
@@ -610,8 +754,8 @@ function BWQ:RenderRows()
 	local maxEntries = math.floor((availableHeight + offsetTop - 10) / ( -1 * ROW_HEIGHT ))
 
 	local numEntries = numQuestsTotal
-	for mapIndex = 1, #MAP_ZONES do
-		if MAP_ZONES[mapIndex].numQuests ~= 0 then
+	for mapId in next, MAP_ZONES do
+		if MAP_ZONES[mapId].numQuests ~= 0 then
 			numEntries = numEntries + 1
 		end
 	end
@@ -640,30 +784,30 @@ function BWQ:RenderRows()
 	local sliderval = math.floor(BWQ.slider:GetValue())
 	local rowIndex = 0
 	local rowInViewIndex = 0
-	for mapIndex = 1, #MAP_ZONES do
-		if MAP_ZONES[mapIndex].numQuests == 0 or rowIndex < sliderval or rowIndex > sliderval + maxEntries then
+	for _, mapId in next, MAP_ZONES_SORT do
+		if MAP_ZONES[mapId].numQuests == 0 or rowIndex < sliderval or rowIndex > sliderval + maxEntries then
 
-			MAP_ZONES[mapIndex].zoneSep.fs:Hide()
-			MAP_ZONES[mapIndex].zoneSep.texture:Hide()
+			MAP_ZONES[mapId].zoneSep.fs:Hide()
+			MAP_ZONES[mapId].zoneSep.texture:Hide()
 		else
 
-			MAP_ZONES[mapIndex].zoneSep.fs:Show()
-			MAP_ZONES[mapIndex].zoneSep.fs:SetPoint("TOP", BWQ, "TOP", 15 + (totalWidth / -2) + (MAP_ZONES[mapIndex].zoneSep.fs:GetStringWidth() / 2), offsetTop + ROW_HEIGHT * rowInViewIndex)
-			MAP_ZONES[mapIndex].zoneSep.texture:Show()
-			MAP_ZONES[mapIndex].zoneSep.texture:SetPoint("TOP", BWQ, "TOP", 5, offsetTop + ROW_HEIGHT * rowInViewIndex - 3)
+			MAP_ZONES[mapId].zoneSep.fs:Show()
+			MAP_ZONES[mapId].zoneSep.fs:SetPoint("TOP", BWQ, "TOP", 15 + (totalWidth / -2) + (MAP_ZONES[mapId].zoneSep.fs:GetStringWidth() / 2), offsetTop + ROW_HEIGHT * rowInViewIndex)
+			MAP_ZONES[mapId].zoneSep.texture:Show()
+			MAP_ZONES[mapId].zoneSep.texture:SetPoint("TOP", BWQ, "TOP", 5, offsetTop + ROW_HEIGHT * rowInViewIndex - 3)
 
 			rowInViewIndex = rowInViewIndex + 1
 		end
 
-		if MAP_ZONES[mapIndex].numQuests ~= 0 then
+		if MAP_ZONES[mapId].numQuests ~= 0 then
 			rowIndex = rowIndex + 1 -- count up from row with zone name
 		end
 
 		highlightedRow = true
 		local buttonIndex = 1
-		for _, button in ipairs(MAP_ZONES[mapIndex].buttons) do
+		for _, button in ipairs(MAP_ZONES[mapId].buttons) do
 
-			if not button.quest.hide and buttonIndex <= MAP_ZONES[mapIndex].numQuests then
+			if not button.quest.hide and buttonIndex <= MAP_ZONES[mapId].numQuests then
 				if rowIndex < sliderval  or rowIndex > sliderval + maxEntries then
 					button:Hide()
 				else
@@ -688,7 +832,7 @@ function BWQ:RenderRows()
 end
 
 function BWQ:RunUpdate()
-	currentTime = GetTime()
+	local currentTime = GetTime()
 	if currentTime - lastUpdate > 5 then
 		updateTries = 1
 		BWQ:UpdateBlock()
@@ -703,237 +847,237 @@ function BWQ:UpdateBlock()
 	BWQ:UpdateBountyData()
 	BWQ:UpdateQuestData()
 
+	questIds = {}
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
-	for mapIndex = 1, #MAP_ZONES do
+	for mapId in next, MAP_ZONES do
 		local buttonIndex = 1
 
-		if not MAP_ZONES[mapIndex].zoneSep then
+		if not MAP_ZONES[mapId].zoneSep then
 			local zoneSep = {
 				fs = BWQ:CreateFontString("BWQzoneNameFS", "OVERLAY", "SystemFont_Shadow_Med1"),
 				texture = BWQ:CreateTexture(),
 			}
 			zoneSep.fs:SetJustifyH("LEFT")
 			zoneSep.fs:SetTextColor(.9, .8, 0)
-			zoneSep.fs:SetText(MAP_ZONES[mapIndex].name)
+			zoneSep.fs:SetText(MAP_ZONES[mapId].name)
 			zoneSep.texture:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-OnlineDivider")
 			zoneSep.texture:SetHeight(8)
 
-			MAP_ZONES[mapIndex].zoneSep = zoneSep
+			MAP_ZONES[mapId].zoneSep = zoneSep
 		end
 
-		for questIndex = 1, #MAP_ZONES[mapIndex].quests do
+		for _, questId in next, MAP_ZONES[mapId].questsSort do
 
+			questIds[questId] = true -- save quest to cache to check new status after reload/relog
 			local button
-			--if MAP_ZONES[mapIndex].quests[questIndex].hide then
-				if buttonIndex > #MAP_ZONES[mapIndex].buttons then
+			if buttonIndex > #MAP_ZONES[mapId].buttons then
 
-					button = CreateFrame("Button", nil, BWQ)
-					button:RegisterForClicks("AnyUp")
+				button = CreateFrame("Button", nil, BWQ)
+				button:RegisterForClicks("AnyUp")
 
-					button.highlight = button:CreateTexture()
-					button.highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-					button.highlight:SetBlendMode("ADD")
+				button.highlight = button:CreateTexture()
+				button.highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+				button.highlight:SetBlendMode("ADD")
+				button.highlight:SetAlpha(0)
+				button.highlight:SetAllPoints(button)
+
+				button.rowHighlight = button:CreateTexture()
+				button.rowHighlight:SetTexture("Interface\\Buttons\\WHITE8x8")
+				button.rowHighlight:SetBlendMode("ADD")
+				button.rowHighlight:SetAlpha(0.05)
+				button.rowHighlight:SetAllPoints(button)
+
+				button:SetScript("OnLeave", function(self)
+					Block_OnLeave()
 					button.highlight:SetAlpha(0)
-					button.highlight:SetAllPoints(button)
+				end)
+				button:SetScript("OnEnter", function(self)
+					button.highlight:SetAlpha(1)
+				end)
 
-					button.rowHighlight = button:CreateTexture()
-					button.rowHighlight:SetTexture("Interface\\Buttons\\WHITE8x8")
-					button.rowHighlight:SetBlendMode("ADD")
-					button.rowHighlight:SetAlpha(0.05)
-					button.rowHighlight:SetAllPoints(button)
+				button:SetScript("OnClick", function(self)
+					Row_OnClick(button)
+				end)
 
-					button:SetScript("OnLeave", function(self)
-						Block_OnLeave()
-						button.highlight:SetAlpha(0)
-					end)
-					button:SetScript("OnEnter", function(self)
-						button.highlight:SetAlpha(1)
-					end)
-
-					button:SetScript("OnClick", function(self)
-						Row_OnClick(button)
-					end)
-
-					button.icon = button:CreateTexture()
-					button.icon:SetTexture("Interface\\QUESTFRAME\\WorldQuest")
-					button.icon:SetSize(12, 12)
-
-					-- create font strings
-					button.title = CreateFrame("Button", nil, button)
-					button.title:SetScript("OnClick", function(self)
-						Row_OnClick(button)
-					end)
-					button.title:SetScript("OnEnter", function(self)
-						button.highlight:SetAlpha(1)
-
-						ShowQuestObjectiveTooltip(button)
-					end)
-					button.title:SetScript("OnLeave", function(self)
-						button.highlight:SetAlpha(0)
-
-						GameTooltip:Hide()
-						Block_OnLeave()
-					end)
-
-					button.titleFS = button:CreateFontString("BWQtitleFS", "OVERLAY", "SystemFont_Shadow_Med1")
-					button.titleFS:SetJustifyH("LEFT")
-					button.titleFS:SetTextColor(.9, .9, .9)
-					button.titleFS:SetWordWrap(false)
-
-					button.bountyFS = button:CreateFontString("BWQbountyFS", "OVERLAY", "SystemFont_Shadow_Med1")
-					button.bountyFS:SetJustifyH("LEFT")
-					button.bountyFS:SetWordWrap(false)
-
-					button.factionFS = button:CreateFontString("BWQfactionFS", "OVERLAY", "SystemFont_Shadow_Med1")
-					button.factionFS:SetJustifyH("LEFT")
-					button.factionFS:SetTextColor(.9, .9, .9)
-					button.factionFS:SetWordWrap(false)
-
-					button.reward = CreateFrame("Button", nil, button)
-					button.reward:SetScript("OnClick", function(self)
-						Row_OnClick(button)
-					end)
-
-					button.rewardFS = button.reward:CreateFontString("BWQrewardFS", "OVERLAY", "SystemFont_Shadow_Med1")
-					button.rewardFS:SetJustifyH("LEFT")
-					button.rewardFS:SetTextColor(.9, .9, .9)
-					button.rewardFS:SetWordWrap(false)
-
-					button.timeLeftFS = button:CreateFontString("BWQtimeLeftFS", "OVERLAY", "SystemFont_Shadow_Med1")
-					button.timeLeftFS:SetJustifyH("LEFT")
-					button.timeLeftFS:SetTextColor(.9, .9, .9)
-					button.timeLeftFS:SetWordWrap(false)
-
-					MAP_ZONES[mapIndex].buttons[buttonIndex] = button
-				else
-					button = MAP_ZONES[mapIndex].buttons[buttonIndex]
-				end
-
-				button.mapId = MAP_ZONES[mapIndex].id
-				button.quest = MAP_ZONES[mapIndex].quests[questIndex]
-
-				-- fill and format row
-				local rewardText = ""
-				if button.quest.reward.itemName or button.quest.reward.artifactPower then
-					local itemText
-					if button.quest.reward.artifactPower then
-						itemText = string.format("|cffe5cc80[%s Artifact Power]|r", button.quest.reward.artifactPower)
-					else
-						itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex, button.quest.reward.itemName)
-					end
-
-					rewardText = string.format(
-						"|T%s$s:14:14|t %s%s",
-						button.quest.reward.itemTexture,
-						itemText,
-						button.quest.reward.itemQuantity > 1 and " x" .. button.quest.reward.itemQuantity or ""
-					)
-
-					button.reward:SetScript("OnEvent", function(self, event)
-						if event == "MODIFIER_STATE_CHANGED" then
-							ShowQuestLogItemTooltip(button)
-						end
-					end)
-
-					button.reward:SetScript("OnEnter", function(self)
-						button.highlight:SetAlpha(1)
-						self:RegisterEvent("MODIFIER_STATE_CHANGED")
-
-						ShowQuestLogItemTooltip(button)
-					end)
-
-					button.reward:SetScript("OnLeave", function(self)
-						button.highlight:SetAlpha(0)
-
-						self:UnregisterEvent("MODIFIER_STATE_CHANGED")
-						GameTooltip:Hide()
-						Block_OnLeave()
-					end)
-				else
-					button.reward:SetScript("OnEnter", function(self)
-						button.highlight:SetAlpha(1)
-					end)
-					button.reward:SetScript("OnLeave", function(self)
-						button.highlight:SetAlpha(0)
-
-						GameTooltip:Hide()
-						Block_OnLeave()
-					end)
-				end
-				if button.quest.reward.money and button.quest.reward.money > 0 then
-					local moneyText = GetCoinTextureString(button.quest.reward.money)
-					rewardText = string.format(
-						"%s%s%s",
-						rewardText,
-						rewardText ~= "" and "   " or "", -- insert some space between rewards
-						moneyText
-					)
-				end
-				if button.quest.reward.resourceName then
-					local currencyText = string.format(
-						"|T%1$s:14:14|t %2$d %3$s",
-						button.quest.reward.resourceTexture,
-						button.quest.reward.resourceAmount,
-						button.quest.reward.resourceName
-					)
-
-					rewardText = string.format(
-						"%s%s%s",
-						rewardText,
-						rewardText ~= "" and "   " or "", -- insert some space between rewards
-						currencyText
-					)
-				end
-
-				-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
-				--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
-				if WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId] then
-					button.icon:SetAtlas(WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId], true)
-					button.icon:SetAlpha(1)
-				else
-					button.icon:SetAlpha(0)
-				end
+				button.icon = button:CreateTexture()
+				button.icon:SetTexture("Interface\\QUESTFRAME\\WorldQuest")
 				button.icon:SetSize(12, 12)
 
+				-- create font strings
+				button.title = CreateFrame("Button", nil, button)
+				button.title:SetScript("OnClick", function(self)
+					Row_OnClick(button)
+				end)
+				button.title:SetScript("OnEnter", function(self)
+					button.highlight:SetAlpha(1)
 
-				button.titleFS:SetText(string.format("%s%s|r", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
-				--local titleWidth = button.titleFS:GetStringWidth()
-				--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
+					ShowQuestObjectiveTooltip(button)
+				end)
+				button.title:SetScript("OnLeave", function(self)
+					button.highlight:SetAlpha(0)
 
-				local bountyText = ""
-				for _, bountyIcon in ipairs(button.quest.bounties) do
-					bountyText = string.format("%s |T%s$s:14:14|t", bountyText, bountyIcon)
+					tip:Hide()
+					Block_OnLeave()
+				end)
+
+				button.titleFS = button:CreateFontString("BWQtitleFS", "OVERLAY", "SystemFont_Shadow_Med1")
+				button.titleFS:SetJustifyH("LEFT")
+				button.titleFS:SetTextColor(.9, .9, .9)
+				button.titleFS:SetWordWrap(false)
+
+				button.bountyFS = button:CreateFontString("BWQbountyFS", "OVERLAY", "SystemFont_Shadow_Med1")
+				button.bountyFS:SetJustifyH("LEFT")
+				button.bountyFS:SetWordWrap(false)
+
+				button.factionFS = button:CreateFontString("BWQfactionFS", "OVERLAY", "SystemFont_Shadow_Med1")
+				button.factionFS:SetJustifyH("LEFT")
+				button.factionFS:SetTextColor(.9, .9, .9)
+				button.factionFS:SetWordWrap(false)
+
+				button.reward = CreateFrame("Button", nil, button)
+				button.reward:SetScript("OnClick", function(self)
+					Row_OnClick(button)
+				end)
+
+				button.rewardFS = button.reward:CreateFontString("BWQrewardFS", "OVERLAY", "SystemFont_Shadow_Med1")
+				button.rewardFS:SetJustifyH("LEFT")
+				button.rewardFS:SetTextColor(.9, .9, .9)
+				button.rewardFS:SetWordWrap(false)
+
+				button.timeLeftFS = button:CreateFontString("BWQtimeLeftFS", "OVERLAY", "SystemFont_Shadow_Med1")
+				button.timeLeftFS:SetJustifyH("LEFT")
+				button.timeLeftFS:SetTextColor(.9, .9, .9)
+				button.timeLeftFS:SetWordWrap(false)
+
+				MAP_ZONES[mapId].buttons[buttonIndex] = button
+			else
+				button = MAP_ZONES[mapId].buttons[buttonIndex]
+			end
+
+			button.mapId = mapId
+			button.quest = MAP_ZONES[mapId].quests[questId]
+
+			-- fill and format row
+			local rewardText = ""
+			if button.quest.reward.itemName or button.quest.reward.artifactPower then
+				local itemText
+				if button.quest.reward.artifactPower then
+					itemText = string.format("|cffe5cc80[%s Artifact Power]|r", button.quest.reward.artifactPower)
+				else
+					itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex, button.quest.reward.itemName)
 				end
-				button.bountyFS:SetText(bountyText)
-				local bountyWidth = button.bountyFS:GetStringWidth()
-				if bountyWidth > bountyMaxWidth then bountyMaxWidth = bountyWidth end
 
-				button.factionFS:SetText(button.quest.faction)
-				local factionWidth = button.factionFS:GetStringWidth()
-				if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
+				rewardText = string.format(
+					"|T%s$s:14:14|t %s%s",
+					button.quest.reward.itemTexture,
+					itemText,
+					button.quest.reward.itemQuantity > 1 and " x" .. button.quest.reward.itemQuantity or ""
+				)
 
-				button.timeLeftFS:SetText(FormatTimeLeftString(button.quest.timeLeft))
-				--local timeLeftWidth = button.factionFS:GetStringWidth()
-				--if timeLeftWidth > timeLeftMaxWidth then timeLeftMaxWidth = timeLeftWidth end
+				button.reward:SetScript("OnEvent", function(self, event)
+					if event == "MODIFIER_STATE_CHANGED" then
+						ShowQuestLogItemTooltip(button)
+					end
+				end)
 
-				button.rewardFS:SetText(rewardText)
+				button.reward:SetScript("OnEnter", function(self)
+					button.highlight:SetAlpha(1)
+					self:RegisterEvent("MODIFIER_STATE_CHANGED")
 
-				local rewardWidth = button.rewardFS:GetStringWidth()
-				if rewardWidth > rewardMaxWidth then rewardMaxWidth = rewardWidth end
-				button.reward:SetHeight(button.rewardFS:GetStringHeight())
-				button.title:SetHeight(button.titleFS:GetStringHeight())
+					ShowQuestLogItemTooltip(button)
+				end)
 
-				button.icon:SetPoint("LEFT", button, "LEFT", 5, 0)
-				button.titleFS:SetPoint("LEFT", button.icon, "RIGHT", 5, 0)
-				button.title:SetPoint("LEFT", button.titleFS, "LEFT", 0, 0)
-				button.rewardFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
-				button.reward:SetPoint("LEFT", button.rewardFS, "LEFT", 0, 0)
-				button.bountyFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
-				button.factionFS:SetPoint("LEFT", button.bountyFS, "RIGHT", 10, 0)
-				button.timeLeftFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
+				button.reward:SetScript("OnLeave", function(self)
+					button.highlight:SetAlpha(0)
 
-				buttonIndex = buttonIndex + 1
-			--end
+					self:UnregisterEvent("MODIFIER_STATE_CHANGED")
+					tip:Hide()
+					Block_OnLeave()
+				end)
+			else
+				button.reward:SetScript("OnEnter", function(self)
+					button.highlight:SetAlpha(1)
+				end)
+				button.reward:SetScript("OnLeave", function(self)
+					button.highlight:SetAlpha(0)
+
+					tip:Hide()
+					Block_OnLeave()
+				end)
+			end
+			if button.quest.reward.money and button.quest.reward.money > 0 then
+				local moneyText = GetCoinTextureString(button.quest.reward.money)
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					moneyText
+				)
+			end
+			if button.quest.reward.resourceName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.resourceTexture,
+					button.quest.reward.resourceAmount,
+					button.quest.reward.resourceName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
+
+			-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
+			--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
+			if WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId] then
+				button.icon:SetAtlas(WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId], true)
+				button.icon:SetAlpha(1)
+			else
+				button.icon:SetAlpha(0)
+			end
+			button.icon:SetSize(12, 12)
+
+
+			button.titleFS:SetText(string.format("|cffe5cc80%s|r%s%s|r", button.quest.isNew and "NEW  " or "", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
+			--local titleWidth = button.titleFS:GetStringWidth()
+			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
+
+			local bountyText = ""
+			for _, bountyIcon in ipairs(button.quest.bounties) do
+				bountyText = string.format("%s |T%s$s:14:14|t", bountyText, bountyIcon)
+			end
+			button.bountyFS:SetText(bountyText)
+			local bountyWidth = button.bountyFS:GetStringWidth()
+			if bountyWidth > bountyMaxWidth then bountyMaxWidth = bountyWidth end
+
+			button.factionFS:SetText(button.quest.faction)
+			local factionWidth = button.factionFS:GetStringWidth()
+			if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
+
+			button.timeLeftFS:SetText(FormatTimeLeftString(button.quest.timeLeft))
+			--local timeLeftWidth = button.factionFS:GetStringWidth()
+			--if timeLeftWidth > timeLeftMaxWidth then timeLeftMaxWidth = timeLeftWidth end
+
+			button.rewardFS:SetText(rewardText)
+
+			local rewardWidth = button.rewardFS:GetStringWidth()
+			if rewardWidth > rewardMaxWidth then rewardMaxWidth = rewardWidth end
+			button.reward:SetHeight(button.rewardFS:GetStringHeight())
+			button.title:SetHeight(button.titleFS:GetStringHeight())
+
+			button.icon:SetPoint("LEFT", button, "LEFT", 5, 0)
+			button.titleFS:SetPoint("LEFT", button.icon, "RIGHT", 5, 0)
+			button.title:SetPoint("LEFT", button.titleFS, "LEFT", 0, 0)
+			button.rewardFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
+			button.reward:SetPoint("LEFT", button.rewardFS, "LEFT", 0, 0)
+			button.bountyFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+			button.factionFS:SetPoint("LEFT", button.bountyFS, "RIGHT", 10, 0)
+			button.timeLeftFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
+
+			buttonIndex = buttonIndex + 1
 		end -- quest loop
 	end -- maps loop
 
@@ -950,29 +1094,29 @@ function BWQ:UpdateBlock()
 		rewardMaxWidth = rewardMaxWidth + diff
 	end
 
-	for mapIndex = 1, #MAP_ZONES do
-		for i = 1, #MAP_ZONES[mapIndex].buttons do
-			if not MAP_ZONES[mapIndex].buttons[i].quest.hide then -- dont care about the hidden ones
-				MAP_ZONES[mapIndex].buttons[i]:SetHeight(15)
-				MAP_ZONES[mapIndex].buttons[i]:SetWidth(totalWidth)
-				MAP_ZONES[mapIndex].buttons[i].title:SetWidth(titleMaxWidth)
-				MAP_ZONES[mapIndex].buttons[i].titleFS:SetWidth(titleMaxWidth)
-				MAP_ZONES[mapIndex].buttons[i].bountyFS:SetWidth(bountyMaxWidth)
-				MAP_ZONES[mapIndex].buttons[i].factionFS:SetWidth(factionMaxWidth)
-				MAP_ZONES[mapIndex].buttons[i].reward:SetWidth(rewardMaxWidth)
-				MAP_ZONES[mapIndex].buttons[i].rewardFS:SetWidth(rewardMaxWidth)
-				MAP_ZONES[mapIndex].buttons[i].timeLeftFS:SetWidth(timeLeftMaxWidth)
+	for mapId in next, MAP_ZONES do
+		for i = 1, #MAP_ZONES[mapId].buttons do
+			if not MAP_ZONES[mapId].buttons[i].quest.hide then -- dont care about the hidden ones
+				MAP_ZONES[mapId].buttons[i]:SetHeight(15)
+				MAP_ZONES[mapId].buttons[i]:SetWidth(totalWidth)
+				MAP_ZONES[mapId].buttons[i].title:SetWidth(titleMaxWidth)
+				MAP_ZONES[mapId].buttons[i].titleFS:SetWidth(titleMaxWidth)
+				MAP_ZONES[mapId].buttons[i].bountyFS:SetWidth(bountyMaxWidth)
+				MAP_ZONES[mapId].buttons[i].factionFS:SetWidth(factionMaxWidth)
+				MAP_ZONES[mapId].buttons[i].reward:SetWidth(rewardMaxWidth)
+				MAP_ZONES[mapId].buttons[i].rewardFS:SetWidth(rewardMaxWidth)
+				MAP_ZONES[mapId].buttons[i].timeLeftFS:SetWidth(timeLeftMaxWidth)
+			else
+				MAP_ZONES[mapId].buttons[i]:Hide()
 			end
 		end
+		MAP_ZONES[mapId].zoneSep.texture:SetWidth(totalWidth + 20)
 	end
 
 	totalWidth = totalWidth + 20
-	for i = 1, #MAP_ZONES do
-		MAP_ZONES[i].zoneSep.texture:SetWidth(totalWidth)
-	end
-
 	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
 
+	BWQcache.questIds = questIds
 	BWQ:RenderRows()
 end
 
@@ -983,8 +1127,10 @@ function BWQ:SetupConfigMenu()
 	configMenu = CreateFrame("Frame", "BWQ_ConfigMenu")
 	configMenu.displayMode = "MENU"
 
-	options = {
+	local options = {
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
+		{ text = "Show list frame on click", check = "showOnClick" },
+		{ text = "" },
 		{ text = "Always show quests for active bounty", check = "alwaysShowBountyQuests" },
 		{ text = "Hide pet battle quests even when active bounty", check = "hidePetBattleBountyQuests" },
 		{ text = "" },
@@ -1038,24 +1184,27 @@ function BWQ:SetupConfigMenu()
 		{ text = "The Nightfallen", check="alwaysShowNightfallen" },
 		{ text = "The Wardens", check="alwaysShowWardens" },
 		{ text = "Valarjar", check="alwaysShowValarjar" },
-
-
 	}
+
+	local SetOption = function(bt, var, val)
+		BWQcfg[var] = val or not BWQcfg[var]
+		BWQ:UpdateBlock()
+		if WorldMapFrame:IsShown() then
+			BWQ:OpenConfigMenu(nil)
+		end
+
+		-- toggle block when changing attach setting
+		if var == "attachToWorldMap" then
+			BWQ:Hide()
+			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
+				BWQ:AttachToWorldMap()
+			end
+		end
+	end
 
 	configMenu.initialize = function(self, level)
 		if not level then return end
 		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or options
-		if type(opt)=="string" and opt:find("^align") then
-			for _, pos in ipairs(aligns) do
-				info = wipe(info)
-				info.text = pos
-				info.checked = BWQcfg[opt] == pos
-				info.func, info.arg1, info.arg2 = SetOption, opt, pos
-				info.keepShownOnClick = true
-				UIDropDownMenu_AddButton( info, level )
-			end
-			return
-		end
 		for i, v in ipairs(opt) do
 			info = wipe(info)
 			info.text = v.text
@@ -1075,22 +1224,6 @@ function BWQ:SetupConfigMenu()
 		end
 	end
 
-	SetOption = function(bt, var, val)
-		BWQcfg[var] = val or not BWQcfg[var]
-		BWQ:UpdateBlock()
-		if WorldMapFrame:IsShown() then
-			BWQ:OpenConfigMenu(nil)
-		end
-
-		-- toggle block when changing attach setting
-		if var == "attachToWorldMap" then
-			BWQ:Hide()
-			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
-				BWQ:AttachToWorldMap()
-			end
-		end
-	end
-
 	BWQ.SetupConfigMenu = nil
 end
 
@@ -1104,6 +1237,21 @@ function BWQ:OpenConfigMenu(anchor)
 	ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
 end
 
+function BWQ:AttachToBlock(anchor)
+	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
+		CloseDropDownMenus()
+
+		blockYPos = select(2, anchor:GetCenter())
+		showDownwards = blockYPos > UIParent:GetHeight() / 2
+		BWQ:ClearAllPoints()
+		BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", anchor, showDownwards and "BOTTOM" or "TOP", 0, 0)
+		BWQ:SetFrameStrata("DIALOG")
+		BWQ:Show()
+
+		BWQ:RunUpdate()
+	end
+end
+
 function BWQ:AttachToWorldMap()
 	BWQ:ClearAllPoints()
 	BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -5)
@@ -1113,6 +1261,9 @@ end
 
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
+BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 BWQ:SetScript("OnEvent", function(self, event)
 	if event == "QUEST_LOG_UPDATE" then
 		if not skipNextUpdate then
@@ -1126,9 +1277,16 @@ BWQ:SetScript("OnEvent", function(self, event)
 	--]]
 	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
 		skipNextUpdate = true
-		if BWQ.mapPingFrame.mapId and BWQ.mapPingFrame.mapId ~= GetCurrentMapAreaID() then
-			BWQ.mapPingFrame.animationGroup:Stop()
+		local mapId = GetCurrentMapAreaID()
+		if BWQ.currentMapId and BWQ.currentMapId ~= mapId then
+			BWQ.mapTextures.animationGroup:Stop()
+			BWQ:HideAllWatchGlows(BWQ.currentMapId)
 		end
+		BWQ:UpdateWatchGlows(mapId)
+		--BWQ:ShowAllWatchGlows(mapId)
+		BWQ.currentMapId = mapId
+	elseif event == "QUEST_WATCH_LIST_CHANGED" then
+		BWQ:UpdateWatchGlows(GetCurrentMapAreaID())
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQcfg = BWQcfg or defaultConfig
 		for i, v in next, defaultConfig do
@@ -1136,9 +1294,7 @@ BWQ:SetScript("OnEvent", function(self, event)
 				BWQcfg[i] = v
 			end
 		end
-
-		BWQ:UpdateBountyData()
-		BWQ:UpdateQuestData()
+		BWQcache = BWQcache or {}
 
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
 		BWQ.slider:SetScript("OnValueChanged", function(self, value)
@@ -1168,19 +1324,14 @@ BWQ:SetScript("OnEvent", function(self, event)
 
 		hooksecurefunc(WorldMapFrame, "Hide", function(self)
 			if BWQcfg["attachToWorldMap"] then
-				BWQ:UnregisterEvent("QUEST_LOG_UPDATE")
-				BWQ:UnregisterEvent("WORLD_MAP_UPDATE")
-
 				BWQ:Hide()
 			end
 
-			BWQ.mapPingFrame.animationGroup:Stop()
+			BWQ.mapTextures.animationGroup:Stop()
+			BWQ:HideAllWatchGlows(BWQ.currentMapId)
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if BWQcfg["attachToWorldMap"] then
-				BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-				BWQ:RegisterEvent("WORLD_MAP_UPDATE")
-
 				BWQ:AttachToWorldMap()
 				BWQ:RunUpdate()
 			end
@@ -1198,25 +1349,18 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	text = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
-		if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
-			CloseDropDownMenus()
-			BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-			BWQ:RegisterEvent("WORLD_MAP_UPDATE")
-
-			blockYPos = select(2, self:GetCenter())
-			showDownwards = blockYPos > UIParent:GetHeight() / 2
-			BWQ:ClearAllPoints()
-			BWQ:SetPoint(showDownwards and "TOP" or "BOTTOM", self, showDownwards and "BOTTOM" or "TOP", 0, 0)
-			BWQ:SetFrameStrata("DIALOG")
-			BWQ:Show()
-
-			BWQ:RunUpdate()
+		if not BWQcfg.showOnClick then
+			BWQ:AttachToBlock(self)
 		end
 	end,
 	OnLeave = Block_OnLeave,
 	OnClick = function(self, button)
 		if button == "LeftButton" then
-			BWQ:UpdateBlock()
+			if BWQcfg.showOnClick then
+				BWQ:AttachToBlock(self)
+			else
+				BWQ:RunUpdate()
+			end
 		elseif button == "RightButton" then
 			Block_OnLeave()
 			BWQ:OpenConfigMenu(self)

@@ -179,8 +179,13 @@ local CreateErrorFS = function()
 	BWQ.errorFS:SetTextColor(.9, .8, 0)
 end
 
+local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
-	if UnitLevel("player") < 110 or not IsQuestFlaggedCompleted(43341) then -- http://legion.wowhead.com/quest=43341
+	if not hasUnlockedWorldQuests then
+		hasUnlockedWorldQuests = (UnitLevel("player") == 110 and IsQuestFlaggedCompleted(43341)) -- http://wowhead.com/quest=43341
+	end
+
+	if not hasUnlockedWorldQuests then
 		if BWQcfg.attachToWorldMap and WorldMapFrame:IsShown() then -- don't show error box on map
 			BWQ:Hide()
 			return false
@@ -191,13 +196,6 @@ function BWQ:WorldQuestsUnlocked()
 		BWQ.errorFS:SetText("You need to reach Level 110 and complete the\nquest \124cffffff00\124Hquest:43341:-1\124h[Uniting the Isles]\124h\124r to unlock World Quests.")
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:Show()
-
-		-- TODO: improve this, don't always check this when character has it once
-		for mapId in next, MAP_ZONES do
-			for _, button in next, MAP_ZONES[mapId].buttons do
-				button:Hide()
-			end
-		end
 
 		return false
 	else

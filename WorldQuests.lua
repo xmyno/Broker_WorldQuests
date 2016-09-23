@@ -255,8 +255,10 @@ local FormatTimeLeftString = function(timeLeft)
 	end
 	timeLeftStr = string.format("%s%s%sm", timeLeftStr, timeLeftStr ~= "" and " " or "", timeLeft % 60) -- always show minutes
 
-	if timeLeft < 180 then -- highlight less then 3 hours
-		timeLeftStr = string.format("|cffe6c800%s|r", timeLeftStr)
+	if 		timeLeft <= 120 then timeLeftStr = string.format("|cffD96932%s|r", timeLeftStr)
+	elseif 	timeLeft <= 240 then timeLeftStr = string.format("|cffDBA43B%s|r", timeLeftStr)
+	elseif 	timeLeft <= 480 then timeLeftStr = string.format("|cffE6D253%s|r", timeLeftStr)
+	elseif 	timeLeft <= 960 then timeLeftStr = string.format("|cffE6DA8E%s|r", timeLeftStr)
 	end
 	return timeLeftStr
 end

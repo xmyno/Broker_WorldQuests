@@ -58,7 +58,6 @@ local MAP_ZONES = {
 local MAP_ZONES_SORT = {
 	1015, 1096, 1018, 1024, 1017, 1033, 1014
 }
-
 local SORT_ORDER = {
 	ARTIFACTPOWER = 1,
 	RELIC = 2,
@@ -69,6 +68,7 @@ local SORT_ORDER = {
 	MONEY = 7,
 }
 
+local ARTIFACTPOWER_SPELL_NAME = select(1, GetSpellInfo(228111))
 local defaultConfig = {
 	-- general
 	attachToWorldMap = false,
@@ -164,7 +164,6 @@ local numQuestsTotal, totalWidth, offsetTop = 0, 0, -15
 local showDownwards = false
 local blockYPos = 0
 local highlightedRow = true
-local artifactPowerSpellName = select(1, GetSpellInfo(228111))
 
 local CreateBountyBoardFS = function()
 	BWQ.bountyBoardFS = BWQ:CreateFontString("BWQbountyBoardFS", "OVERLAY", "SystemFont_Shadow_Med1")
@@ -527,7 +526,7 @@ local RetrieveWorldQuests = function(mapId)
 							local itemSpell = GetItemSpell(quest.reward.itemId)
 							local _, itemLink, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 							quest.reward.itemLink = itemLink
-							if itemSpell and artifactPowerSpellName and itemSpell == artifactPowerSpellName then
+							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
 								if BWQcfg.showArtifactPower then quest.hide = false end
@@ -1281,7 +1280,6 @@ BWQ:SetScript("OnEvent", function(self, event)
 			BWQ:HideAllWatchGlows(BWQ.currentMapId)
 		end
 		BWQ:UpdateWatchGlows(mapId)
-		--BWQ:ShowAllWatchGlows(mapId)
 		BWQ.currentMapId = mapId
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
 		BWQ:UpdateWatchGlows(GetCurrentMapAreaID())

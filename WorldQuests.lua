@@ -817,7 +817,7 @@ function BWQ:RenderRows()
 		else
 
 			MAP_ZONES[mapId].zoneSep.fs:Show()
-			MAP_ZONES[mapId].zoneSep.fs:SetPoint("TOP", BWQ, "TOP", 15 + (totalWidth / -2) + (MAP_ZONES[mapId].zoneSep.fs:GetStringWidth() / 2), offsetTop + ROW_HEIGHT * rowInViewIndex)
+			MAP_ZONES[mapId].zoneSep.fs:SetPoint("TOP", BWQ, "TOP", 15 + (totalWidth / -2) + (MAP_ZONES[mapId].zoneSep.fs:GetStringWidth() / 2), offsetTop + ROW_HEIGHT * rowInViewIndex - 2)
 			MAP_ZONES[mapId].zoneSep.texture:Show()
 			MAP_ZONES[mapId].zoneSep.texture:SetPoint("TOP", BWQ, "TOP", 5, offsetTop + ROW_HEIGHT * rowInViewIndex - 3)
 
@@ -1106,7 +1106,7 @@ function BWQ:UpdateBlock()
 		end -- quest loop
 	end -- maps loop
 
-	titleMaxWidth = 200
+	titleMaxWidth = 125
 	rewardMaxWidth = rewardMaxWidth < 150 and 150 or rewardMaxWidth
 	factionMaxWidth = factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
@@ -1283,7 +1283,7 @@ end
 
 function BWQ:AttachToWorldMap()
 	BWQ:ClearAllPoints()
-	BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -5)
+	BWQ:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 3, 0)
 	BWQ:SetFrameStrata("HIGH")
 	BWQ:Show()
 end
@@ -1333,7 +1333,11 @@ BWQ:SetScript("OnEvent", function(self, event)
 			BWQ.slider:SetValue(BWQ.slider:GetValue() - delta * 3)
 		end)
 
-		if TipTac then
+		if Aurora and Aurora[1] then
+			Aurora[1].CreateBD(BWQ)
+		elseif ElvUI then
+			BWQ:SetTemplate("Transparent")
+		elseif TipTac then
 			local tiptacBKG = { tile = false, insets = {} }
 			local cfg = TipTac_Config
 			if cfg.tipBackdropBG and cfg.tipBackdropEdge and cfg.tipColor and cfg.tipBorderColor then

@@ -69,12 +69,30 @@ local SORT_ORDER = {
 }
 
 local ARTIFACTPOWER_SPELL_NAME = select(1, GetSpellInfo(228111))
+local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
+	[42442] = true, -- Fight Night: Amalia
+	[40299] = true, -- Fight Night: Bodhi Sunwayver
+	[40298] = true, -- Fight Night: Sir Galveston
+	[40277] = true, -- Fight Night: Tiffany Nelson
+	[42159] = true, -- Training with the Nightwatchers
+	[41860] = true, -- Dealing with Satyrs
+	[40279] = true, -- Training with Durian
+	[40280] = true, -- Training with Bredda
+	[41687] = true, -- Snail Fight!
+	[40282] = true, -- Tiny Poacher, Tiny Animals
+	[40278] = true, -- My Beasts's Bidding
+	[41944] = true, -- Jarrun's Ladder
+	[41895] = true, -- The Master of Pets
+	[40337] = true, -- Flummoxed
+	[41990] = true, -- Chopped
+}
+
 local defaultConfig = {
 	-- general
 	attachToWorldMap = false,
 	showOnClick = false,
 	alwaysShowBountyQuests = true,
-	hidePetBattleBountyQuests = false,
+	alwaysShowEpicQuests = true,
 	-- reward type
 	showArtifactPower = true,
 	showItems = true,
@@ -105,7 +123,6 @@ local defaultConfig = {
 		showProfessionArchaeology = true,
 		showProfessionFirstAid = true,
 		showProfessionFishing = true,
-	showPetBattle = true,
 	showDungeon = true,
 	showPvP = true,
 	alwaysShowCourtOfFarondis = false,
@@ -114,6 +131,9 @@ local defaultConfig = {
 	alwaysShowNightfallen = false,
 	alwaysShowWardens = false,
 	alwaysShowValarjar = false,
+	showPetBattle = true,
+	hidePetBattleBountyQuests = false,
+	alwaysShowPetBattleFamilyFamiliar = true,
 }
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
@@ -598,7 +618,11 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- quest type filters
 					if quest.worldQuestType == 5 then
-						if not BWQcfg.showPetBattle then quest.hide = true end
+						if BWQcfg.showPetBattle or (BWQcfg.alwaysShowPetBattleFamilyFamiliar and FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
+							quest.hide = false
+						else
+							quest.hide = true
+						end
 					elseif quest.worldQuestType == 2 then
 						if BWQcfg.showProfession then
 
@@ -624,7 +648,7 @@ local RetrieveWorldQuests = function(mapId)
 					elseif not BWQcfg.showPvP and quest.worldQuestType == 4 then quest.hide = true
 					elseif not BWQcfg.showDungeon and quest.worldQuestType == 7 then quest.hide = true
 					end
-					-- always show bounty quests filter
+					-- always show bounty quests or reputation for faction filter
 					if (BWQcfg.alwaysShowBountyQuests and #quest.bounties > 0) or
 					   (BWQcfg.alwaysShowCourtOfFarondis 	and (mapId == 1015 or mapId == 1096)) or
 					   (BWQcfg.alwaysShowDreamweavers 		and mapId == 1018) or
@@ -640,6 +664,8 @@ local RetrieveWorldQuests = function(mapId)
 							quest.hide = false
 						end
 					end
+					-- don't filter epic quests based on setting
+					if BWQcfg.alwaysShowEpicQuests and quest.isRare == 3 then quest.hide = false end
 
 					MAP_ZONES[mapId].quests[questId] = quest
 
@@ -1128,8 +1154,8 @@ function BWQ:SetupConfigMenu()
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
 		{ text = "Show list frame on click", check = "showOnClick" },
 		{ text = "" },
-		{ text = "Always show quests for active bounty", check = "alwaysShowBountyQuests" },
-		{ text = "Hide pet battle quests even when active bounty", check = "hidePetBattleBountyQuests" },
+		{ text = "Always show |cffa335eeepic|r world quests (e.g. world bosses)", check = "alwaysShowEpicQuests" },
+		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "" },
 		{ text = "Filter by reward...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_enchant_shardradientlarge"), check = "showArtifactPower" },
@@ -1170,9 +1196,13 @@ function BWQ:SetupConfigMenu()
 				{ text = "Fishing", check="showProfessionFishing" },
 			}
 		},
-		{ text = ("|T%1$s:16:16|t  Pet Battle Quests"):format("Interface\\Icons\\tracking_wildpet"), check = "showPetBattle" },
 		{ text = "Dungeon Quests", check = "showDungeon" },
 		{ text = ("|T%1$s:16:16|t  PvP Quests"):format("Interface\\Minimap\\Tracking\\BattleMaster"), check = "showPvP" },
+		{ text = "" },
+		{ text = ("|T%1$s:16:16|t  Pet Battle Quests"):format("Interface\\Icons\\tracking_wildpet"), isTitle = true },
+		{ text = "Show Pet Battle Quests", check = "showPetBattle" },
+		{ text = "Hide Pet Battle Quests even when active bounty", check = "hidePetBattleBountyQuests" },
+		{ text = "Always show Pet Battle Quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
 		{ text = "" },
 		{ text = "Always show quests for faction...", isTitle = true },
 		{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },

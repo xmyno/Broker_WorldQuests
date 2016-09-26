@@ -456,21 +456,21 @@ local Row_OnClick = function(row)
 end
 
 
-local firstRun = true
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
 
-	local numQuests = 0
+	local numQuests
 	local currentTime = GetTime()
 	local questList = GetQuestsForPlayerByMapID(mapId)
-	MAP_ZONES[mapId].questsSort = {}
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
-	if questList then
+	if questList and (#questList > 0 or not MAP_ZONES[mapId].questsSort) then
+		numQuests = 0
+		MAP_ZONES[mapId].questsSort = {}
+
 		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId
 		for i = 1, #questList do
-
 			--[[
 			local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
 
@@ -498,10 +498,10 @@ local RetrieveWorldQuests = function(mapId)
 					table.insert(MAP_ZONES[mapId].questsSort, questId)
 					local quest = MAP_ZONES[mapId].quests[questId] or {}
 
-					quest.timeAdded = quest.timeAdded or currentTime
-					if firstRun then
-						quest.wasSaved = BWQcache.questIds[questId] ~= nil
+					if not quest.timeAdded then
+						quest.wasSaved = questIds[questId] ~= nil
 					end
+					quest.timeAdded = quest.timeAdded or currentTime
 					if quest.wasSaved or currentTime - quest.timeAdded > 900 then
 						quest.isNew = false
 					else
@@ -680,9 +680,9 @@ local RetrieveWorldQuests = function(mapId)
 
 		table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].sort < MAP_ZONES[mapId].quests[b].sort end)
 
+		if numQuests == nil then numQuests = 0 end
+		MAP_ZONES[mapId].numQuests = numQuests
 	end
-
-	MAP_ZONES[mapId].numQuests = numQuests
 end
 
 
@@ -714,7 +714,8 @@ end
 
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
-	BWQcache.questIds = BWQcache.questIds or {}
+	questIds = BWQcache.questIds or {}
+
 	if not InCombatLockdown() then
 		local _, _, _, isMicroDungeon, _ = GetMapInfo()
 		if not isMicroDungeon then
@@ -760,12 +761,22 @@ function BWQ:UpdateQuestData()
 	for mapId in next, MAP_ZONES do
 		numQuestsTotal = numQuestsTotal + MAP_ZONES[mapId].numQuests
 	end
-	firstRun = nil
+
+	-- save quests to saved vars to check new status after reload/relog
+	if numQuestsTotal ~= 0 then
+		questIds = {}
+		for mapId in next, MAP_ZONES do
+			for _, questId in next, MAP_ZONES[mapId].questsSort do
+				questIds[questId] = true
+			end
+		end
+		BWQcache.questIds = questIds
+	end
 
 	if needsRefresh and updateTries <= 5 then
 		needsRefresh = false
 		updateTries = updateTries + 1
-		C_Timer.After(0.5, function() BWQ:UpdateBlock() end)
+		C_Timer.After(1, function() BWQ:UpdateBlock() end)
 	end
 end
 
@@ -872,7 +883,6 @@ function BWQ:UpdateBlock()
 	BWQ:UpdateBountyData()
 	BWQ:UpdateQuestData()
 
-	questIds = {}
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES do
 		local buttonIndex = 1
@@ -893,7 +903,6 @@ function BWQ:UpdateBlock()
 
 		for _, questId in next, MAP_ZONES[mapId].questsSort do
 
-			questIds[questId] = true -- save quest to cache to check new status after reload/relog
 			local button
 			if buttonIndex > #MAP_ZONES[mapId].buttons then
 
@@ -1141,7 +1150,6 @@ function BWQ:UpdateBlock()
 	totalWidth = totalWidth + 20
 	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
 
-	BWQcache.questIds = questIds
 	BWQ:RenderRows()
 end
 
@@ -1290,10 +1298,8 @@ end
 
 local skipNextUpdate = false
 BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
-BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-BWQ:RegisterEvent("WORLD_MAP_UPDATE")
-BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
-BWQ:SetScript("OnEvent", function(self, event)
+BWQ:RegisterEvent("ADDON_LOADED")
+BWQ:SetScript("OnEvent", function(self, event, arg1)
 	if event == "QUEST_LOG_UPDATE" then
 		if not skipNextUpdate then
 			BWQ:RunUpdate()
@@ -1316,14 +1322,6 @@ BWQ:SetScript("OnEvent", function(self, event)
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
 		BWQ:UpdateWatchGlows(GetCurrentMapAreaID())
 	elseif event == "PLAYER_ENTERING_WORLD" then
-		BWQcfg = BWQcfg or defaultConfig
-		for i, v in next, defaultConfig do
-			if BWQcfg[i] == nil then
-				BWQcfg[i] = v
-			end
-		end
-		BWQcache = BWQcache or {}
-
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
 		BWQ.slider:SetScript("OnValueChanged", function(self, value)
 			BWQ:RenderRows()
@@ -1370,6 +1368,20 @@ BWQ:SetScript("OnEvent", function(self, event)
 		end)
 
 		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
+
+		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
+		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
+	elseif event == "ADDON_LOADED" and arg1 == "Broker_WorldQuests" then
+		BWQcfg = BWQcfg or defaultConfig
+		for i, v in next, defaultConfig do
+			if BWQcfg[i] == nil then
+				BWQcfg[i] = v
+			end
+		end
+		BWQcache = BWQcache or {}
+
+		BWQ:UnregisterEvent("ADDON_LOADED")
 	end
 end)
 

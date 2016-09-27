@@ -439,7 +439,7 @@ function BWQ:DisableWatchGlow(mapId, questId)
 end
 
 local Row_OnClick = function(row)
-	if not WorldMapFrame:IsShown() then ToggleWorldMap() end
+	if not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
 	if not InCombatLockdown() then SetMapByID(row.mapId) end
 
 	if IsShiftKeyDown() then

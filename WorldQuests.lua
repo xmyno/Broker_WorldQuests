@@ -551,8 +551,10 @@ local RetrieveWorldQuests = function(mapId)
 							local _, itemLink, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 							quest.reward.itemLink = itemLink
 							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
-								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
+								local ap = BWQ:GetArtifactPowerValue(quest.reward.itemId)
+								quest.reward.artifactPower = ap
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
+								BWQ.totalArtifactPower = BWQ.totalArtifactPower + ap
 								if BWQcfg.showArtifactPower then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
@@ -717,6 +719,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
+	BWQ.totalArtifactPower = 0
 
 	if not InCombatLockdown() then
 		local _, _, _, isMicroDungeon, _ = GetMapInfo()
@@ -774,6 +777,8 @@ function BWQ:UpdateQuestData()
 		end
 		BWQcache.questIds = questIds
 	end
+
+	BWQ.WorldQuestsBroker.text = ("%d AP"):format(BWQ.totalArtifactPower)
 
 	if needsRefresh and updateTries <= 5 then
 		needsRefresh = false

@@ -444,9 +444,6 @@ function BWQ:DisableWatchGlow(mapId, questId)
 end
 
 local Row_OnClick = function(row)
-	if not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
-	if not InCombatLockdown() then SetMapByID(row.mapId) end
-
 	if IsShiftKeyDown() then
 		if IsWorldQuestHardWatched(row.quest.questId) or (IsWorldQuestWatched(row.quest.questId) and GetSuperTrackedQuestID() == row.quest.questId) then
 			BonusObjectiveTracker_UntrackWorldQuest(row.quest.questId)
@@ -454,6 +451,9 @@ local Row_OnClick = function(row)
 			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
 		end
 	else
+		if not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
+		if not InCombatLockdown() then SetMapByID(row.mapId) end
+
 		if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
 		local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
 		BWQ.mapTextures:ClearAllPoints()

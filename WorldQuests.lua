@@ -237,12 +237,17 @@ function BWQ:ShowNoWorldQuestsInfo()
 end
 
 
-local ArtifactPowerScanTooltip = CreateFrame ("GameTooltip", "ArtifactPowerScanTooltip", nil, "GameTooltipTemplate")
+local BWQScanTooltip = CreateFrame("GameTooltip", "BWQScanTooltip", nil, "GameTooltipTemplate")
 function BWQ:GetArtifactPowerValue(itemId)
 	local _, itemLink = GetItemInfo(itemId)
-	ArtifactPowerScanTooltip:SetOwner (BWQ, "ANCHOR_NONE")
-	ArtifactPowerScanTooltip:SetHyperlink (itemLink)
-	return _G["ArtifactPowerScanTooltipTextLeft4"]:GetText():gsub("%p", ""):match("%d+") or ""
+	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
+	BWQScanTooltip:SetHyperlink(itemLink)
+	return BWQScanTooltipTextLeft4 and BWQScanTooltipTextLeft4:GetText():gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or ""
+end
+function BWQ:GetItemLevelValueForQuestId(questId)
+	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
+	BWQScanTooltip:SetQuestLogItem("reward", 1, questId)
+	return BWQScanTooltipTextLeft2 and BWQScanTooltipTextLeft2:GetText():match("[%d]+%p*") or ""
 end
 
 local FormatTimeLeftString = function(timeLeft)
@@ -565,9 +570,11 @@ local RetrieveWorldQuests = function(mapId)
 										if BWQcfg.showCraftingMaterials then quest.hide = false end
 									elseif equipSlot ~= "" then
 										quest.sort = SORT_ORDER.EQUIP
+										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 										if BWQcfg.showGear then quest.hide = false end
 									elseif subClass == "Artifact Relic" then
 										quest.sort = SORT_ORDER.RELIC
+										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 										if BWQcfg.showRelics then quest.hide = false end
 									else
 										quest.sort = SORT_ORDER.ITEM
@@ -1005,7 +1012,12 @@ function BWQ:UpdateBlock()
 				if button.quest.reward.artifactPower then
 					itemText = string.format("|cffe5cc80[%s Artifact Power]|r", button.quest.reward.artifactPower)
 				else
-					itemText = string.format("%s[%s]|r", ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex, button.quest.reward.itemName)
+					itemText = string.format(
+						"%s[%s%s]|r",
+						ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex,
+						button.quest.reward.realItemLevel and (button.quest.reward.realItemLevel .. " ") or "",
+						button.quest.reward.itemName
+					)
 				end
 
 				rewardText = string.format(

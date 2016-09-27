@@ -455,10 +455,12 @@ local Row_OnClick = function(row)
 		if not InCombatLockdown() then SetMapByID(row.mapId) end
 
 		if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
-		local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
-		BWQ.mapTextures:ClearAllPoints()
-		BWQ.mapTextures:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y + 25)
-  		BWQ.mapTextures.animationGroup:Play()
+		if row.quest.x and row.quest.y then
+			local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
+			BWQ.mapTextures:ClearAllPoints()
+			BWQ.mapTextures:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y + 25)
+	  		BWQ.mapTextures.animationGroup:Play()
+	  	end
 	end
 end
 

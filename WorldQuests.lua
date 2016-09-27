@@ -394,10 +394,12 @@ function BWQ:ShowWatchGlow(mapId, questId)
 	end
 	quest = MAP_ZONES[mapId].quests[questId]
 
-	local x, y = BWQ:CalculateMapPosition(quest.x, quest.y)
-	glow.texture:ClearAllPoints()
-	glow.texture:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y)
-	glow.texture:Show()
+	if quest.x and quest.y then
+		local x, y = BWQ:CalculateMapPosition(quest.x, quest.y)
+		glow.texture:ClearAllPoints()
+		glow.texture:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y)
+		glow.texture:Show()
+	end
 end
 
 function BWQ:AddWatchGlow(mapId, questId)

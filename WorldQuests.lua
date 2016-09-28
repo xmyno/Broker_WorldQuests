@@ -695,6 +695,8 @@ local RetrieveWorldQuests = function(mapId)
 
 		if numQuests == nil then numQuests = 0 end
 		MAP_ZONES[mapId].numQuests = numQuests
+	else
+		needsRefresh = true
 	end
 end
 

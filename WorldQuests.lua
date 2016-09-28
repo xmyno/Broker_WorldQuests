@@ -477,6 +477,7 @@ local RetrieveWorldQuests = function(mapId)
 	if questList and (#questList > 0 or not MAP_ZONES[mapId].questsSort) then
 		numQuests = 0
 		MAP_ZONES[mapId].questsSort = {}
+		MAP_ZONES[mapId].totalArtifactPower = 0
 
 		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId
 		for i = 1, #questList do
@@ -561,7 +562,7 @@ local RetrieveWorldQuests = function(mapId)
 								local ap = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.reward.artifactPower = ap
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
-								BWQ.totalArtifactPower = BWQ.totalArtifactPower + ap
+								MAP_ZONES[mapId].totalArtifactPower = MAP_ZONES[mapId].totalArtifactPower + ap
 								if BWQcfg.showArtifactPower then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
@@ -730,7 +731,6 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower = 0
 
 	if not InCombatLockdown() then
 		local _, _, _, isMicroDungeon, _ = GetMapInfo()
@@ -788,8 +788,6 @@ function BWQ:UpdateQuestData()
 		end
 		BWQcache.questIds = questIds
 	end
-
-	BWQ.WorldQuestsBroker.text = ("%d AP"):format(BWQ.totalArtifactPower)
 
 	if needsRefresh and updateTries <= 5 then
 		needsRefresh = false
@@ -1151,6 +1149,7 @@ function BWQ:UpdateBlock()
 		rewardMaxWidth = rewardMaxWidth + diff
 	end
 
+	local totalAP = 0
 	for mapId in next, MAP_ZONES do
 		for i = 1, #MAP_ZONES[mapId].buttons do
 			if not MAP_ZONES[mapId].buttons[i].quest.hide then -- dont care about the hidden ones
@@ -1168,11 +1167,16 @@ function BWQ:UpdateBlock()
 			end
 		end
 		MAP_ZONES[mapId].zoneSep.texture:SetWidth(totalWidth + 20)
+
+		if MAP_ZONES[mapId].totalArtifactPower then
+			totalAP = totalAP + MAP_ZONES[mapId].totalArtifactPower
+		end
 	end
 
 	totalWidth = totalWidth + 20
 	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
 
+	BWQ.WorldQuestsBroker.text = ("%d AP"):format(totalAP)
 	BWQ:RenderRows()
 end
 

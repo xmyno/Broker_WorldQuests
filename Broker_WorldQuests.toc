@@ -1,7 +1,7 @@
 ## Interface: 70000
 ## Author: myno
 ## Title: Broker_WorldQuests
-## Version: r19
+## Version: r20
 ## SavedVariables: BWQcfg
 ## SavedVariablesPerCharacter: BWQcache
 ## Notes: Broker plugin to display world quests as a list.

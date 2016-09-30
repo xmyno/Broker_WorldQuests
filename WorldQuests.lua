@@ -1037,8 +1037,8 @@ function BWQ:UpdateBlock()
 				rewardText = string.format(
 					"|T%s$s:14:14|t %s%s",
 					button.quest.reward.itemTexture,
-					itemText,
-					button.quest.reward.itemQuantity > 1 and " x" .. button.quest.reward.itemQuantity or ""
+					button.quest.reward.itemQuantity > 1 and button.quest.reward.itemQuantity .. "x " or "",
+					itemText
 				)
 
 				button.reward:SetScript("OnEvent", function(self, event)
@@ -1149,7 +1149,7 @@ function BWQ:UpdateBlock()
 	end -- maps loop
 
 	titleMaxWidth = 125
-	rewardMaxWidth = rewardMaxWidth < 150 and 150 or rewardMaxWidth
+	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 200 and 200 or rewardMaxWidth
 	factionMaxWidth = factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 70

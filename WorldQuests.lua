@@ -1427,8 +1427,7 @@ end)
 -- data broker object
 local ldb = LibStub("LibDataBroker-1.1")
 BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
-	type = "launcher",
-	label = "World Quests",
+	type = "data source",
 	text = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)

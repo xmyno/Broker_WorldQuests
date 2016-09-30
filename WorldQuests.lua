@@ -242,12 +242,24 @@ function BWQ:GetArtifactPowerValue(itemId)
 	local _, itemLink = GetItemInfo(itemId)
 	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
 	BWQScanTooltip:SetHyperlink(itemLink)
-	return BWQScanTooltipTextLeft4 and BWQScanTooltipTextLeft4:GetText():gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or ""
+	local numLines = BWQScanTooltip:NumLines()
+	for i = 2, numLines do
+		local text = _G["BWQScanTooltipTextLeft" .. i]:GetText()
+		if text and text:find(ARTIFACT_POWER) and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
+			return text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or ""
+		end
+	end
 end
 function BWQ:GetItemLevelValueForQuestId(questId)
 	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
 	BWQScanTooltip:SetQuestLogItem("reward", 1, questId)
-	return BWQScanTooltipTextLeft2 and BWQScanTooltipTextLeft2:GetText():match("[%d]+%p*") or ""
+	local numLines = BWQScanTooltip:NumLines()
+	for i = 2, numLines do
+		local text = _G["BWQScanTooltipTextLeft" .. i]:GetText()
+		if text and text:find(ITEM_LEVEL:gsub(" %%d", "")) then
+			return text:match("[%d]+%p*") or ""
+		end
+	end
 end
 
 local FormatTimeLeftString = function(timeLeft)

@@ -486,7 +486,7 @@ local RetrieveWorldQuests = function(mapId)
 	local questList = GetQuestsForPlayerByMapID(mapId)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
-	if questList and (#questList > 0 or not MAP_ZONES[mapId].questsSort) then
+	if questList then
 		numQuests = 0
 		MAP_ZONES[mapId].questsSort = {}
 		MAP_ZONES[mapId].totalArtifactPower = 0
@@ -558,6 +558,8 @@ local RetrieveWorldQuests = function(mapId)
 					quest.reward = {}
 					-- item reward
 					local hasReward = false
+					C_TaskQuest.RequestPreloadRewardData(quest.questId)
+
 					if GetNumQuestLogRewards(quest.questId) > 0 then
 						local itemName, itemTexture, quantity, quality, isUsable, itemId = GetQuestLogRewardInfo(1, quest.questId)
 						if itemName then
@@ -708,8 +710,6 @@ local RetrieveWorldQuests = function(mapId)
 
 		if numQuests == nil then numQuests = 0 end
 		MAP_ZONES[mapId].numQuests = numQuests
-	else
-		needsRefresh = true
 	end
 end
 
@@ -1149,7 +1149,7 @@ function BWQ:UpdateBlock()
 	end -- maps loop
 
 	titleMaxWidth = 125
-	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 200 and 200 or rewardMaxWidth
+	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 250 and 250 or rewardMaxWidth
 	factionMaxWidth = factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 70
@@ -1349,7 +1349,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 	To avoid setting the currently shown map again, which would hide the quest details,
 	skip updating after a WORLD_MAP_UPDATE event happened
 	--]]
-	elseif event == "WORLD_MAP_UPDATE" and WorldMapFrame:IsShown() then
+	elseif event == "WORLD_MAP_UPDATE" then
 		skipNextUpdate = true
 		local mapId = GetCurrentMapAreaID()
 		if BWQ.currentMapId and BWQ.currentMapId ~= mapId then

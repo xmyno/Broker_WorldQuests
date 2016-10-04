@@ -243,12 +243,20 @@ function BWQ:GetArtifactPowerValue(itemId)
 	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
 	BWQScanTooltip:SetHyperlink(itemLink)
 	local numLines = BWQScanTooltip:NumLines()
+	local isArtifactPower = false
 	for i = 2, numLines do
 		local text = _G["BWQScanTooltipTextLeft" .. i]:GetText()
-		if text and text:find(ARTIFACT_POWER) and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
-			return text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or ""
+		if text then
+			if text:find(ARTIFACT_POWER) then
+				isArtifactPower = true
+			end
+
+			if isArtifactPower and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
+				return text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or ""
+			end
 		end
 	end
+	return ""
 end
 function BWQ:GetItemLevelValueForQuestId(questId)
 	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
@@ -260,6 +268,7 @@ function BWQ:GetItemLevelValueForQuestId(questId)
 			return text:match("[%d]+%p*") or ""
 		end
 	end
+	return ""
 end
 
 local FormatTimeLeftString = function(timeLeft)

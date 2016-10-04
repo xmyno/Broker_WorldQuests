@@ -612,7 +612,7 @@ local RetrieveWorldQuests = function(mapId)
 					end
 					-- gold reward
 					local money = GetQuestLogRewardMoney(quest.questId);
-					if money > 0 then
+					if money > 20000 then -- >2g, hides these silly low gold extra rewards
 						hasReward = true
 						quest.reward.money = money
 						quest.sort = SORT_ORDER.MONEY

@@ -57,6 +57,7 @@ local MAP_ZONES = {
 local MAP_ZONES_SORT = {
 	1015, 1096, 1018, 1024, 1017, 1033, 1014
 }
+local MAPID_BROKENISLES = 1007
 local SORT_ORDER = {
 	ARTIFACTPOWER = 1,
 	RELIC = 2,
@@ -492,7 +493,7 @@ local RetrieveWorldQuests = function(mapId)
 
 	local numQuests
 	local currentTime = GetTime()
-	local questList = GetQuestsForPlayerByMapID(mapId)
+	local questList = GetQuestsForPlayerByMapID(mapId, MAPID_BROKENISLES)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -753,45 +754,8 @@ local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
 
-	if not InCombatLockdown() then
-		local _, _, _, isMicroDungeon, _ = GetMapInfo()
-		if not isMicroDungeon then
-			originalMap = GetCurrentMapAreaID()
-			originalContinent = GetCurrentMapContinent()
-			originalDungeonLevel = GetCurrentMapDungeonLevel()
-		end
-
-		SetMapByID(1007) -- Broken Isles map, able to query all world quests on it
-		for mapId in next, MAP_ZONES do
-			if mapId ~= 1014 then
-				RetrieveWorldQuests(mapId)
-			end
-		end
-		-- we need to do Dalaran separately
-		SetMapByID(1014)
-		RetrieveWorldQuests(1014)
-
-		-- set map back to the original map from before updating
-		if not isMicroDungeon then
-			-- setting the maelstrom continent map via SetMapByID would make it non-interactive
-			if originalMap == 751 then
-				SetMapZoom(WORLDMAP_MAELSTROM_ID)
-			elseif originalMap == -1 then
-				SetMapZoom(originalContinent)
-			else
-				SetMapByID(originalMap)
-				if originalDungeonLevel ~= 0 then
-					SetDungeonMapLevel(originalDungeonLevel)
-				end
-			end
-		else
-			SetMapToCurrentZone()
-		end
-	else
-		local mapId = GetCurrentMapAreaID()
-		if MAP_ZONES[mapId] ~= nil then
-			RetrieveWorldQuests(mapId)
-		end
+	for mapId in next, MAP_ZONES do
+		RetrieveWorldQuests(mapId)
 	end
 
 	numQuestsTotal = 0

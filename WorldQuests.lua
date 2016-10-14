@@ -9,18 +9,17 @@
 --
 --]]----
 
-local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS = ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS
-local GetQuestsForPlayerByMapID = C_TaskQuest.GetQuestsForPlayerByMapID
-local GetQuestTimeLeftMinutes = C_TaskQuest.GetQuestTimeLeftMinutes
-local GetQuestTagInfo = GetQuestTagInfo
-local GetQuestInfoByQuestID = C_TaskQuest.GetQuestInfoByQuestID
-local GetFactionInfoByID = GetFactionInfoByID
-local GetQuestObjectiveInfo = GetQuestObjectiveInfo
-local GetQuestProgressBarInfo = C_TaskQuest.GetQuestProgressBarInfo
-local UnitLevel, IsQuestFlaggedCompleted = UnitLevel, IsQuestFlaggedCompleted
-local GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel = GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
-local GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney = GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney
-local GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo = GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
+local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
+	= ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
+
+local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes,             GetQuestInfoByQuestID,             GetQuestProgressBarInfo
+	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo
+
+local GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
+	= GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
+
+local GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
+	= GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
 
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[114] = "worldquest-icon-firstaid",
@@ -238,6 +237,7 @@ end
 
 
 local BWQScanTooltip = CreateFrame("GameTooltip", "BWQScanTooltip", nil, "GameTooltipTemplate")
+BWQScanTooltip:Hide()
 function BWQ:GetArtifactPowerValue(itemId)
 	local _, itemLink = GetItemInfo(itemId)
 	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")

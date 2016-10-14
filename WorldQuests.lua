@@ -649,16 +649,8 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.resourceAmount = numItems
 							quest.sort = SORT_ORDER.RESOURCES
 
-							if BWQcfg.showResources then
-								if name == "Ancient Mana" then
-									if BWQcfg.showAncientMana then quest.hide = false end
-								elseif name == "Order Resources" then
-									if BWQcfg.showOrderHallResources then quest.hide = false end
-								else
-									if BWQcfg.showOtherResources then quest.hide = false end
-								end
-							end
 							BWQ.totalResources = BWQ.totalResources + numItems
+							if BWQcfg.showResources then quest.hide = false end
 						end
 					end
 
@@ -1221,12 +1213,7 @@ function BWQ:SetupConfigMenu()
 		},
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
-		{ text = "Resources", check = "showResources", submenu = {
-				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showOrderHallResources" },
-				{ text = ("|T%1$s:16:16|t  Ancient Mana"):format("Interface\\Icons\\inv_misc_ancient_mana"), check = "showAncientMana" },
-				{ text = "Other", check = "showOtherResources" },
-			}
-		},
+		{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession", submenu = {

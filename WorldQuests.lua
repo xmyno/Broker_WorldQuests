@@ -1322,6 +1322,21 @@ function BWQ:OpenConfigMenu(anchor)
 	ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
 end
 
+local SetFlightMapPins = function(self)
+	for pin, active in self:GetMap():EnumeratePinsByTemplate("WorldQuestPinTemplate") do
+		if IsWorldQuestHardWatched(pin.questID) or GetSuperTrackedQuestID() == pin.questID then
+			pin:SetAlphaLimits(2.0, 1.0, 1.0)
+			pin:SetScalingLimits(1, 1.5, 0.50)
+		else
+			pin:SetAlphaLimits(2.0, 0.0, 1.0)
+			pin:SetScalingLimits(1, 1.0, 0.50)
+		end
+	end
+end
+function BWQ:AddFlightMapHook()
+	hooksecurefunc(WorldQuestDataProviderMixin, "RefreshAllData", SetFlightMapPins)
+end
+
 function BWQ:AttachToBlock(anchor)
 	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
 		CloseDropDownMenus()
@@ -1420,16 +1435,24 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
-	elseif event == "ADDON_LOADED" and arg1 == "Broker_WorldQuests" then
-		BWQcfg = BWQcfg or defaultConfig
-		for i, v in next, defaultConfig do
-			if BWQcfg[i] == nil then
-				BWQcfg[i] = v
+	elseif event == "ADDON_LOADED" then
+		if arg1 == "Broker_WorldQuests" then
+			BWQcfg = BWQcfg or defaultConfig
+			for i, v in next, defaultConfig do
+				if BWQcfg[i] == nil then
+					BWQcfg[i] = v
+				end
 			end
-		end
-		BWQcache = BWQcache or {}
+			BWQcache = BWQcache or {}
 
-		BWQ:UnregisterEvent("ADDON_LOADED")
+			if IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
+				BWQ:AddFlightMapHook()
+				BWQ:UnregisterEvent("ADDON_LOADED")
+			end
+		elseif arg1 == "Blizzard_SharedMapDataProviders" then
+			BWQ:AddFlightMapHook()
+			BWQ:UnregisterEvent("ADDON_LOADED")
+		end
 	end
 end)
 

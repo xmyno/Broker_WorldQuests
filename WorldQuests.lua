@@ -93,6 +93,12 @@ local defaultConfig = {
 	showOnClick = false,
 	alwaysShowBountyQuests = true,
 	alwaysShowEpicQuests = true,
+	showTotalsInBrokerText = true,
+		brokerShowAP = true,
+		brokerShowResources = true,
+		brokerShowGold = true,
+		brokerShowGear = false,
+		brokerShowBloodOfSargeras = false,
 	-- reward type
 	showArtifactPower = true,
 	showItems = true,
@@ -499,7 +505,6 @@ local RetrieveWorldQuests = function(mapId)
 	if questList then
 		numQuests = 0
 		MAP_ZONES[mapId].questsSort = {}
-		MAP_ZONES[mapId].totalArtifactPower = 0
 
 		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId
 		for i = 1, #questList do
@@ -583,10 +588,10 @@ local RetrieveWorldQuests = function(mapId)
 							local _, itemLink, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 							quest.reward.itemLink = itemLink
 							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
-								local ap = BWQ:GetArtifactPowerValue(quest.reward.itemId)
-								quest.reward.artifactPower = ap
+								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
-								MAP_ZONES[mapId].totalArtifactPower = MAP_ZONES[mapId].totalArtifactPower + ap
+
+								BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.artifactPower or 0)
 								if BWQcfg.showArtifactPower then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
@@ -594,14 +599,21 @@ local RetrieveWorldQuests = function(mapId)
 								if BWQcfg.showItems then
 									if class == "Tradeskill" then
 										quest.sort = SORT_ORDER.PROFESSION
+										if quest.reward.itemId == 124124 then
+											BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
+										end
 										if BWQcfg.showCraftingMaterials then quest.hide = false end
 									elseif equipSlot ~= "" then
 										quest.sort = SORT_ORDER.EQUIP
 										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+
+										BWQ.totalGear = BWQ.totalGear + 1
 										if BWQcfg.showGear then quest.hide = false end
 									elseif subClass == "Artifact Relic" then
 										quest.sort = SORT_ORDER.RELIC
 										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+
+										BWQ.totalGear = BWQ.totalGear + 1
 										if BWQcfg.showRelics then quest.hide = false end
 									else
 										quest.sort = SORT_ORDER.ITEM
@@ -618,6 +630,7 @@ local RetrieveWorldQuests = function(mapId)
 						quest.reward.money = money
 						quest.sort = SORT_ORDER.MONEY
 
+						BWQ.totalGold = BWQ.totalGold + money
 						if money < 1000000 then
 							if BWQcfg.showLowGold then quest.hide = false end
 						else
@@ -645,6 +658,7 @@ local RetrieveWorldQuests = function(mapId)
 									if BWQcfg.showOtherResources then quest.hide = false end
 								end
 							end
+							BWQ.totalResources = BWQ.totalResources + numItems
 						end
 					end
 
@@ -753,6 +767,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalBloodOfSargeras, BWQ.totalGear = 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES do
 		RetrieveWorldQuests(mapId)
@@ -1134,7 +1149,6 @@ function BWQ:UpdateBlock()
 		rewardMaxWidth = rewardMaxWidth + diff
 	end
 
-	local totalAP = 0
 	for mapId in next, MAP_ZONES do
 		for i = 1, #MAP_ZONES[mapId].buttons do
 			if not MAP_ZONES[mapId].buttons[i].quest.hide then -- dont care about the hidden ones
@@ -1152,17 +1166,26 @@ function BWQ:UpdateBlock()
 			end
 		end
 		MAP_ZONES[mapId].zoneSep.texture:SetWidth(totalWidth + 20)
-
-		if MAP_ZONES[mapId].totalArtifactPower then
-			totalAP = totalAP + MAP_ZONES[mapId].totalArtifactPower
-		end
 	end
 
 	totalWidth = totalWidth + 20
 	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
 
-	BWQ.WorldQuestsBroker.text = ("%d AP"):format(totalAP)
-	BWQ:RenderRows()
+	if BWQcfg.showTotalsInBrokerText then
+		local brokerString = ""
+		if BWQcfg.brokerShowAP              then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %d  ", brokerString, BWQ.totalArtifactPower) end
+		if BWQcfg.brokerShowResources       then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
+		if BWQcfg.brokerShowGold            then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
+		if BWQcfg.brokerShowGear            then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
+		if BWQcfg.brokerShowBloodOfSargeras then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
+
+		if brokerString then
+			BWQ.WorldQuestsBroker.text = brokerString
+		end
+	else
+		BWQ.WorldQuestsBroker.text = "World Quests"
+	end
+	if not needsRefresh then BWQ:RenderRows() end
 end
 
 
@@ -1178,9 +1201,17 @@ function BWQ:SetupConfigMenu()
 		{ text = "" },
 		{ text = "Always show |cffa335eeepic|r world quests (e.g. world bosses)", check = "alwaysShowEpicQuests" },
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
+		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
+				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "brokerShowAP" },
+				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
+				{ text = ("|T%1$s:16:16|t  Gold"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "brokerShowGold" },
+				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "brokerShowGear" },
+				{ text = ("|T%s$s:16:16|t  Blood of Sargeras"):format("1417744"), check = "brokerShowBloodOfSargeras" },
+			}
+		},
 		{ text = "" },
 		{ text = "Filter by reward...", isTitle = true },
-		{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_enchant_shardradientlarge"), check = "showArtifactPower" },
+		{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "showArtifactPower" },
 		{ text = ("|T%1$s:16:16|t  Items"):format("Interface\\Minimap\\Tracking\\Banker"), check = "showItems", submenu = {
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "showGear" },
 				{ text = ("|T%1$s:16:16|t  Artifact Relics"):format("Interface\\Icons\\inv_misc_statue_01"), check = "showRelics" },

@@ -1080,12 +1080,12 @@ function BWQ:UpdateBlock()
 			end
 			button.icon:SetSize(12, 12)
 
-
 			button.titleFS:SetText(string.format("|cffe5cc80%s|r%s%s|r", button.quest.isNew and "NEW  " or "", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
 			--local titleWidth = button.titleFS:GetStringWidth()
 			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 
-			local bountyText = ""
+			local isWatched = IsWorldQuestHardWatched(button.quest.questId) or GetSuperTrackedQuestID() == button.quest.questId
+			local bountyText = isWatched and "|TInterface\\COMMON\\FavoritesIcon:24:24|t " or "         "
 			for _, bountyIcon in ipairs(button.quest.bounties) do
 				bountyText = string.format("%s |T%s$s:14:14|t", bountyText, bountyIcon)
 			end
@@ -1348,6 +1348,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		BWQ.currentMapId = mapId
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
 		BWQ:UpdateWatchGlows(GetCurrentMapAreaID())
+		BWQ:UpdateBlock()
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
 		BWQ.slider:SetScript("OnValueChanged", function(self, value)

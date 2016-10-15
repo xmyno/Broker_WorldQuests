@@ -909,6 +909,8 @@ function BWQ:UpdateBlock()
 	BWQ:UpdateBountyData()
 	BWQ:UpdateQuestData()
 
+	if needsRefresh then return end
+
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES do
 		local buttonIndex = 1
@@ -1202,7 +1204,8 @@ function BWQ:UpdateBlock()
 	else
 		BWQ.WorldQuestsBroker.text = "World Quests"
 	end
-	if not needsRefresh then BWQ:RenderRows() end
+
+	BWQ:RenderRows()
 end
 
 

@@ -131,6 +131,7 @@ local defaultConfig = {
 		showProfessionFishing = true,
 	showDungeon = true,
 	showPvP = true,
+	hideFactionColumn = false,
 	alwaysShowCourtOfFarondis = false,
 	alwaysShowDreamweavers = false,
 	alwaysShowHighmountainTribe = false,
@@ -1100,9 +1101,13 @@ function BWQ:UpdateBlock()
 			local bountyWidth = button.bountyFS:GetStringWidth()
 			if bountyWidth > bountyMaxWidth then bountyMaxWidth = bountyWidth end
 
-			button.factionFS:SetText(button.quest.faction)
-			local factionWidth = button.factionFS:GetStringWidth()
-			if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
+			if not C("hideFactionColumn") then
+				button.factionFS:SetText(button.quest.faction)
+				local factionWidth = button.factionFS:GetStringWidth()
+				if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
+			else
+				button.factionFS:SetText("")
+			end
 
 			button.timeLeftFS:SetText(FormatTimeLeftString(button.quest.timeLeft))
 			--local timeLeftWidth = button.factionFS:GetStringWidth()
@@ -1130,7 +1135,7 @@ function BWQ:UpdateBlock()
 
 	titleMaxWidth = 125
 	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 250 and 250 or rewardMaxWidth
-	factionMaxWidth = factionMaxWidth < 100 and 100 or factionMaxWidth
+	factionMaxWidth = C("hideFactionColumn") and 0 or factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 70
 
@@ -1244,6 +1249,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Hide Pet Battle Quests even when active bounty", check = "hidePetBattleBountyQuests" },
 		{ text = "Always show Pet Battle Quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
 		{ text = "" },
+		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Always show quests for faction...", isTitle = true },
 		{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },
 		{ text = "Dreamweavers", check="alwaysShowDreamweavers" },

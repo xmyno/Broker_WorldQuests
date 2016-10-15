@@ -91,13 +91,17 @@ local defaultConfig = {
 	-- general
 	attachToWorldMap = false,
 	showOnClick = false,
+	usePerCharacterSettings = false,
 	alwaysShowBountyQuests = true,
 	alwaysShowEpicQuests = true,
 	showTotalsInBrokerText = true,
 		brokerShowAP = true,
 		brokerShowResources = true,
-		brokerShowGold = true,
+		brokerShowGold = false,
 		brokerShowGear = false,
+		brokerShowHerbalism = false,
+		brokerShowMining = false,
+		brokerShowFishing = false,
 		brokerShowBloodOfSargeras = false,
 	-- reward type
 	showArtifactPower = true,
@@ -142,6 +146,13 @@ local defaultConfig = {
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
 }
+local C = function(k)
+	if BWQcfg.usePerCharacterSettings then
+		return BWQcfgPerCharacter[k]
+	else
+		return BWQcfg[k]
+	end
+end
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
 BWQ:EnableMouse(true)
@@ -160,7 +171,7 @@ BWQ:Hide()
 
 
 local Block_OnLeave = function(self)
-	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
+	if not C("attachToWorldMap") or (C("attachToWorldMap") and not WorldMapFrame:IsShown()) then
 		if not BWQ:IsMouseOver() then
 			BWQ:Hide()
 		end
@@ -212,7 +223,7 @@ function BWQ:WorldQuestsUnlocked()
 	end
 
 	if not hasUnlockedWorldQuests then
-		if BWQcfg.attachToWorldMap and WorldMapFrame:IsShown() then -- don't show error box on map
+		if C("attachToWorldMap") and WorldMapFrame:IsShown() then -- don't show error box on map
 			BWQ:Hide()
 			return false
 		end
@@ -593,32 +604,32 @@ local RetrieveWorldQuests = function(mapId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
 
 								BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.artifactPower or 0)
-								if BWQcfg.showArtifactPower then quest.hide = false end
+								if C("showArtifactPower") then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
 
-								if BWQcfg.showItems then
+								if C("showItems") then
 									if class == "Tradeskill" then
 										quest.sort = SORT_ORDER.PROFESSION
 										if quest.reward.itemId == 124124 then
 											BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
 										end
-										if BWQcfg.showCraftingMaterials then quest.hide = false end
+										if C("showCraftingMaterials") then quest.hide = false end
 									elseif equipSlot ~= "" then
 										quest.sort = SORT_ORDER.EQUIP
 										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 
 										BWQ.totalGear = BWQ.totalGear + 1
-										if BWQcfg.showGear then quest.hide = false end
+										if C("showGear") then quest.hide = false end
 									elseif subClass == "Artifact Relic" then
 										quest.sort = SORT_ORDER.RELIC
 										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 
 										BWQ.totalGear = BWQ.totalGear + 1
-										if BWQcfg.showRelics then quest.hide = false end
+										if C("showRelics") then quest.hide = false end
 									else
 										quest.sort = SORT_ORDER.ITEM
-										if BWQcfg.showOtherItems then quest.hide = false end
+										if C("showOtherItems") then quest.hide = false end
 									end
 								end
 							end
@@ -633,9 +644,9 @@ local RetrieveWorldQuests = function(mapId)
 
 						BWQ.totalGold = BWQ.totalGold + money
 						if money < 1000000 then
-							if BWQcfg.showLowGold then quest.hide = false end
+							if C("showLowGold") then quest.hide = false end
 						else
-							if BWQcfg.showHighGold then quest.hide = false end
+							if C("showHighGold") then quest.hide = false end
 						end
 					end
 					-- currency reward
@@ -651,7 +662,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.sort = SORT_ORDER.RESOURCES
 
 							BWQ.totalResources = BWQ.totalResources + numItems
-							if BWQcfg.showResources then quest.hide = false end
+							if C("showResources") then quest.hide = false end
 						end
 					end
 
@@ -665,54 +676,60 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- quest type filters
 					if quest.worldQuestType == 5 then
-						if BWQcfg.showPetBattle or (BWQcfg.alwaysShowPetBattleFamilyFamiliar and FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
+						if C("showPetBattle") or (C("alwaysShowPetBattleFamilyFamiliar") and FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
 							quest.hide = false
 						else
 							quest.hide = true
 						end
 					elseif quest.worldQuestType == 2 then
-						if BWQcfg.showProfession then
+						if C("showProfession") then
 
-							if     quest.tagId == 118 then 	if BWQcfg.showProfessionAlchemy 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 129 then	if BWQcfg.showProfessionArchaeology 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 116 then 	if BWQcfg.showProfessionBlacksmithing 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 131 then 	if BWQcfg.showProfessionCooking 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 123 then 	if BWQcfg.showProfessionEnchanting 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 122 then 	if BWQcfg.showProfessionEngineering 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 114 then 	if BWQcfg.showProfessionFirstAid 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 130 then 	if BWQcfg.showProfessionFishing 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 119 then 	if BWQcfg.showProfessionHerbalism 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 126 then 	if BWQcfg.showProfessionInscription 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 125 then 	if BWQcfg.showProfessionJewelcrafting 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 117 then 	if BWQcfg.showProfessionLeatherworking 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 120 then 	if BWQcfg.showProfessionMining 			then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 124 then 	if BWQcfg.showProfessionSkinning 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 121 then 	if BWQcfg.showProfessionTailoring 		then quest.hide = false else quest.hide = true end
+							if quest.tagId == 119 then
+								BWQ.totalHerbalism = BWQ.totalHerbalism + 1
+								if C("showProfessionHerbalism")	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 120 then
+								BWQ.totalMining = BWQ.totalMining + 1
+								if C("showProfessionMining")		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 130 then
+								BWQ.totalFishing = BWQ.totalFishing + 1
+							 	if C("showProfessionFishing")		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 118 then 	if C("showProfessionAlchemy") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 129 then	if C("showProfessionArchaeology") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 116 then 	if C("showProfessionBlacksmithing") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 131 then 	if C("showProfessionCooking") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 123 then 	if C("showProfessionEnchanting") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 122 then 	if C("showProfessionEngineering") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 114 then 	if C("showProfessionFirstAid") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 126 then 	if C("showProfessionInscription") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 125 then 	if C("showProfessionJewelcrafting") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 117 then 	if C("showProfessionLeatherworking") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 124 then 	if C("showProfessionSkinning") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 121 then 	if C("showProfessionTailoring") 		then quest.hide = false else quest.hide = true end
 							end
 						else
 							quest.hide = true
 						end
-					elseif not BWQcfg.showPvP and quest.worldQuestType == 4 then quest.hide = true
-					elseif not BWQcfg.showDungeon and quest.worldQuestType == 7 then quest.hide = true
+					elseif not C("showPvP") and quest.worldQuestType == 4 then quest.hide = true
+					elseif not C("showDungeon") and quest.worldQuestType == 7 then quest.hide = true
 					end
 					-- always show bounty quests or reputation for faction filter
-					if (BWQcfg.alwaysShowBountyQuests and #quest.bounties > 0) or
-					   (BWQcfg.alwaysShowCourtOfFarondis 	and (mapId == 1015 or mapId == 1096)) or
-					   (BWQcfg.alwaysShowDreamweavers 		and mapId == 1018) or
-					   (BWQcfg.alwaysShowHighmountainTribe 	and mapId == 1024) or
-					   (BWQcfg.alwaysShowNightfallen 		and mapId == 1033) or
-					   (BWQcfg.alwaysShowWardens 			and quest.faction == "The Wardens") or
-					   (BWQcfg.alwaysShowValarjar 			and mapId == 1017) then
+					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
+					   (C("alwaysShowCourtOfFarondis") 	and (mapId == 1015 or mapId == 1096)) or
+					   (C("alwaysShowDreamweavers") 		and mapId == 1018) or
+					   (C("alwaysShowHighmountainTribe") 	and mapId == 1024) or
+					   (C("alwaysShowNightfallen") 		and mapId == 1033) or
+					   (C("alwaysShowWardens") 			and quest.faction == "The Wardens") or
+					   (C("alwaysShowValarjar") 			and mapId == 1017) then
 
 						-- pet battle override
-						if BWQcfg.hidePetBattleBountyQuests and not BWQcfg.showPetBattle and quest.worldQuestType == 5 then
+						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 5 then
 							quest.hide = true
 						else
 							quest.hide = false
 						end
 					end
 					-- don't filter epic quests based on setting
-					if BWQcfg.alwaysShowEpicQuests and quest.isRare == 3 then quest.hide = false end
+					if C("alwaysShowEpicQuests") and quest.isRare == 3 then quest.hide = false end
 
 					MAP_ZONES[mapId].quests[questId] = quest
 
@@ -760,7 +777,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalBloodOfSargeras, BWQ.totalGear = 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalBloodOfSargeras = 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES do
 		RetrieveWorldQuests(mapId)
@@ -1168,13 +1185,16 @@ function BWQ:UpdateBlock()
 	totalWidth = totalWidth + 20
 	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
 
-	if BWQcfg.showTotalsInBrokerText then
+	if C("showTotalsInBrokerText") then
 		local brokerString = ""
-		if BWQcfg.brokerShowAP              then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %d  ", brokerString, BWQ.totalArtifactPower) end
-		if BWQcfg.brokerShowResources       then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
-		if BWQcfg.brokerShowGold            then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
-		if BWQcfg.brokerShowGear            then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
-		if BWQcfg.brokerShowBloodOfSargeras then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
+		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %d  ", brokerString, BWQ.totalArtifactPower) end
+		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
+		if C("brokerShowGold")            and BWQ.totalGold > 0          then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
+		if C("brokerShowGear")            and BWQ.totalGear > 0          then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
+		if C("brokerShowHerbalism")       and BWQ.totalHerbalism > 0     then brokerString = string.format("%s|TInterface\\Icons\\Trade_Herbalism:16:16|t %d  ", brokerString, BWQ.totalHerbalism) end
+		if C("brokerShowMining")          and BWQ.totalMining > 0        then brokerString = string.format("%s|TInterface\\Icons\\Trade_Mining:16:16|t %d  ", brokerString, BWQ.totalMining) end
+		if C("brokerShowFishing")         and BWQ.totalFishing > 0       then brokerString = string.format("%s|TInterface\\Icons\\Trade_Fishing:16:16|t %d  ", brokerString, BWQ.totalFishing) end
+		if C("brokerShowBloodOfSargeras") and BWQ.totalBloodOfSargeras   then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
 
 		if brokerString then
 			BWQ.WorldQuestsBroker.text = brokerString
@@ -1195,6 +1215,7 @@ function BWQ:SetupConfigMenu()
 	local options = {
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
 		{ text = "Show list frame on click", check = "showOnClick" },
+		{ text = "Use per-character settings", check = "usePerCharacterSettings" },
 		{ text = "" },
 		{ text = "Always show |cffa335eeepic|r world quests (e.g. world bosses)", check = "alwaysShowEpicQuests" },
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
@@ -1203,6 +1224,9 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
 				{ text = ("|T%1$s:16:16|t  Gold"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "brokerShowGold" },
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "brokerShowGear" },
+				{ text = ("|T%1$s:16:16|t  Herbalism Quests"):format("Interface\\Icons\\Trade_Herbalism"), check = "brokerShowHerbalism" },
+				{ text = ("|T%1$s:16:16|t  Mining Quests"):format("Interface\\Icons\\Trade_Mining"), check = "brokerShowMining" },
+				{ text = ("|T%1$s:16:16|t  Fishing Quests"):format("Interface\\Icons\\Trade_Fishing"), check = "brokerShowFishing" },
 				{ text = ("|T%s$s:16:16|t  Blood of Sargeras"):format("1417744"), check = "brokerShowBloodOfSargeras" },
 			}
 		},
@@ -1260,7 +1284,12 @@ function BWQ:SetupConfigMenu()
 	}
 
 	local SetOption = function(bt, var, val)
-		BWQcfg[var] = val or not BWQcfg[var]
+		if var == "usePerCharacterSettings" or not BWQcfg.usePerCharacterSettings then
+			BWQcfg[var] = val or not BWQcfg[var]
+		else
+			BWQcfgPerCharacter[var] = val or not BWQcfgPerCharacter[var]
+		end
+
 		BWQ:UpdateBlock()
 		if WorldMapFrame:IsShown() then
 			BWQ:OpenConfigMenu(nil)
@@ -1269,9 +1298,14 @@ function BWQ:SetupConfigMenu()
 		-- toggle block when changing attach setting
 		if var == "attachToWorldMap" then
 			BWQ:Hide()
-			if BWQcfg[var] == true and WorldMapFrame:IsShown() then
+			if C(var) == true and WorldMapFrame:IsShown() then
 				BWQ:AttachToWorldMap()
 			end
+		end
+
+		if var == "usePerCharacterSettings" then
+			CloseDropDownMenus()
+			ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
 		end
 	end
 
@@ -1284,7 +1318,7 @@ function BWQ:SetupConfigMenu()
 			info.isTitle = v.isTitle
 
 			if v.check then
-				info.checked = v.inv and not BWQcfg[v.check] or not v.inv and BWQcfg[v.check]
+				info.checked = v.inv and not C(v.check) or not v.inv and C(v.check)
 				info.func, info.arg1 = SetOption, v.check
 				info.isNotRadio = true
 				info.keepShownOnClick = true
@@ -1326,7 +1360,7 @@ function BWQ:AddFlightMapHook()
 end
 
 function BWQ:AttachToBlock(anchor)
-	if not BWQcfg.attachToWorldMap or (BWQcfg.attachToWorldMap and not WorldMapFrame:IsShown()) then
+	if not C("attachToWorldMap") or (C("attachToWorldMap") and not WorldMapFrame:IsShown()) then
 		CloseDropDownMenus()
 
 		blockYPos = select(2, anchor:GetCenter())
@@ -1405,7 +1439,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		end
 
 		hooksecurefunc(WorldMapFrame, "Hide", function(self)
-			if BWQcfg["attachToWorldMap"] then
+			if C("attachToWorldMap") then
 				BWQ:Hide()
 			end
 
@@ -1413,7 +1447,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 			BWQ:HideAllWatchGlows(BWQ.currentMapId)
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
-			if BWQcfg["attachToWorldMap"] then
+			if C("attachToWorldMap") then
 				BWQ:AttachToWorldMap()
 				BWQ:RunUpdate()
 			end
@@ -1427,6 +1461,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 	elseif event == "ADDON_LOADED" then
 		if arg1 == "Broker_WorldQuests" then
 			BWQcfg = BWQcfg or defaultConfig
+			BWQcfgPerCharacter = BWQcfgPerCharacter and BWQcfgPerCharacter or BWQcfg and BWQcfg or defaultConfig
 			for i, v in next, defaultConfig do
 				if BWQcfg[i] == nil then
 					BWQcfg[i] = v
@@ -1452,14 +1487,14 @@ BWQ.WorldQuestsBroker = ldb:NewDataObject("WorldQuests", {
 	text = "World Quests",
 	icon = "Interface\\ICONS\\Achievement_Dungeon_Outland_DungeonMaster",
 	OnEnter = function(self)
-		if not BWQcfg.showOnClick then
+		if not C("showOnClick") then
 			BWQ:AttachToBlock(self)
 		end
 	end,
 	OnLeave = Block_OnLeave,
 	OnClick = function(self, button)
 		if button == "LeftButton" then
-			if BWQcfg.showOnClick then
+			if C("showOnClick") then
 				BWQ:AttachToBlock(self)
 			else
 				BWQ:RunUpdate()

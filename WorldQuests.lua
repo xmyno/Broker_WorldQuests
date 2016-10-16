@@ -527,11 +527,12 @@ local RetrieveWorldQuests = function(mapId)
 			tagId = 116
 			tagName = Blacksmithing World Quest
 			worldQuestType =
-				2 -> profession,
-				3 -> pve?
-				4 -> pvp
-				5 -> battle pet
-				7 -> dungeon
+				1 -> profession,
+				2 -> pve?
+				3 -> pvp
+				4 -> battle pet
+				5 -> ??
+				6 -> dungeon
 			isRare =
 				1 -> normal
 				2 -> rare
@@ -676,13 +677,13 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					-- quest type filters
-					if quest.worldQuestType == 5 then
+					if quest.worldQuestType == 4 then
 						if C("showPetBattle") or (C("alwaysShowPetBattleFamilyFamiliar") and FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
 							quest.hide = false
 						else
 							quest.hide = true
 						end
-					elseif quest.worldQuestType == 2 then
+					elseif quest.worldQuestType == 1 then
 						if C("showProfession") then
 
 							if quest.tagId == 119 then
@@ -712,8 +713,8 @@ local RetrieveWorldQuests = function(mapId)
 						else
 							quest.hide = true
 						end
-					elseif not C("showPvP") and quest.worldQuestType == 4 then quest.hide = true
-					elseif not C("showDungeon") and quest.worldQuestType == 7 then quest.hide = true
+					elseif not C("showPvP") and quest.worldQuestType == 3 then quest.hide = true
+					elseif not C("showDungeon") and quest.worldQuestType == 6 then quest.hide = true
 					end
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
@@ -725,7 +726,7 @@ local RetrieveWorldQuests = function(mapId)
 					   (C("alwaysShowValarjar") 			and mapId == 1017) then
 
 						-- pet battle override
-						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 5 then
+						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
 							quest.hide = true
 						else
 							quest.hide = false

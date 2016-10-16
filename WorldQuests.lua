@@ -390,7 +390,7 @@ function BWQ:QueryZoneQuestCoordinates(mapId)
 end
 
 function BWQ:CalculateMapPosition(x, y)
-	return x * WorldMapPlayersFrame:GetWidth(), -1 * y * WorldMapPlayersFrame:GetHeight()
+	return x * WorldMapUnitPositionFrame:GetWidth(), -1 * y * WorldMapUnitPositionFrame:GetHeight()
 end
 
 function BWQ:CreateWatchGlow()

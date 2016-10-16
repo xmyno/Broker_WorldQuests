@@ -147,6 +147,8 @@ local defaultConfig = {
 	alwaysShowPetBattleFamilyFamiliar = true,
 }
 local C = function(k)
+	if k == "usePerCharacterSettings" then return BWQcfg[k] end
+
 	if BWQcfg.usePerCharacterSettings then
 		return BWQcfgPerCharacter[k]
 	else

@@ -148,8 +148,6 @@ local defaultConfig = {
 	alwaysShowPetBattleFamilyFamiliar = true,
 }
 local C = function(k)
-	if k == "usePerCharacterSettings" then return BWQcfg[k] end
-
 	if BWQcfg.usePerCharacterSettings then
 		return BWQcfgPerCharacter[k]
 	else
@@ -1328,7 +1326,8 @@ function BWQ:SetupConfigMenu()
 			info.isTitle = v.isTitle
 
 			if v.check then
-				info.checked = v.inv and not C(v.check) or not v.inv and C(v.check)
+				if (v.check == "usePerCharacterSettings") info.checked = v.inv and not BWQcfg[v.check] or not v.inv and BWQcfg[v.check]
+				else info.checked = v.inv and not C(v.check) or not v.inv and C(v.check) end
 				info.func, info.arg1 = SetOption, v.check
 				info.isNotRadio = true
 				info.keepShownOnClick = true

@@ -1326,7 +1326,7 @@ function BWQ:SetupConfigMenu()
 			info.isTitle = v.isTitle
 
 			if v.check then
-				if (v.check == "usePerCharacterSettings") info.checked = v.inv and not BWQcfg[v.check] or not v.inv and BWQcfg[v.check]
+				if (v.check == "usePerCharacterSettings") then info.checked = v.inv and not BWQcfg[v.check] or not v.inv and BWQcfg[v.check]
 				else info.checked = v.inv and not C(v.check) or not v.inv and C(v.check) end
 				info.func, info.arg1 = SetOption, v.check
 				info.isNotRadio = true

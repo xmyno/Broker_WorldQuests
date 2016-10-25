@@ -635,29 +635,27 @@ local RetrieveWorldQuests = function(mapId)
 							else
 								quest.reward.itemName = itemName
 
-								if C("showItems") then
-									if class == "Tradeskill" then
-										quest.sort = SORT_ORDER.PROFESSION
-										if quest.reward.itemId == 124124 then
-											BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
-										end
-										if C("showCraftingMaterials") then quest.hide = false end
-									elseif equipSlot ~= "" then
-										quest.sort = SORT_ORDER.EQUIP
-										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
-
-										BWQ.totalGear = BWQ.totalGear + 1
-										if C("showGear") then quest.hide = false end
-									elseif subClass == "Artifact Relic" then
-										quest.sort = SORT_ORDER.RELIC
-										quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
-
-										BWQ.totalGear = BWQ.totalGear + 1
-										if C("showRelics") then quest.hide = false end
-									else
-										quest.sort = SORT_ORDER.ITEM
-										if C("showOtherItems") then quest.hide = false end
+								if class == "Tradeskill" then
+									quest.sort = SORT_ORDER.PROFESSION
+									if quest.reward.itemId == 124124 then
+										BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
 									end
+									if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
+								elseif equipSlot ~= "" then
+									quest.sort = SORT_ORDER.EQUIP
+									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+
+									BWQ.totalGear = BWQ.totalGear + 1
+									if C("showItems") and C("showGear") then quest.hide = false end
+								elseif subClass == "Artifact Relic" then
+									quest.sort = SORT_ORDER.RELIC
+									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+
+									BWQ.totalGear = BWQ.totalGear + 1
+									if C("showItems") and C("showRelics") then quest.hide = false end
+								else
+									quest.sort = SORT_ORDER.ITEM
+									if C("showItems") and C("showOtherItems") then quest.hide = false end
 								end
 							end
 						end

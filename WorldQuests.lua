@@ -1238,8 +1238,10 @@ function BWQ:UpdateBlock()
 		if C("brokerShowSkinning")        and BWQ.totalSkinning > 0      then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_pelt_wolf_01:16:16|t %d  ", brokerString, BWQ.totalSkinning) end
 		if C("brokerShowBloodOfSargeras") and BWQ.totalBloodOfSargeras   then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
 
-		if brokerString then
+		if brokerString and brokerString ~= "" then
 			BWQ.WorldQuestsBroker.text = brokerString
+		else
+			BWQ.WorldQuestsBroker.text = "World Quests"
 		end
 	else
 		BWQ.WorldQuestsBroker.text = "World Quests"

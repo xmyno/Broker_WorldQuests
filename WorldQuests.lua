@@ -9,6 +9,8 @@
 --
 --]]----
 
+local interfaceVersion = select(4, GetBuildInfo())
+
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 	= ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 
@@ -67,6 +69,25 @@ local SORT_ORDER = {
 	RESOURCES = 6,
 	MONEY = 7,
 }
+
+local WORLD_QUEST_TYPES = {
+	PROFESSION = 2,
+	PVE = 3,
+	PVP = 4,
+	PETBATTLE = 5,
+	-- ?? = 6,
+	DUNGEON = 7,
+}
+if interfaceVersion > 70000 then
+	WORLD_QUEST_TYPES = {
+		PROFESSION = 1,
+		PVE = 2,
+		PVP = 3,
+		PETBATTLE = 4,
+		-- ?? = 5,
+		DUNGEON = 6,
+	}
+end
 
 local ARTIFACTPOWER_SPELL_NAME = select(1, GetSpellInfo(228111))
 local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
@@ -391,7 +412,11 @@ function BWQ:QueryZoneQuestCoordinates(mapId)
 end
 
 function BWQ:CalculateMapPosition(x, y)
-	return x * WorldMapUnitPositionFrame:GetWidth(), -1 * y * WorldMapUnitPositionFrame:GetHeight()
+	if interfaceVersion > 70000 then
+		return x * WorldMapUnitPositionFrame:GetWidth(), -1 * y * WorldMapUnitPositionFrame:GetHeight()
+	else
+		return x * WorldMapPlayersFrame:GetWidth(), -1 * y * WorldMapPlayersFrame:GetHeight()
+	end
 end
 
 function BWQ:CreateWatchGlow()

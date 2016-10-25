@@ -991,6 +991,10 @@ function BWQ:UpdateBlock()
 				button.titleFS:SetTextColor(.9, .9, .9)
 				button.titleFS:SetWordWrap(false)
 
+				button.track = button:CreateTexture()
+				button.track:SetTexture("Interface\\COMMON\\FavoritesIcon")
+				button.track:SetSize(24, 24)
+
 				button.bountyFS = button:CreateFontString("BWQbountyFS", "OVERLAY", "SystemFont_Shadow_Med1")
 				button.bountyFS:SetJustifyH("LEFT")
 				button.bountyFS:SetWordWrap(false)
@@ -1115,8 +1119,13 @@ function BWQ:UpdateBlock()
 			--local titleWidth = button.titleFS:GetStringWidth()
 			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 
-			local isWatched = IsWorldQuestHardWatched(button.quest.questId) or GetSuperTrackedQuestID() == button.quest.questId
-			local bountyText = isWatched and "|TInterface\\COMMON\\FavoritesIcon:24:24|t " or "         "
+			if IsWorldQuestHardWatched(button.quest.questId) or GetSuperTrackedQuestID() == button.quest.questId then
+				button.track:Show()
+			else
+				button.track:Hide()
+			end
+
+			local bountyText = ""
 			for _, bountyIcon in ipairs(button.quest.bounties) do
 				bountyText = string.format("%s |T%s$s:14:14|t", bountyText, bountyIcon)
 			end
@@ -1148,7 +1157,8 @@ function BWQ:UpdateBlock()
 			button.title:SetPoint("LEFT", button.titleFS, "LEFT", 0, 0)
 			button.rewardFS:SetPoint("LEFT", button.titleFS, "RIGHT", 10, 0)
 			button.reward:SetPoint("LEFT", button.rewardFS, "LEFT", 0, 0)
-			button.bountyFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 10, 0)
+			button.track:SetPoint("LEFT", button.rewardFS, "RIGHT", 5, -3)
+			button.bountyFS:SetPoint("LEFT", button.rewardFS, "RIGHT", 25, 0)
 			button.factionFS:SetPoint("LEFT", button.bountyFS, "RIGHT", 10, 0)
 			button.timeLeftFS:SetPoint("LEFT", button.factionFS, "RIGHT", 10, 0)
 
@@ -1160,7 +1170,7 @@ function BWQ:UpdateBlock()
 	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 250 and 250 or rewardMaxWidth
 	factionMaxWidth = C("hideFactionColumn") and 0 or factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
-	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 70
+	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 80
 
 	local bountyBoardWidth = BWQ.bountyBoardFS:GetStringWidth()
 	if totalWidth < bountyBoardWidth then

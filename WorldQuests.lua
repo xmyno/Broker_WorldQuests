@@ -348,7 +348,9 @@ local ShowQuestLogItemTooltip = function(button)
 	local name, texture = GetQuestLogRewardInfo(1, button.quest.questId)
 	if name and texture then
 		tip:SetOwner(button.reward, "ANCHOR_CURSOR")
-		tip:SetQuestLogItem("reward", 1, button.quest.questId)
+		BWQScanTooltip:SetQuestLogItem("reward", 1, button.quest.questId)
+		local _, itemLink = BWQScanTooltip:GetItem()
+		tip:SetHyperlink(itemLink)
 		tip:Show()
 	end
 end
@@ -609,8 +611,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.itemQuantity = quantity
 
 							local itemSpell = GetItemSpell(quest.reward.itemId)
-							local _, itemLink, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
-							quest.reward.itemLink = itemLink
+							local _, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
 							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER

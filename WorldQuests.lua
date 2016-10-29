@@ -611,7 +611,7 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.itemQuantity = quantity
 
 							local itemSpell = GetItemSpell(quest.reward.itemId)
-							local _, _, _, _, _, class, subClass, _, equipSlot, _, _ = GetItemInfo(quest.reward.itemId)
+							local _, _, _, _, _, _, _, _, equipSlot, _, _, classId, subClassId = GetItemInfo(quest.reward.itemId)
 							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
@@ -621,7 +621,7 @@ local RetrieveWorldQuests = function(mapId)
 							else
 								quest.reward.itemName = itemName
 
-								if class == "Tradeskill" then
+								if classId == 7 then
 									quest.sort = SORT_ORDER.PROFESSION
 									if quest.reward.itemId == 124124 then
 										BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
@@ -633,7 +633,7 @@ local RetrieveWorldQuests = function(mapId)
 
 									BWQ.totalGear = BWQ.totalGear + 1
 									if C("showItems") and C("showGear") then quest.hide = false end
-								elseif subClass == "Artifact Relic" then
+								elseif classId == 3 and subClassId == 11 then
 									quest.sort = SORT_ORDER.RELIC
 									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 

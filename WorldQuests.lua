@@ -1208,7 +1208,7 @@ function BWQ:UpdateBlock()
 	end
 
 	totalWidth = totalWidth + 20
-	BWQ:SetWidth(totalWidth > 550 and totalWidth or 550)
+	BWQ:SetWidth(totalWidth)
 
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""

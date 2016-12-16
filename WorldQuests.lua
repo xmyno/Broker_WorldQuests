@@ -1082,7 +1082,11 @@ function BWQ:UpdateBlock()
 
 				button.reward:SetScript("OnEvent", function(self, event)
 					if event == "MODIFIER_STATE_CHANGED" then
-						ShowQuestLogItemTooltip(button)
+						if button.reward:IsMouseOver() and button.reward:IsShown() then
+							ShowQuestLogItemTooltip(button)
+						else
+							button.reward:UnregisterEvent("MODIFIER_STATE_CHANGED")
+						end
 					end
 				end)
 

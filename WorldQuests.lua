@@ -215,13 +215,6 @@ local showDownwards = false
 local blockYPos = 0
 local highlightedRow = true
 
-local CreateBountyBoardFS = function()
-	BWQ.bountyBoardFS = BWQ:CreateFontString("BWQbountyBoardFS", "OVERLAY", "SystemFont_Shadow_Med1")
-	BWQ.bountyBoardFS:SetJustifyH("CENTER")
-	BWQ.bountyBoardFS:SetTextColor(0.95, 0.95, 0.95)
-	BWQ.bountyBoardFS:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
-end
-
 local CreateErrorFS = function()
 	BWQ.errorFS = BWQ:CreateFontString("BWQerrorFS", "OVERLAY", "SystemFont_Shadow_Med1")
 	BWQ.errorFS:SetJustifyH("CENTER")
@@ -788,29 +781,69 @@ local RetrieveWorldQuests = function(mapId)
 end
 
 
+BWQ.bountyCache = {}
+BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
 	bounties = GetQuestBountyInfoForMapID(1014) -- zone id doesn't matter
-	local bountyBoardText = ""
+
+	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do
-		local questIndex = GetQuestLogIndexByID(bounty.questID);
-		local title = GetQuestLogTitle(questIndex);
+		local questIndex = GetQuestLogIndexByID(bounty.questID)
+		local title = GetQuestLogTitle(questIndex)
+		local timeleft = GetQuestTimeLeftMinutes(bounty.questID)
 		local _, _, finished, numFulfilled, numRequired = GetQuestObjectiveInfo(bounty.questID, 1, false)
 
+		local bountyCacheItem
+		if not BWQ.bountyCache[bountyIndex] then
+			bountyCacheItem = {}
+			bountyCacheItem.icon = BWQ.bountyDisplay:CreateTexture()
+			bountyCacheItem.icon:SetSize(28, 28)
+			bountyCacheItem.text = BWQ.bountyDisplay:CreateFontString("BWQ_BountyDisplayText"..bountyIndex, "OVERLAY", "SystemFont_Shadow_Med1")
+			BWQ.bountyCache[bountyIndex] = bountyCacheItem
+		else
+			bountyCacheItem = BWQ.bountyCache[bountyIndex]
+		end
+
 		if bounty.icon and title then
-			bountyBoardText = string.format("%s|T%s$s:20:20|t %s   %d/%d", bountyBoardText, bounty.icon, title, numFulfilled or 0, numRequired or 0)
-			if bountyIndex < #bounties then
-				bountyBoardText = string.format("%s        ", bountyBoardText)
+
+			bountyCacheItem.text:SetText(string.format(
+											"|cff%s%s\n %s/%s      |r%s",
+											numFulfilled == numRequired and "49d65e" or "e3d29f",
+											title,
+											numFulfilled or 0,
+											numRequired or 0,
+											FormatTimeLeftString(timeleft)
+										))
+			bountyCacheItem.icon:SetTexture(bounty.icon)
+			if bountyIndex == 1 then
+				bountyCacheItem.icon:SetPoint("LEFT", BWQ.bountyDisplay, "LEFT")
+			else
+				bountyCacheItem.icon:SetPoint("LEFT", BWQ.bountyCache[bountyIndex-1].text, "RIGHT", 25, 2)
+				bountyWidth = bountyWidth + 25 -- add padding per item
 			end
+			bountyCacheItem.text:SetPoint("LEFT", bountyCacheItem.icon, "RIGHT", 5, -2)
+
+			bountyWidth = bountyWidth + bountyCacheItem.text:GetStringWidth() + 33 -- icon + padding
 		end
 	end
 
-	if not BWQ.bountyBoardFS then CreateBountyBoardFS(offsetTop) end
+	-- remove obsolete bounty entries (completed or disappeared)
+	if #bounties < #BWQ.bountyCache then
+		for i = bountyIndex, #BWQ.bountyCache do
+			BWQ.bountyCache[i].icon:Hide()
+			BWQ.bountyCache[i].text:Hide()
+			BWQ.bountyCache[i] = nil
+		end
+	end
+
+	-- show if bounties available, otherwise hide the bounty block
 	if #bounties > 0 then
-		BWQ.bountyBoardFS:Show()
-		BWQ.bountyBoardFS:SetText(bountyBoardText)
-		offsetTop = offsetTop - 25
+		BWQ.bountyDisplay:Show()
+		BWQ.bountyDisplay:SetSize(bountyWidth, 30)
+		BWQ.bountyDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
+	 	offsetTop = offsetTop - 35
 	else
-		BWQ.bountyBoardFS:Hide()
+		BWQ.bountyDisplay:Hide()
 	end
 end
 
@@ -1212,7 +1245,7 @@ function BWQ:UpdateBlock()
 	timeLeftMaxWidth = 65
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 80
 
-	local bountyBoardWidth = BWQ.bountyBoardFS:GetStringWidth()
+	local bountyBoardWidth = BWQ.bountyDisplay:GetWidth()
 	if totalWidth < bountyBoardWidth then
 		local diff = bountyBoardWidth - totalWidth
 		totalWidth = bountyBoardWidth

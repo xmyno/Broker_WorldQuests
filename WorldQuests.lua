@@ -808,7 +808,7 @@ function BWQ:UpdateBountyData()
 
 			bountyCacheItem.text:SetText(string.format(
 											"|cff%s%s\n %s/%s      |r%s",
-											numFulfilled == numRequired and "49d65e" or "e3d29f",
+											numFulfilled == numRequired and "49d65e" or "fafafa",
 											title,
 											numFulfilled or 0,
 											numRequired or 0,
@@ -829,7 +829,7 @@ function BWQ:UpdateBountyData()
 
 	-- remove obsolete bounty entries (completed or disappeared)
 	if #bounties < #BWQ.bountyCache then
-		for i = bountyIndex, #BWQ.bountyCache do
+		for i = #bounties + 1, #BWQ.bountyCache do
 			BWQ.bountyCache[i].icon:Hide()
 			BWQ.bountyCache[i].text:Hide()
 			BWQ.bountyCache[i] = nil

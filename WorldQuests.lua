@@ -517,7 +517,8 @@ local Row_OnClick = function(row)
 	end
 end
 
-
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, }
+local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
@@ -601,6 +602,7 @@ local RetrieveWorldQuests = function(mapId)
 					local hasReward = false
 					C_TaskQuest.RequestPreloadRewardData(quest.questId)
 
+					local rewardType
 					if GetNumQuestLogRewards(quest.questId) > 0 then
 						local itemName, itemTexture, quantity, quality, isUsable, itemId = GetQuestLogRewardInfo(1, quest.questId)
 						if itemName then
@@ -616,7 +618,7 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
 								quest.sort = SORT_ORDER.ARTIFACTPOWER
 
-								BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.artifactPower or 0)
+								rewardType = REWARD_TYPES.ARTIFACTPOWER
 								if C("showArtifactPower") then quest.hide = false end
 							else
 								quest.reward.itemName = itemName
@@ -624,20 +626,20 @@ local RetrieveWorldQuests = function(mapId)
 								if classId == 7 then
 									quest.sort = SORT_ORDER.PROFESSION
 									if quest.reward.itemId == 124124 then
-										BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
+										rewardType = REWARD_TYPES.BLOODOFSARGERAS
 									end
 									if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
 								elseif equipSlot ~= "" then
 									quest.sort = SORT_ORDER.EQUIP
 									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+									rewardType = REWARD_TYPES.GEAR
 
-									BWQ.totalGear = BWQ.totalGear + 1
 									if C("showItems") and C("showGear") then quest.hide = false end
 								elseif classId == 3 and subClassId == 11 then
 									quest.sort = SORT_ORDER.RELIC
 									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+									rewardType = REWARD_TYPES.GEAR
 
-									BWQ.totalGear = BWQ.totalGear + 1
 									if C("showItems") and C("showRelics") then quest.hide = false end
 								else
 									quest.sort = SORT_ORDER.ITEM
@@ -652,8 +654,8 @@ local RetrieveWorldQuests = function(mapId)
 						hasReward = true
 						quest.reward.money = money
 						quest.sort = SORT_ORDER.MONEY
+						rewardType = REWARD_TYPES.MONEY
 
-						BWQ.totalGold = BWQ.totalGold + money
 						if money < 1000000 then
 							if C("showLowGold") then quest.hide = false end
 						else
@@ -671,8 +673,8 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.resourceTexture = texture
 							quest.reward.resourceAmount = numItems
 							quest.sort = SORT_ORDER.RESOURCES
+							rewardType = REWARD_TYPES.RESOURCES
 
-							BWQ.totalResources = BWQ.totalResources + numItems
 							if C("showResources") then quest.hide = false end
 						end
 					end
@@ -685,6 +687,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 
+					local questType
 					-- quest type filters
 					if quest.worldQuestType == 4 then
 						if C("showPetBattle") or (C("alwaysShowPetBattleFamilyFamiliar") and FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
@@ -696,16 +699,16 @@ local RetrieveWorldQuests = function(mapId)
 						if C("showProfession") then
 
 							if quest.tagId == 119 then
-								BWQ.totalHerbalism = BWQ.totalHerbalism + 1
+								questType = QUEST_TYPES.HERBALISM
 								if C("showProfessionHerbalism")	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 120 then
-								BWQ.totalMining = BWQ.totalMining + 1
+								questType = QUEST_TYPES.MINING
 								if C("showProfessionMining")		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 130 then
-								BWQ.totalFishing = BWQ.totalFishing + 1
+								questType = QUEST_TYPES.FISHING
 							 	if C("showProfessionFishing")		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 124 then
-								BWQ.totalSkinning = BWQ.totalSkinning + 1
+								questType = QUEST_TYPES.SKINNING
 							 	if C("showProfessionSkinning") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 118 then 	if C("showProfessionAlchemy") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 129 then	if C("showProfessionArchaeology") 	then quest.hide = false else quest.hide = true end
@@ -748,6 +751,25 @@ local RetrieveWorldQuests = function(mapId)
 
 					if not quest.hide then
 						numQuests = numQuests + 1
+
+						if rewardType == REWARD_TYPES.ARTIFACTPOWER and quest.reward.artifactPower then
+							BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.artifactPower or 0) end
+						if rewardType == REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
+							BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
+						if rewardType == REWARD_TYPES.MONEY and quest.reward.money then
+							BWQ.totalGold = BWQ.totalGold + quest.reward.money end
+						if rewardType == REWARD_TYPES.BLOODOFSARGERAS and quest.reward.itemQuantity then
+							BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity end
+						if rewardType == REWARD_TYPES.GEAR then
+							BWQ.totalGear = BWQ.totalGear + 1 end
+						if questType == QUEST_TYPES.HERBALISM then
+							BWQ.totalHerbalism = BWQ.totalHerbalism + 1 end
+						if questType == QUEST_TYPES.MINING then
+							BWQ.totalMining = BWQ.totalMining + 1 end
+						if questType == QUEST_TYPES.FISHING then
+							BWQ.totalFishing = BWQ.totalFishing + 1 end
+						if questType == QUEST_TYPES.SKINNING then
+							BWQ.totalSkinning = BWQ.totalSkinning + 1 end
 					end
 				end
 			end

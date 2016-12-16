@@ -104,6 +104,7 @@ local defaultConfig = {
 	usePerCharacterSettings = false,
 	alwaysShowBountyQuests = true,
 	alwaysShowEpicQuests = true,
+	onlyShowRareOrAbove = false,
 	showTotalsInBrokerText = true,
 		brokerShowAP = true,
 		brokerShowResources = true,
@@ -728,6 +729,10 @@ local RetrieveWorldQuests = function(mapId)
 					elseif not C("showPvP") and quest.worldQuestType == 3 then quest.hide = true
 					elseif not C("showDungeon") and quest.worldQuestType == 6 then quest.hide = true
 					end
+
+					-- only show quest that are blue or above quality
+					if (C("onlyShowRareOrAbove") and quest.isRare < 2) then quest.hide = true end
+
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
 					   (C("alwaysShowCourtOfFarondis") 	and (mapId == 1015 or mapId == 1096)) or
@@ -1273,6 +1278,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Use per-character settings", check = "usePerCharacterSettings" },
 		{ text = "" },
 		{ text = "Always show |cffa335eeepic|r world quests (e.g. world bosses)", check = "alwaysShowEpicQuests" },
+		{ text = "Only show world quests with |cff0070ddrare|r or above quality", check = "onlyShowRareOrAbove" },
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "brokerShowAP" },

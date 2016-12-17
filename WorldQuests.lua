@@ -115,6 +115,7 @@ local defaultConfig = {
 		brokerShowFishing = false,
 		brokerShowSkinning = false,
 		brokerShowBloodOfSargeras = false,
+	sortByTimeRemaining = false,
 	-- reward type
 	showArtifactPower = true,
 	showItems = true,
@@ -773,13 +774,18 @@ local RetrieveWorldQuests = function(mapId)
 			end
 		end
 
-		table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].sort < MAP_ZONES[mapId].quests[b].sort end)
+
+		if C("sortByTimeRemaining") then
+			table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].timeLeft < MAP_ZONES[mapId].quests[b].timeLeft end)
+		else -- reward type
+			table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].sort < MAP_ZONES[mapId].quests[b].sort end)
+		end
+
 
 		if numQuests == nil then numQuests = 0 end
 		MAP_ZONES[mapId].numQuests = numQuests
 	end
 end
-
 
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
@@ -1307,7 +1313,7 @@ function BWQ:SetupConfigMenu()
 
 	local options = {
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
-		{ text = "Show list frame on click", check = "showOnClick" },
+		{ text = "Show list frame on click instead of mouse-over", check = "showOnClick" },
 		{ text = "Use per-character settings", check = "usePerCharacterSettings" },
 		{ text = "" },
 		{ text = "Always show |cffa335eeepic|r world quests (e.g. world bosses)", check = "alwaysShowEpicQuests" },
@@ -1325,6 +1331,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%s$s:16:16|t  Blood of Sargeras"):format("1417744"), check = "brokerShowBloodOfSargeras" },
 			}
 		},
+		{ text = "Sort list by time remaining instead of reward type", check = "sortByTimeRemaining" },
 		{ text = "" },
 		{ text = "Filter by reward...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "showArtifactPower" },
@@ -1366,7 +1373,7 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Pet Battle Quests"):format("Interface\\Icons\\tracking_wildpet"), isTitle = true },
 		{ text = "Show Pet Battle Quests", check = "showPetBattle" },
 		{ text = "Hide Pet Battle Quests even when active bounty", check = "hidePetBattleBountyQuests" },
-		{ text = "Always show Pet Battle Quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
+		{ text = "Always show quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
 		{ text = "" },
 		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Always show quests for faction...", isTitle = true },

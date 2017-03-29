@@ -421,16 +421,16 @@ local Row_OnClick = function(row)
 			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
 		end
 	else
-		if not WorldMapFrame:IsShown() then ShowQuestLog() end
-		if not InCombatLockdown() then SetMapByID(row.mapId) end
-
-		if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
-		if row.quest.x and row.quest.y then
-			local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
-			BWQ.mapTextures:ClearAllPoints()
-			BWQ.mapTextures:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y + 25)
-	  		BWQ.mapTextures.animationGroup:Play()
-	  	end
+		if WorldMapFrame:IsShown() then
+			SetMapByID(row.mapId)
+			if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
+			if row.quest.x and row.quest.y then
+				local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
+				BWQ.mapTextures:ClearAllPoints()
+				BWQ.mapTextures:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y + 25)
+				BWQ.mapTextures.animationGroup:Play()
+			end
+		end
 	end
 end
 

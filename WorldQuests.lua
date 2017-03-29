@@ -296,6 +296,16 @@ function BWQ:GetItemLevelValueForQuestId(questId)
 	return ""
 end
 
+local AbbreviateNumber = function(number)
+	number = tonumber(number)
+	if number > 1000000 then
+		return string.format("%.2f%s", number / 1000000, "M")
+	elseif number > 1000 then
+		return string.format("%.0f%s", number / 1000, "K")
+	end
+	return number
+end
+
 local FormatTimeLeftString = function(timeLeft)
 	local timeLeftStr = ""
 	-- if timeLeft >= 60 * 24 then -- at least 1 day
@@ -1107,7 +1117,7 @@ function BWQ:UpdateBlock()
 			if button.quest.reward.itemName or button.quest.reward.artifactPower then
 				local itemText
 				if button.quest.reward.artifactPower then
-					itemText = string.format("|cffe5cc80[%s Artifact Power]|r", button.quest.reward.artifactPower)
+					itemText = string.format("|cffe5cc80[%s Artifact Power]|r", AbbreviateNumber(button.quest.reward.artifactPower))
 				else
 					itemText = string.format(
 						"%s[%s%s]|r",
@@ -1282,7 +1292,7 @@ function BWQ:UpdateBlock()
 
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
-		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %d  ", brokerString, BWQ.totalArtifactPower) end
+		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
 		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
 		if C("brokerShowGold")            and BWQ.totalGold > 0          then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
 		if C("brokerShowGear")            and BWQ.totalGear > 0          then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end

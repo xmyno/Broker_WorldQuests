@@ -53,9 +53,11 @@ local MAP_ZONES = {
 	[1017] = { id = 1017, name = GetMapNameByID(1017), quests = {}, buttons = {}, glows = {}, },  -- Stormheim
 	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, glows = {}, },  -- Suramar
 	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, glows = {}, },  -- Dalaran
+		[1021] = { id = 1021, name = GetMapNameByID(1021), quests = {}, buttons = {}, glows = {}, },  -- Broken Shore
+
 }
 local MAP_ZONES_SORT = {
-	1015, 1096, 1018, 1024, 1017, 1033, 1014
+	1015, 1096, 1018, 1024, 1017, 1033, 1014, 1021
 }
 local MAPID_BROKENISLES = 1007
 local SORT_ORDER = {
@@ -155,6 +157,7 @@ local defaultConfig = {
 	alwaysShowNightfallen = false,
 	alwaysShowWardens = false,
 	alwaysShowValarjar = false,
+	alwaysShowBS = false,
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -734,7 +737,8 @@ local RetrieveWorldQuests = function(mapId)
 					   (C("alwaysShowHighmountainTribe") 	and mapId == 1024) or
 					   (C("alwaysShowNightfallen") 		and mapId == 1033) or
 					   (C("alwaysShowWardens") 			and quest.faction == "The Wardens") or
-					   (C("alwaysShowValarjar") 			and mapId == 1017) then
+					   (C("alwaysShowValarjar") 			and mapId == 1017) or
+(C("alwaysShowBS") 			and mapId == 1021)					   then
 
 						-- pet battle override
 						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
@@ -1383,6 +1387,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "The Nightfallen", check="alwaysShowNightfallen" },
 		{ text = "The Wardens", check="alwaysShowWardens" },
 		{ text = "Valarjar", check="alwaysShowValarjar" },
+		{ text = "Armies of Legionfall", check="alwaysShowBS" },
 	}
 
 	local SetOption = function(bt, var, val)

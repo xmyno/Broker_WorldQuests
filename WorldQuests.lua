@@ -413,96 +413,6 @@ function BWQ:CalculateMapPosition(x, y)
 	return x * WorldMapUnitPositionFrame:GetWidth(), -1 * y * WorldMapUnitPositionFrame:GetHeight()
 end
 
-function BWQ:CreateWatchGlow()
-	local texture = BWQ.mapTextures:CreateTexture("glowTexture")
-	texture:SetAtlas("worldquest-questmarker-glow", true);
-	texture:SetSize(48, 48)
-	texture:SetDesaturated(1)
-	texture:SetBlendMode("ADD")
-	texture:SetDrawLayer("BORDER", -1)
-	texture:SetVertexColor(1, 1, 1, 0.9)
-
-	return texture
-end
-
-function BWQ:UpdateWatchGlows(mapId)
-	if not MAP_ZONES[mapId] or not MAP_ZONES[mapId].questsSort then return end
-
-	for _, questId in next, MAP_ZONES[mapId].questsSort do
-		if IsWorldQuestHardWatched(questId) then
-			BWQ:AddWatchGlow(mapId, questId)
-			BWQ:ShowWatchGlow(mapId, questId)
-		else
-			BWQ:HideWatchGlow(mapId, questId)
-		end
-	end
-end
-
-function BWQ:ShowAllWatchGlows(mapId)
-	if not MAP_ZONES[mapId] then return end
-
-	for questId, glow in next, MAP_ZONES[mapId].glows do
-		if glow.active then
-			BWQ:ShowWatchGlow(mapId, questId)
-		end
-	end
-end
-
-function BWQ:ShowWatchGlow(mapId, questId)
-	if not MAP_ZONES[mapId] or not MAP_ZONES[mapId].glows then return end
-
-	MAP_ZONES[mapId].glows[questId].active = true
-	local glow = MAP_ZONES[mapId].glows[questId]
-	local quest = MAP_ZONES[mapId].quests[questId]
-	if not quest.x or not quest.y then
-		BWQ:QueryZoneQuestCoordinates(mapId)
-	end
-	quest = MAP_ZONES[mapId].quests[questId]
-
-	if quest.x and quest.y then
-		local x, y = BWQ:CalculateMapPosition(quest.x, quest.y)
-		glow.texture:ClearAllPoints()
-		glow.texture:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y)
-		glow.texture:Show()
-	end
-end
-
-function BWQ:AddWatchGlow(mapId, questId)
-	if not MAP_ZONES[mapId] then return end
-
-	local glow = MAP_ZONES[mapId].glows[questId] or {}
-	if not glow.texture then
-		glow.texture = BWQ:CreateWatchGlow()
-	end
-	MAP_ZONES[mapId].glows[questId] = glow
-end
-
-function BWQ:HideAllWatchGlows(mapId)
-	if not MAP_ZONES[mapId] then return end
-
-	for questId in next, MAP_ZONES[mapId].glows do
-		BWQ:HideWatchGlow(mapId, questId)
-	end
-end
-
-function BWQ:HideWatchGlow(mapId, questId)
-	if not MAP_ZONES[mapId] then return end
-
-	if MAP_ZONES[mapId].glows[questId] then
-		MAP_ZONES[mapId].glows[questId].texture:Hide()
-		MAP_ZONES[mapId].glows[questId].active = false
-	end
-end
-
-function BWQ:DisableWatchGlow(mapId, questId)
-	if not MAP_ZONES[mapId] then return end
-
-	if MAP_ZONES[mapId].glows[questId] then
-		MAP_ZONES[mapId].glows[questId].active = false
-		MAP_ZONES[mapId].glows[questId].texture:Hide()
-	end
-end
-
 local Row_OnClick = function(row)
 	if IsShiftKeyDown() then
 		if IsWorldQuestHardWatched(row.quest.questId) or (IsWorldQuestWatched(row.quest.questId) and GetSuperTrackedQuestID() == row.quest.questId) then
@@ -1517,12 +1427,9 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		local mapId = GetCurrentMapAreaID()
 		if BWQ.currentMapId and BWQ.currentMapId ~= mapId then
 			BWQ.mapTextures.animationGroup:Stop()
-			BWQ:HideAllWatchGlows(BWQ.currentMapId)
 		end
-		BWQ:UpdateWatchGlows(mapId)
 		BWQ.currentMapId = mapId
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
-		BWQ:UpdateWatchGlows(GetCurrentMapAreaID())
 		BWQ:UpdateBlock()
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
@@ -1561,7 +1468,6 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 			end
 
 			BWQ.mapTextures.animationGroup:Stop()
-			BWQ:HideAllWatchGlows(BWQ.currentMapId)
 		end)
 		hooksecurefunc(WorldMapFrame, "Show", function(self)
 			if C("attachToWorldMap") then

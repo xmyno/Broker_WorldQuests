@@ -46,16 +46,17 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 }
 
 local MAP_ZONES = {
-	[1015] = { id = 1015, name = GetMapNameByID(1015), quests = {}, buttons = {}, glows = {}, },  -- Aszuna
-	[1096] = { id = 1096, name = GetMapNameByID(1096), quests = {}, buttons = {}, glows = {}, },  -- Eye of Azshara
-	[1018] = { id = 1018, name = GetMapNameByID(1018), quests = {}, buttons = {}, glows = {}, },  -- Val'sharah
-	[1024] = { id = 1024, name = GetMapNameByID(1024), quests = {}, buttons = {}, glows = {}, },  -- Highmountain
-	[1017] = { id = 1017, name = GetMapNameByID(1017), quests = {}, buttons = {}, glows = {}, },  -- Stormheim
-	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, glows = {}, },  -- Suramar
-	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, glows = {}, },  -- Dalaran
+	[1015] = { id = 1015, name = GetMapNameByID(1015), quests = {}, buttons = {}, },  -- Aszuna
+	[1096] = { id = 1096, name = GetMapNameByID(1096), quests = {}, buttons = {}, },  -- Eye of Azshara
+	[1018] = { id = 1018, name = GetMapNameByID(1018), quests = {}, buttons = {}, },  -- Val'sharah
+	[1024] = { id = 1024, name = GetMapNameByID(1024), quests = {}, buttons = {}, },  -- Highmountain
+	[1017] = { id = 1017, name = GetMapNameByID(1017), quests = {}, buttons = {}, },  -- Stormheim
+	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, },  -- Suramar
+	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, },  -- Dalaran
+	[1021] = { id = 1021, name = GetMapNameByID(1021), quests = {}, buttons = {}, },  -- Broken Shore
 }
 local MAP_ZONES_SORT = {
-	1015, 1096, 1018, 1024, 1017, 1033, 1014
+	1015, 1096, 1018, 1024, 1017, 1033, 1014, 1021
 }
 local MAPID_BROKENISLES = 1007
 local SORT_ORDER = {
@@ -155,6 +156,7 @@ local defaultConfig = {
 	alwaysShowNightfallen = false,
 	alwaysShowWardens = false,
 	alwaysShowValarjar = false,
+	alwaysShowArmiesOfLegionfall = false,
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -739,12 +741,13 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
-					   (C("alwaysShowCourtOfFarondis") 	and (mapId == 1015 or mapId == 1096)) or
+					   (C("alwaysShowCourtOfFarondis") 		and (mapId == 1015 or mapId == 1096)) or
 					   (C("alwaysShowDreamweavers") 		and mapId == 1018) or
 					   (C("alwaysShowHighmountainTribe") 	and mapId == 1024) or
-					   (C("alwaysShowNightfallen") 		and mapId == 1033) or
-					   (C("alwaysShowWardens") 			and quest.faction == "The Wardens") or
-					   (C("alwaysShowValarjar") 			and mapId == 1017) then
+					   (C("alwaysShowNightfallen") 			and mapId == 1033) or
+					   (C("alwaysShowWardens") 				and quest.faction == "The Wardens") or
+					   (C("alwaysShowValarjar") 			and mapId == 1017) or
+					   (C("alwaysShowArmiesOfLegionfall") 	and mapId == 1021) then
 
 						-- pet battle override
 						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
@@ -1393,6 +1396,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "The Nightfallen", check="alwaysShowNightfallen" },
 		{ text = "The Wardens", check="alwaysShowWardens" },
 		{ text = "Valarjar", check="alwaysShowValarjar" },
+		{ text = "Armies of Legionfall", check="alwaysShowArmiesOfLegionfall" },
 	}
 
 	local SetOption = function(bt, var, val)

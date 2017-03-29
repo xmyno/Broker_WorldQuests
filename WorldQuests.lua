@@ -400,10 +400,12 @@ BWQ.mapTextures = mapTextures
 function BWQ:QueryZoneQuestCoordinates(mapId)
 	if mapId == GetCurrentMapAreaID() then
 		local quests = GetQuestsForPlayerByMapID(mapId)
-		for _, v in next, quests do
-			if MAP_ZONES[mapId].quests[v.questId] then
-				MAP_ZONES[mapId].quests[v.questId].x = v.x
-				MAP_ZONES[mapId].quests[v.questId].y = v.y
+		if quests then
+			for _, v in next, quests do
+				if MAP_ZONES[mapId].quests[v.questId] then
+					MAP_ZONES[mapId].quests[v.questId].x = v.x
+					MAP_ZONES[mapId].quests[v.questId].y = v.y
+				end
 			end
 		end
 	end

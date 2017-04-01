@@ -131,9 +131,7 @@ local defaultConfig = {
 	showLowGold = true,
 	showHighGold = true,
 	showResources = true,
-		showOrderHallResources = true,
-		showAncientMana = true,
-		showOtherResources = true,
+	showLegionfallSupplies = true,
 	-- quest type
 	showProfession = true,
 		showProfessionAlchemy = true,
@@ -470,6 +468,7 @@ local RetrieveWorldQuests = function(mapId)
 				4 -> battle pet
 				5 -> ??
 				6 -> dungeon
+				8 -> raid
 			isRare =
 				1 -> normal
 				2 -> rare
@@ -602,21 +601,23 @@ local RetrieveWorldQuests = function(mapId)
 						local name, texture, numItems = GetQuestLogRewardCurrencyInfo(i, quest.questId)
 						if name then
 							hasReward = true
-							
-							if (name == "Order Resources") then
+							-- compare texture, name is localized
+							if (texture == "Interface\\Icons\\inv_orderhall_orderresources") then -- Order Resources
 								quest.reward.resourceName = name
 								quest.reward.resourceTexture = texture
 								quest.reward.resourceAmount = numItems
 								rewardType[#rewardType+1] = REWARD_TYPES.RESOURCES
-							elseif (name == "Legionfall War Supplies") then
+								if C("showResources") then quest.hide = false end
+							elseif (texture == "Interface\\Icons\\inv_misc_summonable_boss_token") then -- Legionfall Supplies
 								quest.reward.legionfallSuppliesName = name
 								quest.reward.legionfallSuppliesTexture = texture
 								quest.reward.legionfallSuppliesAmount = numItems
 								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
+								if C("showLegionfallSupplies") then quest.hide = false end
 							end
 							quest.sort = SORT_ORDER.RESOURCES
 
-							if C("showResources") then quest.hide = false end
+							
 						end
 					end
 
@@ -691,7 +692,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 					-- don't filter epic quests based on setting
-					if C("alwaysShowEpicQuests") and quest.isRare == 3 then quest.hide = false end
+					if C("alwaysShowEpicQuests") and (quest.isRare == 3 or quest.worldQuestType == 8) then quest.hide = false end
 
 					MAP_ZONES[mapId].quests[questId] = quest
 
@@ -1272,7 +1273,7 @@ function BWQ:UpdateBlock()
 		local brokerString = ""
 		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
 		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
-		if C("brokerShowLegionfallSupplies")       and BWQ.totalLegionfallSupplies > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
+		if C("brokerShowLegionfallSupplies") and BWQ.totalLegionfallSupplies > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
 		if C("brokerShowHonor")           and BWQ.totalHonor > 0         then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end
 		if C("brokerShowGold")            and BWQ.totalGold > 0          then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
 		if C("brokerShowGear")            and BWQ.totalGear > 0          then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
@@ -1312,7 +1313,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "brokerShowAP" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
-				{ text = ("|T%1$s:16:16|t  Legionfall Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
+				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
 				{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "brokerShowHonor" },
 				{ text = ("|T%1$s:16:16|t  Gold"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "brokerShowGold" },
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "brokerShowGear" },
@@ -1338,6 +1339,7 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
 		{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
+		{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession", submenu = {

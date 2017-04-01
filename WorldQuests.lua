@@ -111,6 +111,7 @@ local defaultConfig = {
 		brokerShowAP = true,
 		brokerShowResources = true,
 		brokerShowLegionfallSupplies = true,
+		brokerShowHonor = true,
 		brokerShowGold = false,
 		brokerShowGear = false,
 		brokerShowHerbalism = false,
@@ -126,6 +127,7 @@ local defaultConfig = {
 		showRelics = true,
 		showCraftingMaterials = true,
 		showOtherItems = true,
+	showHonor = true,
 	showLowGold = true,
 	showHighGold = true,
 	showResources = true,
@@ -439,7 +441,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, }
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
@@ -584,6 +586,15 @@ local RetrieveWorldQuests = function(mapId)
 							if C("showHighGold") then quest.hide = false end
 						end
 					end
+					local honor = GetQuestLogRewardHonor(quest.questId)
+					if honor > 0 then
+						hasReward = true
+						quest.reward.honor = honor
+						quest.sort = SORT_ORDER.RESOURCES
+						rewardType[#rewardType+1] = REWARD_TYPES.HONOR
+
+						if C("showHonor") then quest.hide = false end
+					end
 					-- currency reward
 					local numQuestCurrencies = GetNumQuestLogRewardCurrencies(quest.questId)
 					for i = 1, numQuestCurrencies do
@@ -695,6 +706,8 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
 								if rtype == REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
 									BWQ.totalLegionfallSupplies = BWQ.totalLegionfallSupplies + quest.reward.legionfallSuppliesAmount end
+								if rtype == REWARD_TYPES.HONOR and quest.reward.honor then
+									BWQ.totalHonor = BWQ.totalHonor + quest.reward.honor end
 								if rtype == REWARD_TYPES.MONEY and quest.reward.money then
 									BWQ.totalGold = BWQ.totalGold + quest.reward.money end
 								if rtype == REWARD_TYPES.BLOODOFSARGERAS and quest.reward.itemQuantity then
@@ -802,7 +815,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES do
 		RetrieveWorldQuests(mapId)
@@ -1109,6 +1122,16 @@ function BWQ:UpdateBlock()
 					Block_OnLeave()
 				end)
 			end
+			if button.quest.reward.honor and button.quest.reward.honor > 0 then
+				rewardText = string.format(
+					"%1$s%2$s|T%3$s:14:14|t %4$d %5$s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					"Interface\\Icons\\Achievement_LegionPVPTier4",
+					button.quest.reward.honor,
+					HONOR
+				) 
+			end
 			if button.quest.reward.money and button.quest.reward.money > 0 then
 				local moneyText = GetCoinTextureString(button.quest.reward.money)
 				rewardText = string.format(
@@ -1250,6 +1273,7 @@ function BWQ:UpdateBlock()
 		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
 		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
 		if C("brokerShowLegionfallSupplies")       and BWQ.totalLegionfallSupplies > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
+		if C("brokerShowHonor")           and BWQ.totalHonor > 0         then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end
 		if C("brokerShowGold")            and BWQ.totalGold > 0          then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
 		if C("brokerShowGear")            and BWQ.totalGear > 0          then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
 		if C("brokerShowHerbalism")       and BWQ.totalHerbalism > 0     then brokerString = string.format("%s|TInterface\\Icons\\Trade_Herbalism:16:16|t %d  ", brokerString, BWQ.totalHerbalism) end
@@ -1289,6 +1313,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "brokerShowAP" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
 				{ text = ("|T%1$s:16:16|t  Legionfall Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
+				{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "brokerShowHonor" },
 				{ text = ("|T%1$s:16:16|t  Gold"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "brokerShowGold" },
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "brokerShowGear" },
 				{ text = ("|T%1$s:16:16|t  Herbalism Quests"):format("Interface\\Icons\\Trade_Herbalism"), check = "brokerShowHerbalism" },
@@ -1309,6 +1334,7 @@ function BWQ:SetupConfigMenu()
 				{ text = "Other", check = "showOtherItems" },
 			}
 		},
+		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
 		{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },

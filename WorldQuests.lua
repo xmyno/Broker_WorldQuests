@@ -103,6 +103,7 @@ local defaultConfig = {
 	attachToWorldMap = false,
 	showOnClick = false,
 	usePerCharacterSettings = false,
+	enableClickToOpenMap = false,
 	alwaysShowBountyQuests = true,
 	alwaysShowEpicQuests = true,
 	onlyShowRareOrAbove = false,
@@ -424,6 +425,7 @@ local Row_OnClick = function(row)
 			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
 		end
 	else
+		if C("enableClickToOpenMap") and not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
 		if WorldMapFrame:IsShown() then
 			SetMapByID(row.mapId)
 			if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
@@ -1349,6 +1351,8 @@ function BWQ:SetupConfigMenu()
 		{ text = "The Wardens", check="alwaysShowWardens" },
 		{ text = "Valarjar", check="alwaysShowValarjar" },
 		{ text = "Armies of Legionfall", check="alwaysShowArmiesOfLegionfall" },
+		{ text = "" },
+		{ text = "Enable row click to open world map\n(can cause instant world quest complete to not work)", check = "enableClickToOpenMap" },
 	}
 
 	local SetOption = function(bt, var, val)

@@ -285,10 +285,12 @@ function BWQ:GetArtifactPowerValue(itemId)
 			if isArtifactPower and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
 				local power = text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or "0"
 				if (text:find(millionSearchLocalized[locale])) then
-					if power.len % 2 == 0 then
-						power = power * 100000
-					else
-						power = power * 1000000
+					if power then
+						if string.len(power) % 2 == 0 then
+							power = power * 100000
+						else
+							power = power * 1000000
+						end
 					end
 				end
 

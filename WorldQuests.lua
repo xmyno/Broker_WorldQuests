@@ -719,13 +719,13 @@ local RetrieveWorldQuests = function(mapId)
 						end
 						if questType then
 							for _, qtype in next, questType do
-								if questType == QUEST_TYPES.HERBALISM then
+								if qtype == QUEST_TYPES.HERBALISM then
 									BWQ.totalHerbalism = BWQ.totalHerbalism + 1 end
-								if questType == QUEST_TYPES.MINING then
+								if qtype == QUEST_TYPES.MINING then
 									BWQ.totalMining = BWQ.totalMining + 1 end
-								if questType == QUEST_TYPES.FISHING then
+								if qtype == QUEST_TYPES.FISHING then
 									BWQ.totalFishing = BWQ.totalFishing + 1 end
-								if questType == QUEST_TYPES.SKINNING then
+								if qtype == QUEST_TYPES.SKINNING then
 									BWQ.totalSkinning = BWQ.totalSkinning + 1 end
 							end
 						end

@@ -264,7 +264,8 @@ function BWQ:ShowNoWorldQuestsInfo()
 	BWQ.errorFS:Show()
 end
 
-
+local locale = GetLocale()
+local millionSearchLocalized = { enUS = "million", enGB = "million", zhCN = "万", frFR = "million", deDE = "Million", esES = "mill", itIT = "milion", koKR = "만", esMX = "mill", ptBR = "milh", ruRU = "млн", zhTW = "萬", }
 local BWQScanTooltip = CreateFrame("GameTooltip", "BWQScanTooltip", nil, "GameTooltipTemplate")
 BWQScanTooltip:Hide()
 function BWQ:GetArtifactPowerValue(itemId)
@@ -283,8 +284,12 @@ function BWQ:GetArtifactPowerValue(itemId)
 
 			if isArtifactPower and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
 				local power = text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or "0"
-				if (text:find(SECOND_NUMBER)) then
-					power = power * 100000
+				if (text:find(millionSearchLocalized[locale])) then
+					if power.len % 2 == 0 then
+						power = power * 100000
+					else
+						power = power * 1000000
+					end
 				end
 
 				return power

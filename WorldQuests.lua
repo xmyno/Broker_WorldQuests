@@ -539,7 +539,7 @@ local RetrieveWorldQuests = function(mapId)
 							local _, _, _, _, _, _, _, _, equipSlot, _, _, classId, subClassId = GetItemInfo(quest.reward.itemId)
 							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
 								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
-								quest.sort = SORT_ORDER.ARTIFACTPOWER
+								quest.sort = quest.sort > SORT_ORDER.ARTIFACTPOWER and quest.sort or SORT_ORDER.ARTIFACTPOWER
 
 								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
 								if C("showArtifactPower") then quest.hide = false end
@@ -547,25 +547,25 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.itemName = itemName
 
 								if classId == 7 then
-									quest.sort = SORT_ORDER.PROFESSION
+									quest.sort = quest.sort > SORT_ORDER.PROFESSION and quest.sort or SORT_ORDER.PROFESSION
 									if quest.reward.itemId == 124124 then
 										rewardType[#rewardType+1] = REWARD_TYPES.BLOODOFSARGERAS
 									end
 									if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
 								elseif equipSlot ~= "" then
-									quest.sort = SORT_ORDER.EQUIP
+									quest.sort = quest.sort > SORT_ORDER.EQUIP and quest.sort or SORT_ORDER.EQUIP
 									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 									rewardType[#rewardType+1] = REWARD_TYPES.GEAR
 
 									if C("showItems") and C("showGear") then quest.hide = false end
 								elseif classId == 3 and subClassId == 11 then
-									quest.sort = SORT_ORDER.RELIC
+									quest.sort = quest.sort > SORT_ORDER.RELIC and quest.sort or SORT_ORDER.RELIC
 									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 									rewardType[#rewardType+1] = REWARD_TYPES.GEAR
 
 									if C("showItems") and C("showRelics") then quest.hide = false end
 								else
-									quest.sort = SORT_ORDER.ITEM
+									quest.sort = quest.sort > SORT_ORDER.ITEM and quest.sort or SORT_ORDER.ITEM
 									if C("showItems") and C("showOtherItems") then quest.hide = false end
 								end
 							end
@@ -576,7 +576,7 @@ local RetrieveWorldQuests = function(mapId)
 					if money > 20000 then -- >2g, hides these silly low gold extra rewards
 						hasReward = true
 						quest.reward.money = money
-						quest.sort = SORT_ORDER.MONEY
+						quest.sort = quest.sort > SORT_ORDER.MONEY and quest.sort or SORT_ORDER.MONEY
 						rewardType[#rewardType+1] = REWARD_TYPES.MONEY
 
 						if money < 1000000 then
@@ -589,7 +589,7 @@ local RetrieveWorldQuests = function(mapId)
 					if honor > 0 then
 						hasReward = true
 						quest.reward.honor = honor
-						quest.sort = SORT_ORDER.RESOURCES
+						quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
 						rewardType[#rewardType+1] = REWARD_TYPES.HONOR
 
 						if C("showHonor") then quest.hide = false end
@@ -615,7 +615,7 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
 								if C("showLegionfallSupplies") then quest.hide = false end
 							end
-							quest.sort = SORT_ORDER.RESOURCES
+							quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
 
 							
 						end

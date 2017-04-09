@@ -275,17 +275,23 @@ function BWQ:GetArtifactPowerValue(itemId)
 	local isArtifactPower = false
 	for i = 2, numLines do
 		local text = _G["BWQScanTooltipTextLeft" .. i]:GetText()
+
 		if text then
 			if text:find(ARTIFACT_POWER) then
 				isArtifactPower = true
 			end
 
 			if isArtifactPower and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
-				return text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or ""
+				local power = text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or "0"
+				if (text:find(SECOND_NUMBER)) then
+					power = power * 100000
+				end
+
+				return power
 			end
 		end
 	end
-	return ""
+	return "0"
 end
 function BWQ:GetItemLevelValueForQuestId(questId)
 	BWQScanTooltip:SetOwner(BWQ, "ANCHOR_NONE")
@@ -303,7 +309,7 @@ end
 local AbbreviateNumber = function(number)
 	number = tonumber(number)
 	if number > 1000000 then
-		return string.format("%.2f%s", number / 1000000, "M")
+		return string.format("%.1f%s", number / 1000000, "M")
 	elseif number > 1000 then
 		return string.format("%.0f%s", number / 1000, "K")
 	end
@@ -468,6 +474,7 @@ local RetrieveWorldQuests = function(mapId)
 				4 -> battle pet
 				5 -> ??
 				6 -> dungeon
+				7 -> invasion
 				8 -> raid
 			isRare =
 				1 -> normal

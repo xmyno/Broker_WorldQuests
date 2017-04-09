@@ -1281,7 +1281,7 @@ function BWQ:UpdateBlock()
 		if C("brokerShowMining")          and BWQ.totalMining > 0        then brokerString = string.format("%s|TInterface\\Icons\\Trade_Mining:16:16|t %d  ", brokerString, BWQ.totalMining) end
 		if C("brokerShowFishing")         and BWQ.totalFishing > 0       then brokerString = string.format("%s|TInterface\\Icons\\Trade_Fishing:16:16|t %d  ", brokerString, BWQ.totalFishing) end
 		if C("brokerShowSkinning")        and BWQ.totalSkinning > 0      then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_pelt_wolf_01:16:16|t %d  ", brokerString, BWQ.totalSkinning) end
-		if C("brokerShowBloodOfSargeras") and BWQ.totalBloodOfSargeras   then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
+		if C("brokerShowBloodOfSargeras") and BWQ.totalBloodOfSargeras > 0   then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
 
 		if brokerString and brokerString ~= "" then
 			BWQ.WorldQuestsBroker.text = brokerString

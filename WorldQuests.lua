@@ -284,15 +284,15 @@ function BWQ:GetArtifactPowerValue(itemId)
 			end
 
 			if isArtifactPower and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
-				local power = text:gsub("%p", ""):match("%d[%d%s]+"):gsub("%s+", "") or "0"
+				local power = text:match("%d+%p?%d*") or "0"
 				if (text:find(millionSearchLocalized[locale])) then
-					if power then
-						if string.len(power) % 2 == 0 then
-							power = power * 100000
-						else
-							power = power * 1000000
-						end
-					end
+					-- en locale only use , for thousands, shouldn't occur in these million digit numbers
+					-- replace , for german etc comma numbers so we can do math with them.
+					power = power:gsub(",", ".")
+					power = power * 1000000
+				else 
+					-- get rid of thousands comma for non-million numbers
+					power:gsub(",", "")
 				end
 
 				return power

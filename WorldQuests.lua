@@ -60,13 +60,14 @@ local MAP_ZONES_SORT = {
 }
 local MAPID_BROKENISLES = 1007
 local SORT_ORDER = {
-	ARTIFACTPOWER = 1,
-	RELIC = 2,
-	EQUIP = 3,
-	ITEM = 4,
-	PROFESSION = 5,
-	RESOURCES = 6,
-	MONEY = 7,
+	ARTIFACTPOWER = 8,
+	RESOURCES = 7,
+	HONOR = 6,
+	RELIC = 5,
+	EQUIP = 4,
+	ITEM = 3,
+	PROFESSION = 2,
+	MONEY = 1,
 }
 
 local WORLD_QUEST_TYPES = {
@@ -603,7 +604,7 @@ local RetrieveWorldQuests = function(mapId)
 					if honor > 0 then
 						hasReward = true
 						quest.reward.honor = honor
-						quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
+						quest.sort = quest.sort > SORT_ORDER.HONOR and quest.sort or SORT_ORDER.HONOR
 						rewardType[#rewardType+1] = REWARD_TYPES.HONOR
 
 						if C("showHonor") then quest.hide = false end
@@ -752,7 +753,7 @@ local RetrieveWorldQuests = function(mapId)
 		if C("sortByTimeRemaining") then
 			table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].timeLeft < MAP_ZONES[mapId].quests[b].timeLeft end)
 		else -- reward type
-			table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].sort < MAP_ZONES[mapId].quests[b].sort end)
+			table.sort(MAP_ZONES[mapId].questsSort, function(a, b) return MAP_ZONES[mapId].quests[a].sort > MAP_ZONES[mapId].quests[b].sort end)
 		end
 
 

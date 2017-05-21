@@ -315,7 +315,7 @@ end
 
 local AbbreviateNumber = function(number)
 	number = tonumber(number)
-	if number > 1000000 then
+	if number >= 1000000 then
 		return string.format("%.1f%s", number / 1000000, "M")
 	elseif number > 1000 then
 		return string.format("%.0f%s", number / 1000, "K")

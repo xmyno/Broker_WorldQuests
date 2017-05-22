@@ -1086,7 +1086,7 @@ function BWQ:UpdateBlock()
 			if button.quest.reward.itemName or button.quest.reward.artifactPower then
 				local itemText
 				if button.quest.reward.artifactPower then
-					itemText = string.format("|cffe5cc80[%s Artifact Power]|r", AbbreviateNumber(button.quest.reward.artifactPower))
+					itemText = string.format("|cffe5cc80[%s %s]|r", AbbreviateNumber(button.quest.reward.artifactPower), ARTIFACT_POWER)
 				else
 					itemText = string.format(
 						"%s[%s%s]|r",

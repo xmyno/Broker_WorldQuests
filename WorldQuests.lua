@@ -9,6 +9,8 @@
 --
 --]]----
 
+local isPatch_7_2_0 = select(1, GetBuildInfo()) == "7.2.0"
+
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 	= ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 
@@ -617,13 +619,14 @@ local RetrieveWorldQuests = function(mapId)
 						if name then
 							hasReward = true
 							-- compare texture, name is localized
-							if (texture == "Interface\\Icons\\inv_orderhall_orderresources") then -- Order Resources
+							-- @todo: come 7.2.5, texture is the icon id, not the path to the file, remove path check
+							if ((isPatch_7_2_0 and texture == "Interface\\Icons\\inv_orderhall_orderresources") or texture == 1397630) then -- Order Resources
 								quest.reward.resourceName = name
 								quest.reward.resourceTexture = texture
 								quest.reward.resourceAmount = numItems
 								rewardType[#rewardType+1] = REWARD_TYPES.RESOURCES
 								if C("showResources") then quest.hide = false end
-							elseif (texture == "Interface\\Icons\\inv_misc_summonable_boss_token") then -- Legionfall Supplies
+							elseif ((isPatch_7_2_0 and texture == "Interface\\Icons\\inv_misc_summonable_boss_token") or texture == 803763) then -- Legionfall Supplies
 								quest.reward.legionfallSuppliesName = name
 								quest.reward.legionfallSuppliesTexture = texture
 								quest.reward.legionfallSuppliesAmount = numItems

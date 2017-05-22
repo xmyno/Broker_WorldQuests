@@ -286,15 +286,16 @@ function BWQ:GetArtifactPowerValue(itemId)
 			end
 
 			if isArtifactPower and text:find(ITEM_SPELL_TRIGGER_ONUSE) then
-				local power = text:match("%d+%p?%d*") or "0"
+				-- gsub french special-space character (wtf..)
+				local power = text:gsub(" ", ""):match("%d+%p?%d*") or "0"
 				if (text:find(millionSearchLocalized[locale])) then
-					-- en locale only use , for thousands, shouldn't occur in these million digit numbers
-					-- replace , for german etc comma numbers so we can do math with them.
+					-- en locale only use ',' for thousands, shouldn't occur in these million digit numbers
+					-- replace ',' for german etc comma numbers so we can do math with them.
 					power = power:gsub(",", ".")
 					power = power * 1000000
 				else 
 					-- get rid of thousands comma for non-million numbers
-					power:gsub(",", "")
+					power = power:gsub("%p", "")
 				end
 
 				return power
@@ -319,8 +320,9 @@ end
 local AbbreviateNumber = function(number)
 	number = tonumber(number)
 	if number >= 1000000 then
-		return string.format("%.1f%s", number / 1000000, "M")
-	elseif number > 1000 then
+		number = number / 1000000
+		return string.format((number % 1 == 0) and "%.0f%s" or "%.1f%s", number, "M")
+	elseif number >= 10000 then
 		return string.format("%.0f%s", number / 1000, "K")
 	end
 	return number

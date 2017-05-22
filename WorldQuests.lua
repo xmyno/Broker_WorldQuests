@@ -310,8 +310,9 @@ function BWQ:GetItemLevelValueForQuestId(questId)
 	local numLines = BWQScanTooltip:NumLines()
 	for i = 2, numLines do
 		local text = _G["BWQScanTooltipTextLeft" .. i]:GetText()
-		if text and text:find(ITEM_LEVEL:gsub(" %%d", "")) then
-			return text:match("[%d]+%p*") or ""
+		local e = ITEM_LEVEL_PLUS:find("%%d")
+		if text and text:find(ITEM_LEVEL_PLUS:sub(1, e - 1)) then
+			return text:match("%d+" .. ITEM_LEVEL_PLUS:sub(e + 2, ITEM_LEVEL_PLUS:len())) or ""
 		end
 	end
 	return ""

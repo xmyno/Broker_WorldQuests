@@ -1521,11 +1521,12 @@ end
 local SetFlightMapPins = function(self)
 	for pin, active in self:GetMap():EnumeratePinsByTemplate("WorldQuestPinTemplate") do
 		if IsWorldQuestHardWatched(pin.questID) or GetSuperTrackedQuestID() == pin.questID then
-			pin:SetAlphaLimits(2.0, 1.0, 1.0)
-			pin:SetScalingLimits(1, 1.5, 0.50)
-		else
-			pin:SetAlphaLimits(2.0, 0.0, 1.0)
-			pin:SetScalingLimits(1, 1.0, 0.50)
+			pin:SetAlphaLimits(nil, 0.0, 1.0)
+		    pin:SetAlpha(1)
+		    pin:Show()
+		  else
+		    pin:SetAlphaLimits(1.0, 0.0, 1.0)
+		    if FlightMapFrame.ScrollContainer:IsZoomedOut() then pin:Hide() end
 		end
 	end
 end

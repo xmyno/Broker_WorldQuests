@@ -54,6 +54,9 @@ local MAP_ZONES = {
 	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, },  -- Suramar
 	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, },  -- Dalaran
 	[1021] = { id = 1021, name = GetMapNameByID(1021), quests = {}, buttons = {}, },  -- Broken Shore
+	[1135] = { id = 1135, name = GetMapNameByID(1135), quests = {}, buttons = {}, },  -- Krokuun
+	[1170] = { id = 1170, name = GetMapNameByID(1170), quests = {}, buttons = {}, },  -- Mac'aree
+	[1171] = { id = 1171, name = GetMapNameByID(1171), quests = {}, buttons = {}, },  -- Antoran Wastes
 }
 local MAP_ZONES_SORT = {
 	1015, 1096, 1018, 1024, 1017, 1033, 1014, 1021

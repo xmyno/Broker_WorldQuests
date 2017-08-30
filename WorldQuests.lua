@@ -59,7 +59,7 @@ local MAP_ZONES = {
 	[1171] = { id = 1171, name = GetMapNameByID(1171), quests = {}, buttons = {}, },  -- Antoran Wastes
 }
 local MAP_ZONES_SORT = {
-	1015, 1096, 1018, 1024, 1017, 1033, 1014, 1021
+	1015, 1096, 1018, 1024, 1017, 1033, 1014, 1021, 1135, 1170, 1171
 }
 local MAPID_BROKENISLES = 1007
 local SORT_ORDER = {
@@ -136,6 +136,8 @@ local defaultConfig = {
 	showHighGold = true,
 	showResources = true,
 	showLegionfallSupplies = true,
+	showNethershards = true,
+	showArgunite = true,
 	-- quest type
 	showProfession = true,
 		showProfessionAlchemy = true,
@@ -163,6 +165,7 @@ local defaultConfig = {
 	alwaysShowWardens = false,
 	alwaysShowValarjar = false,
 	alwaysShowArmiesOfLegionfall = false,
+	alwaysShowArmyOfTheLight = false,
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -463,7 +466,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, }
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
@@ -471,7 +474,7 @@ local RetrieveWorldQuests = function(mapId)
 
 	local numQuests
 	local currentTime = GetTime()
-	local questList = GetQuestsForPlayerByMapID(mapId, MAPID_BROKENISLES)
+	local questList = GetQuestsForPlayerByMapID(mapId, mapId)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -638,6 +641,18 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.legionfallSuppliesAmount = numItems
 								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
 								if C("showLegionfallSupplies") then quest.hide = false end
+							elseif texture == 132775 then -- Nethershard
+								quest.reward.nethershardsName = name
+								quest.reward.nethershardsTexture = texture
+								quest.reward.nethershardsAmount = numItems
+								rewardType[#rewardType+1] = REWARD_TYPES.NETHERSHARD
+								if C("showNethershards") then quest.hide = false end
+							elseif texture == 1064188 then -- Argunite
+								quest.reward.arguniteName = name
+								quest.reward.arguniteTexture = texture
+								quest.reward.arguniteAmount = numItems
+								rewardType[#rewardType+1] = REWARD_TYPES.ARGUNITE
+								if C("showArgunite") then quest.hide = false end
 							end
 							quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
 
@@ -706,7 +721,8 @@ local RetrieveWorldQuests = function(mapId)
 					   (C("alwaysShowNightfallen") 			and mapId == 1033) or
 					   (C("alwaysShowWardens") 				and quest.faction == "The Wardens") or
 					   (C("alwaysShowValarjar") 			and mapId == 1017) or
-					   (C("alwaysShowArmiesOfLegionfall") 	and mapId == 1021) then
+					   (C("alwaysShowArmiesOfLegionfall") 	and mapId == 1021) or
+					   (C("alwaysShowArmyOfTheLight") 		and (mapId == 1135 or mapId == 1170 or mapId == 1171)) then
 
 						-- pet battle override
 						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
@@ -1196,6 +1212,36 @@ function BWQ:UpdateBlock()
 					currencyText
 				)
 			end
+			if button.quest.reward.nethershardsName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.nethershardsTexture,
+					button.quest.reward.nethershardsAmount,
+					button.quest.reward.nethershardsName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
+			if button.quest.reward.arguniteName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.arguniteTexture,
+					button.quest.reward.arguniteAmount,
+					button.quest.reward.arguniteName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
 
 			-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
 			--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
@@ -1364,6 +1410,8 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
 		{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
 		{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
+		{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
+		{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession", submenu = {
@@ -1403,6 +1451,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "The Wardens", check="alwaysShowWardens" },
 		{ text = "Valarjar", check="alwaysShowValarjar" },
 		{ text = "Armies of Legionfall", check="alwaysShowArmiesOfLegionfall" },
+		{ text = "Army of the Light", check="alwaysShowArmyOfTheLight" },
 		{ text = "" },
 		{ text = "Enable row click to open world map\n(can cause instant world quest complete to not work)", check = "enableClickToOpenMap" },
 	}

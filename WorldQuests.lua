@@ -112,6 +112,7 @@ local defaultConfig = {
 	onlyShowRareOrAbove = false,
 	showTotalsInBrokerText = true,
 		brokerShowAP = true,
+		brokerShowWakeningEssences = true,
 		brokerShowResources = true,
 		brokerShowLegionfallSupplies = true,
 		brokerShowHonor = true,
@@ -137,6 +138,7 @@ local defaultConfig = {
 	showLegionfallSupplies = true,
 	showNethershards = true,
 	showArgunite = true,
+	showWakeningEssences = true,
 	-- quest type
 	showProfession = true,
 		showProfessionAlchemy = true,
@@ -164,6 +166,7 @@ local defaultConfig = {
 	alwaysShowValarjar = false,
 	alwaysShowArmiesOfLegionfall = false,
 	alwaysShowArmyOfTheLight = false,
+	alwaysShowArgussianReach = false,
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -462,7 +465,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, }
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9 }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
@@ -650,6 +653,12 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.arguniteAmount = numItems
 								rewardType[#rewardType+1] = REWARD_TYPES.ARGUNITE
 								if C("showArgunite") then quest.hide = false end
+							elseif texture == 236521 then -- Wakening Essences
+								quest.reward.wakeningEssencesName = name
+								quest.reward.wakeningEssencesTexture = texture
+								quest.reward.wakeningEssencesAmount = numItems
+								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
+								if C("showWakeningEssences") then quest.hide = false end
 							end
 							quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
 
@@ -740,6 +749,8 @@ local RetrieveWorldQuests = function(mapId)
 							for _, rtype in next, rewardType do
 								if rtype == REWARD_TYPES.ARTIFACTPOWER and quest.reward.artifactPower then
 									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.artifactPower or 0) end
+								if rtype == REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
+									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount end
 								if rtype == REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
 									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
 								if rtype == REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
@@ -853,7 +864,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES do
 		RetrieveWorldQuests(mapId)
@@ -1239,6 +1250,23 @@ function BWQ:UpdateBlock()
 					currencyText
 				)
 			end
+			if button.quest.reward.essencesName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.essencesTexture,
+					button.quest.reward.essencesAmount,
+					button.quest.reward.essencesName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
+
+ 
 
 			-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
 			--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
@@ -1379,6 +1407,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "brokerShowAP" },
+				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
 				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
 				{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "brokerShowHonor" },
@@ -1409,6 +1438,7 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
 		{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
 		{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
+		{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession", submenu = {
@@ -1448,6 +1478,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Valarjar", check="alwaysShowValarjar" },
 		{ text = "Armies of Legionfall", check="alwaysShowArmiesOfLegionfall" },
 		{ text = "Army of the Light", check="alwaysShowArmyOfTheLight" },
+		{ text = "Argussian Reach", check="alwaysShowArgussianReach" },
 		{ text = "" },
 		{ text = "Enable row click to open world map\n(can cause instant world quest complete to not work)", check = "enableClickToOpenMap" },
 	}
@@ -1518,11 +1549,11 @@ local SetFlightMapPins = function(self)
 	for pin, active in self:GetMap():EnumeratePinsByTemplate("WorldQuestPinTemplate") do
 		if IsWorldQuestHardWatched(pin.questID) or GetSuperTrackedQuestID() == pin.questID then
 			pin:SetAlphaLimits(nil, 0.0, 1.0)
-		    pin:SetAlpha(1)
-		    pin:Show()
-		  else
-		    pin:SetAlphaLimits(1.0, 0.0, 1.0)
-		    if FlightMapFrame.ScrollContainer:IsZoomedOut() then pin:Hide() end
+			pin:SetAlpha(1)
+			pin:Show()
+		else
+			pin:SetAlphaLimits(1.0, 0.0, 1.0)
+			if FlightMapFrame.ScrollContainer:IsZoomedOut() then pin:Hide() end
 		end
 	end
 end

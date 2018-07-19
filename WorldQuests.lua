@@ -22,7 +22,6 @@ local GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
 	= GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
 
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
-	[114] = "worldquest-icon-firstaid",
 	[116] = "worldquest-icon-blacksmithing",
 	[117] = "worldquest-icon-leatherworking",
 	[118] = "worldquest-icon-alchemy",
@@ -153,7 +152,6 @@ local defaultConfig = {
 		showProfessionSkinning = true,
 		showProfessionCooking = true,
 		showProfessionArchaeology = true,
-		showProfessionFirstAid = true,
 		showProfessionFishing = true,
 	showDungeon = true,
 	showPvP = true,
@@ -697,7 +695,6 @@ local RetrieveWorldQuests = function(mapId)
 							elseif quest.tagId == 131 then 	if C("showProfessionCooking") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 123 then 	if C("showProfessionEnchanting") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 122 then 	if C("showProfessionEngineering") 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 114 then 	if C("showProfessionFirstAid") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 126 then 	if C("showProfessionInscription") 	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 125 then 	if C("showProfessionJewelcrafting") 	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 117 then 	if C("showProfessionLeatherworking") 	then quest.hide = false else quest.hide = true end
@@ -1430,7 +1427,6 @@ function BWQ:SetupConfigMenu()
 				{ text = "" },
 				{ text = "Cooking", check="showProfessionCooking" },
 				{ text = "Archaeology", check="showProfessionArchaeology" },
-				{ text = "FirstAid", check="showProfessionFirstAid" },
 				{ text = "Fishing", check="showProfessionFishing" },
 			}
 		},

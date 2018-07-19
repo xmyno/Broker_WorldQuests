@@ -473,7 +473,7 @@ local RetrieveWorldQuests = function(mapId)
 
 	local numQuests
 	local currentTime = GetTime()
-	local questList = GetQuestsForPlayerByMapID(mapId, mapId)
+	local questList = GetQuestsForPlayerByMapID(mapId)
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -482,6 +482,7 @@ local RetrieveWorldQuests = function(mapId)
 
 		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId
 		for i = 1, #questList do
+			if questList[i].mapID == mapId then 
 			--[[
 			local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
 
@@ -779,6 +780,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 				end
+			end
 			end
 		end
 

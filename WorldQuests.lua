@@ -1367,6 +1367,7 @@ function BWQ:UpdateBlock()
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
 		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
+		if C("brokerShowWakeningEssences") and BWQ.totalWakeningEssences > 0 then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
 		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
 		if C("brokerShowLegionfallSupplies") and BWQ.totalLegionfallSupplies > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
 		if C("brokerShowHonor")           and BWQ.totalHonor > 0         then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end

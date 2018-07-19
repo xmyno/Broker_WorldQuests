@@ -18,8 +18,8 @@ local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes
 local GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
 	= GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
 
-local GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
-	= GetCurrentMapAreaID, GetCurrentMapContinent, GetCurrentMapDungeonLevel
+local GetBestMapForUnit,       GetMapInfo
+	= C_Map.GetBestMapForUnit, C_Map.GetMapInfo
 
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[116] = "worldquest-icon-blacksmithing",
@@ -45,22 +45,22 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 }
 
 local MAP_ZONES = {
-	[1015] = { id = 1015, name = GetMapNameByID(1015), quests = {}, buttons = {}, },  -- Aszuna
-	[1096] = { id = 1096, name = GetMapNameByID(1096), quests = {}, buttons = {}, },  -- Eye of Azshara
-	[1018] = { id = 1018, name = GetMapNameByID(1018), quests = {}, buttons = {}, },  -- Val'sharah
-	[1024] = { id = 1024, name = GetMapNameByID(1024), quests = {}, buttons = {}, },  -- Highmountain
-	[1017] = { id = 1017, name = GetMapNameByID(1017), quests = {}, buttons = {}, },  -- Stormheim
-	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, },  -- Suramar
-	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, },  -- Dalaran
-	[1021] = { id = 1021, name = GetMapNameByID(1021), quests = {}, buttons = {}, },  -- Broken Shore
-	[1135] = { id = 1135, name = GetMapNameByID(1135), quests = {}, buttons = {}, },  -- Krokuun
-	[1170] = { id = 1170, name = GetMapNameByID(1170), quests = {}, buttons = {}, },  -- Mac'aree
-	[1171] = { id = 1171, name = GetMapNameByID(1171), quests = {}, buttons = {}, },  -- Antoran Wastes
+	[630] = { id = 630, name = GetMapInfo(630).name, quests = {}, buttons = {}, },  -- Aszuna
+	[790] = { id = 790, name = GetMapInfo(790).name, quests = {}, buttons = {}, },  -- Eye of Azshara
+	[641] = { id = 641, name = GetMapInfo(641).name, quests = {}, buttons = {}, },  -- Val'sharah
+	[650] = { id = 650, name = GetMapInfo(650).name, quests = {}, buttons = {}, },  -- Highmountain
+	[634] = { id = 634, name = GetMapInfo(634).name, quests = {}, buttons = {}, },  -- Stormheim
+	[680] = { id = 680, name = GetMapInfo(680).name, quests = {}, buttons = {}, },  -- Suramar
+	[627] = { id = 627, name = GetMapInfo(627).name, quests = {}, buttons = {}, },  -- Dalaran
+	[646] = { id = 646, name = GetMapInfo(646).name, quests = {}, buttons = {}, },  -- Broken Shore
+	[830] = { id = 830, name = GetMapInfo(830).name, quests = {}, buttons = {}, },  -- Krokuun
+	[882] = { id = 882, name = GetMapInfo(882).name, quests = {}, buttons = {}, },  -- Mac'aree
+	[885] = { id = 885, name = GetMapInfo(885).name, quests = {}, buttons = {}, },  -- Antoran Wastes
 }
 local MAP_ZONES_SORT = {
-	1015, 1096, 1018, 1024, 1017, 1033, 1014, 1021, 1135, 1170, 1171
+	630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
 }
-local MAPID_BROKENISLES = 1007
+local MAPID_BROKENISLES = 619
 local SORT_ORDER = {
 	ARTIFACTPOWER = 8,
 	RESOURCES = 7,
@@ -368,11 +368,9 @@ local ShowQuestObjectiveTooltip = function(row)
 		end
 	end
 
-	local percent = GetQuestProgressBarInfo(row.quest.questId);
+	local percent = GetQuestProgressBarInfo(row.quest.questId)
 	if percent then
-		GameTooltip_InsertFrame(GameTooltip, WorldMapTaskTooltipStatusBar);
-		WorldMapTaskTooltipStatusBar.Bar:SetValue(percent);
-		WorldMapTaskTooltipStatusBar.Bar.Label:SetFormattedText(PERCENTAGE_STRING, percent);
+    	GameTooltip_ShowProgressBar(tip, 0, 100, percent, PERCENTAGE_STRING:format(percent))
 	end
 
 	tip:Show()
@@ -425,7 +423,7 @@ BWQ.mapTextures = mapTextures
 
 
 function BWQ:QueryZoneQuestCoordinates(mapId)
-	if mapId == GetCurrentMapAreaID() then
+	if mapId == GetBestMapForUnit("player") then
 		local quests = GetQuestsForPlayerByMapID(mapId)
 		if quests then
 			for _, v in next, quests do
@@ -452,7 +450,7 @@ local Row_OnClick = function(row)
 	else
 		if C("enableClickToOpenMap") and not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
 		if WorldMapFrame:IsShown() then
-			SetMapByID(row.mapId)
+			WorldMapFrame:SetMapID(row.mapId)
 			if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
 			if row.quest.x and row.quest.y then
 				local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
@@ -540,6 +538,7 @@ local RetrieveWorldQuests = function(mapId)
 
 					title, factionId = GetQuestInfoByQuestID(quest.questId)
 					quest.title = title
+					quest.factionId = factionId
 					if factionId then
 						quest.faction = GetFactionInfoByID(factionId)
 					end
@@ -712,14 +711,15 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
-					   (C("alwaysShowCourtOfFarondis") 		and (mapId == 1015 or mapId == 1096)) or
-					   (C("alwaysShowDreamweavers") 		and mapId == 1018) or
-					   (C("alwaysShowHighmountainTribe") 	and mapId == 1024) or
-					   (C("alwaysShowNightfallen") 			and mapId == 1033) or
-					   (C("alwaysShowWardens") 				and quest.faction == "The Wardens") or
-					   (C("alwaysShowValarjar") 			and mapId == 1017) or
-					   (C("alwaysShowArmiesOfLegionfall") 	and mapId == 1021) or
-					   (C("alwaysShowArmyOfTheLight") 		and (mapId == 1135 or mapId == 1170 or mapId == 1171)) then
+					   (C("alwaysShowCourtOfFarondis") 		and (mapId == 630 or mapId == 790)) or
+					   (C("alwaysShowDreamweavers") 		and mapId == 641) or
+					   (C("alwaysShowHighmountainTribe") 	and mapId == 650) or
+					   (C("alwaysShowNightfallen") 			and mapId == 680) or
+					   (C("alwaysShowWardens") 				and quest.factionId == 1894) or
+					   (C("alwaysShowValarjar") 			and mapId == 634) or
+					   (C("alwaysShowArmiesOfLegionfall") 	and mapId == 646) or
+					   (C("alwaysShowArmyOfTheLight") 		and quest.factionId == 2165) or
+					   (C("alwaysShowArgussianReach") 		and quest.factionId == 2170) then
 
 						-- pet battle override
 						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
@@ -787,7 +787,7 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
-	bounties = GetQuestBountyInfoForMapID(1014) -- zone id doesn't matter
+	bounties = GetQuestBountyInfoForMapID(627) -- zone id doesn't matter
 
 	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do
@@ -1623,7 +1623,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-		BWQ:RegisterEvent("WORLD_MAP_UPDATE")
+		-- BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 	elseif event == "ADDON_LOADED" then
 		if arg1 == "Broker_WorldQuests" then

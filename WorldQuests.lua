@@ -1250,12 +1250,12 @@ function BWQ:UpdateBlock()
 					currencyText
 				)
 			end
-			if button.quest.reward.essencesName then
+			if button.quest.reward.wakeningEssencesName then
 				local currencyText = string.format(
 					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.essencesTexture,
-					button.quest.reward.essencesAmount,
-					button.quest.reward.essencesName
+					button.quest.reward.wakeningEssencesTexture,
+					button.quest.reward.wakeningEssencesAmount,
+					button.quest.reward.wakeningEssencesName
 				)
 
 				rewardText = string.format(

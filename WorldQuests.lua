@@ -393,7 +393,7 @@ end
 
 
 -- super track map ping
-local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapButton)
+local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapFrame:GetCanvas())
 mapTextures:SetSize(64, 64)
 mapTextures:SetFrameStrata("DIALOG")
 mapTextures:SetFrameLevel(2001)
@@ -427,7 +427,7 @@ BWQ.mapTextures = mapTextures
 
 
 function BWQ:QueryZoneQuestCoordinates(mapId)
-	if mapId == GetBestMapForUnit("player") then
+	if mapId == WorldMapFrame:GetMapID() then
 		local quests = GetQuestsForPlayerByMapID(mapId)
 		if quests then
 			for _, v in next, quests do
@@ -441,7 +441,7 @@ function BWQ:QueryZoneQuestCoordinates(mapId)
 end
 
 function BWQ:CalculateMapPosition(x, y)
-	return x * WorldMapUnitPositionFrame:GetWidth(), -1 * y * WorldMapUnitPositionFrame:GetHeight()
+	return x * WorldMapFrame:GetCanvas():GetWidth() , -1 * y * WorldMapFrame:GetCanvas():GetHeight() 
 end
 
 local Row_OnClick = function(row)
@@ -459,7 +459,7 @@ local Row_OnClick = function(row)
 			if row.quest.x and row.quest.y then
 				local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
 				BWQ.mapTextures:ClearAllPoints()
-				BWQ.mapTextures:SetPoint("CENTER", WorldMapButton, "TOPLEFT", x, y + 25)
+				BWQ.mapTextures:SetPoint("CENTER", WorldMapFrame:GetCanvas(), "TOPLEFT", x, y + 35)
 				BWQ.mapTextures.animationGroup:Play()
 			end
 		end

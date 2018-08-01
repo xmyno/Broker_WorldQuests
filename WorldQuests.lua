@@ -1592,22 +1592,15 @@ BWQ:RegisterEvent("PLAYER_ENTERING_WORLD")
 BWQ:RegisterEvent("ADDON_LOADED")
 BWQ:SetScript("OnEvent", function(self, event, arg1)
 	if event == "QUEST_LOG_UPDATE" then
+		--[[
+		Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
+		To avoid setting the currently shown map again, which would hide the quest details,
+		skip updating after a WORLD_MAP_UPDATE event happened
+		--]]
 		if not skipNextUpdate then
 			BWQ:RunUpdate()
 		end
 		skipNextUpdate = false
-	--[[
-	Opening quest details in the side bar of the world map fires QUEST_LOG_UPDATE event.
-	To avoid setting the currently shown map again, which would hide the quest details,
-	skip updating after a WORLD_MAP_UPDATE event happened
-	--]]
-	elseif event == "WORLD_MAP_UPDATE" then
-		skipNextUpdate = true
-		local mapId = GetCurrentMapAreaID()
-		if BWQ.currentMapId and BWQ.currentMapId ~= mapId then
-			BWQ.mapTextures.animationGroup:Stop()
-		end
-		BWQ.currentMapId = mapId
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
 		BWQ:UpdateBlock()
 	elseif event == "PLAYER_ENTERING_WORLD" then
@@ -1654,11 +1647,18 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 				BWQ:RunUpdate()
 			end
 		end)
+		hooksecurefunc(WorldMapFrame, "OnMapChanged", function(self)
+			skipNextUpdate = true
+			local mapId = WorldMapFrame:GetMapID()
+			if BWQ.currentMapId and BWQ.currentMapId ~= mapId then
+				BWQ.mapTextures.animationGroup:Stop()
+			end
+			BWQ.currentMapId = mapId
+		end)
 
 		BWQ:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
-		-- BWQ:RegisterEvent("WORLD_MAP_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 	elseif event == "ADDON_LOADED" then
 		if arg1 == "Broker_WorldQuests" then

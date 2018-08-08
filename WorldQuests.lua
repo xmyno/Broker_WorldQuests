@@ -258,7 +258,11 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		hasUnlockedWorldQuests = UnitLevel("player") == 110 -- and IsQuestFlaggedCompleted(43341)) -- http://wowhead.com/quest=43341
+		hasUnlockedWorldQuests = (expansion == "BFA" and UnitLevel("player") >= 120 and
+				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
+				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
+			or (expansion == "LEGION" and UnitLevel("player") >= 110 and
+				(IsQuestFlaggedCompleted(43341) or IsQuestFlaggedCompleted(45727))) -- broken isles
 	end
 
 	if not hasUnlockedWorldQuests then
@@ -268,8 +272,21 @@ function BWQ:WorldQuestsUnlocked()
 		end
 		if not BWQ.errorFS then CreateErrorFS() end
 
+		local level = expansion == "BFA" and "120" or "110"
+		local quest = ""
+		if expansion == "BFA" then
+			local faction = UnitFactionGroup("player")
+			if faction and faction == "Alliance" then
+				quest = "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
+			else
+				quest = "|cffffff00|Hquest:51916:-1|h[Uniting Zandalar]|h|r"
+			end
+		else
+			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
+		end
+
 		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
-		BWQ.errorFS:SetText("You need to reach Level 110 to unlock World Quests.")
+		BWQ.errorFS:SetText(("You need to reach Level %s and complete the\nquest %s to unlock World Quests."):format(level, quest))
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
 		BWQ.errorFS:Show()
 
@@ -1005,7 +1022,6 @@ function BWQ:RenderRows()
 end
 
 function BWQ:HideRowsOfInactiveExpansions()
-	expansion = C("expansion")
 	for k, expac in next, MAP_ZONES do
 		if k ~= expansion then
 			for mapId, v in next, expac do
@@ -1019,6 +1035,8 @@ function BWQ:HideRowsOfInactiveExpansions()
 			end
 		end
 	end
+	BWQ.slider:Hide()
+	BWQ:UpdateBountyData()
 end
 
 function BWQ:RunUpdate()
@@ -1032,7 +1050,6 @@ end
 
 function BWQ:UpdateBlock()
 	if not BWQ:WorldQuestsUnlocked() then return end
-	expansion = C("expansion")
 
 	offsetTop = -15 -- initial padding from top
 	BWQ:UpdateBountyData()
@@ -1538,6 +1555,7 @@ function BWQ:SetupConfigMenu()
 			BWQcfgPerCharacter[var] = val or not BWQcfgPerCharacter[var]
 		end
 
+		-- refresh radio buttons
 		if val then
 			local sub = bt:GetName():sub(1, 19).."%i"
 			for i = 1, bt:GetParent().numButtons do
@@ -1551,7 +1569,11 @@ function BWQ:SetupConfigMenu()
 			end
 		end
 
-		if var == "expansion" then BWQ:HideRowsOfInactiveExpansions() end
+		if var == "expansion" then
+			expansion = C("expansion")
+			BWQ:HideRowsOfInactiveExpansions()
+			hasUnlockedWorldQuests = false
+		end
 
 		BWQ:UpdateBlock()
 		if WorldMapFrame:IsShown() then
@@ -1734,6 +1756,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 				end
 			end
 			BWQcache = BWQcache or {}
+			expansion = C("expansion")
 
 			if IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
 				BWQ:AddFlightMapHook()

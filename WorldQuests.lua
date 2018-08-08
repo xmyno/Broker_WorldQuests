@@ -101,7 +101,6 @@ local WORLD_QUEST_TYPES = {
 }
 
 
-local ARTIFACTPOWER_SPELL_NAME = select(1, GetSpellInfo(228111))
 local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 	[42442] = true, -- Fight Night: Amalia
 	[40299] = true, -- Fight Night: Bodhi Sunwayver
@@ -120,6 +119,21 @@ local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 	[41990] = true, -- Chopped
 }
 
+local BFA_REPUTATION_CURRENCY_IDS = {
+	[1579] = 0, -- both
+	[1598] = 0,
+	
+	[1600] = 1, -- alliance
+	[1595] = 1,
+	[1597] = 1,
+	[1596] = 1,
+	
+	[1599] = 2, -- horde
+	[1593] = 2,
+	[1594] = 2,
+	[1592] = 2,
+}
+
 local defaultConfig = {
 	-- general
 	attachToWorldMap = false,
@@ -133,6 +147,7 @@ local defaultConfig = {
 	showTotalsInBrokerText = true,
 		brokerShowAP = true,
 		brokerShowWakeningEssences = true,
+		brokerShowWarResources = true,
 		brokerShowResources = true,
 		brokerShowLegionfallSupplies = true,
 		brokerShowHonor = true,
@@ -151,9 +166,11 @@ local defaultConfig = {
 		showRelics = true,
 		showCraftingMaterials = true,
 		showOtherItems = true,
+	showBFAReputation = true,
 	showHonor = true,
 	showLowGold = true,
 	showHighGold = true,
+	showWarResources = true,
 	showResources = true,
 	showLegionfallSupplies = true,
 	showNethershards = true,
@@ -178,15 +195,26 @@ local defaultConfig = {
 	showDungeon = true,
 	showPvP = true,
 	hideFactionColumn = false,
-	alwaysShowCourtOfFarondis = false,
-	alwaysShowDreamweavers = false,
-	alwaysShowHighmountainTribe = false,
-	alwaysShowNightfallen = false,
-	alwaysShowWardens = false,
-	alwaysShowValarjar = false,
-	alwaysShowArmiesOfLegionfall = false,
-	alwaysShowArmyOfTheLight = false,
-	alwaysShowArgussianReach = false,
+	--legion
+	alwaysShow7thLegion = false,
+	alwaysShowStormsWake = false,
+	alwaysShowOrderOfEmbers = false,
+	alwaysShowProudmooreAdmiralty = false,
+	alwaysShowTheHonorbound = false,
+	alwaysShowZandalariEmpire = false,
+	alwaysShowTalanjisExpedition = false,
+	alwaysShowVoldunai = false,
+	alwaysShowTortollanSeekers = false,
+	alwaysShowChampionsOfAzeroth = false,
+		alwaysShowCourtOfFarondis = false,
+		alwaysShowDreamweavers = false,
+		alwaysShowHighmountainTribe = false,
+		alwaysShowNightfallen = false,
+		alwaysShowWardens = false,
+		alwaysShowValarjar = false,
+		alwaysShowArmiesOfLegionfall = false,
+		alwaysShowArmyOfTheLight = false,
+		alwaysShowArgussianReach = false,
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -504,7 +532,7 @@ local Row_OnClick = function(row)
 	end
 end
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9 }
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10 }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
@@ -602,40 +630,24 @@ local RetrieveWorldQuests = function(mapId)
 							quest.reward.itemId = itemId
 							quest.reward.itemQuality = quality
 							quest.reward.itemQuantity = quantity
-
-							local itemSpell = GetItemSpell(quest.reward.itemId)
+							quest.reward.itemName = itemName
+							
 							local _, _, _, _, _, _, _, _, equipSlot, _, _, classId, subClassId = GetItemInfo(quest.reward.itemId)
-							if itemSpell and ARTIFACTPOWER_SPELL_NAME and itemSpell == ARTIFACTPOWER_SPELL_NAME then
-								quest.reward.artifactPower = BWQ:GetArtifactPowerValue(quest.reward.itemId)
-								quest.sort = quest.sort > SORT_ORDER.ARTIFACTPOWER and quest.sort or SORT_ORDER.ARTIFACTPOWER
-
-								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
-								if C("showArtifactPower") then quest.hide = false end
-							else
-								quest.reward.itemName = itemName
-
-								if classId == 7 then
-									quest.sort = quest.sort > SORT_ORDER.PROFESSION and quest.sort or SORT_ORDER.PROFESSION
-									if quest.reward.itemId == 124124 then
-										rewardType[#rewardType+1] = REWARD_TYPES.BLOODOFSARGERAS
-									end
-									if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
-								elseif equipSlot ~= "" then
-									quest.sort = quest.sort > SORT_ORDER.EQUIP and quest.sort or SORT_ORDER.EQUIP
-									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
-									rewardType[#rewardType+1] = REWARD_TYPES.GEAR
-
-									if C("showItems") and C("showGear") then quest.hide = false end
-								elseif classId == 3 and subClassId == 11 then
-									quest.sort = quest.sort > SORT_ORDER.RELIC and quest.sort or SORT_ORDER.RELIC
-									quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
-									rewardType[#rewardType+1] = REWARD_TYPES.GEAR
-
-									if C("showItems") and C("showRelics") then quest.hide = false end
-								else
-									quest.sort = quest.sort > SORT_ORDER.ITEM and quest.sort or SORT_ORDER.ITEM
-									if C("showItems") and C("showOtherItems") then quest.hide = false end
+							if classId == 7 then
+								quest.sort = quest.sort > SORT_ORDER.PROFESSION and quest.sort or SORT_ORDER.PROFESSION
+								if quest.reward.itemId == 124124 then
+									rewardType[#rewardType+1] = REWARD_TYPES.BLOODOFSARGERAS
 								end
+								if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
+							elseif equipSlot ~= "" then
+								quest.sort = quest.sort > SORT_ORDER.EQUIP and quest.sort or SORT_ORDER.EQUIP
+								quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
+								rewardType[#rewardType+1] = REWARD_TYPES.GEAR
+
+								if C("showItems") and C("showGear") then quest.hide = false end
+							else
+								quest.sort = quest.sort > SORT_ORDER.ITEM and quest.sort or SORT_ORDER.ITEM
+								if C("showItems") and C("showOtherItems") then quest.hide = false end
 							end
 						end
 					end
@@ -666,10 +678,27 @@ local RetrieveWorldQuests = function(mapId)
 					local numQuestCurrencies = GetNumQuestLogRewardCurrencies(quest.questId)
 					for i = 1, numQuestCurrencies do
 
-						local name, texture, numItems = GetQuestLogRewardCurrencyInfo(i, quest.questId)
+						local name, texture, numItems, currencyId = GetQuestLogRewardCurrencyInfo(i, quest.questId)
 						if name then
 							hasReward = true
-							if texture == 1397630 then -- Order Resources
+							if currencyId == 1553 then -- Azerite
+								quest.reward.azeriteName = name
+								quest.reward.azeriteTexture = texture
+								quest.reward.azeriteAmount = numItems
+								rewardType[#rewardType+1] = REWARD_TYPES.AZERITE
+								if C("showArtifactPower") then quest.hide = false end
+							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
+								quest.reward.reputationName = name
+								quest.reward.reputationTexture = name
+								quest.reward.reputationAmount = name
+								if C("showBFAReputation") then quest.hide = false end
+							elseif currencyId == 1560 then -- War Resources (BFA)
+								quest.reward.warResourceName = name
+								quest.reward.warResourceTexture = texture
+								quest.reward.warResourceAmount = numItems
+								rewardType[#rewardType+1] = REWARD_TYPES.WAR_RESOURCES
+								if C("showWarResources") then quest.hide = false end
+							elseif texture == 1397630 then -- Order Resources (Legion)
 								quest.reward.resourceName = name
 								quest.reward.resourceTexture = texture
 								quest.reward.resourceAmount = numItems
@@ -700,8 +729,12 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
 								if C("showWakeningEssences") then quest.hide = false end
 							end
-							quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
 
+							if quest.reward.azeriteName then
+								quest.sort = quest.sort > SORT_ORDER.ARTIFACTPOWER and quest.sort or SORT_ORDER.ARTIFACTPOWER
+							else
+								quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
+							end
 							
 						end
 					end
@@ -760,15 +793,28 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
-					   (C("alwaysShowCourtOfFarondis") 		and (mapId == 630 or mapId == 790)) or
-					   (C("alwaysShowDreamweavers") 		and mapId == 641) or
-					   (C("alwaysShowHighmountainTribe") 	and mapId == 650) or
-					   (C("alwaysShowNightfallen") 			and mapId == 680) or
-					   (C("alwaysShowWardens") 				and quest.factionId == 1894) or
-					   (C("alwaysShowValarjar") 			and mapId == 634) or
-					   (C("alwaysShowArmiesOfLegionfall") 	and mapId == 646) or
-					   (C("alwaysShowArmyOfTheLight") 		and quest.factionId == 2165) or
-					   (C("alwaysShowArgussianReach") 		and quest.factionId == 2170) then
+						-- bfa
+						(C("alwaysShow7thLegion") and quest.factionId == 2159) or
+						(C("alwaysShowStormsWake") and quest.factionId == 2162) or
+						(C("alwaysShowOrderOfEmbers") and quest.factionId == 2161) or
+						(C("alwaysShowProudmooreAdmiralty") and quest.factionId == 2160) or
+						(C("alwaysShowTheHonorbound") and quest.factionId == 2157) or
+						(C("alwaysShowZandalariEmpire") and quest.factionId == 2103) or
+						(C("alwaysShowTalanjisExpedition") and quest.factionId == 2156) or
+						(C("alwaysShowVoldunai") and quest.factionId == 2158) or
+						(C("alwaysShowTortollanSeekers") and quest.factionId == 2163) or
+						(C("alwaysShowChampionsOfAzeroth") and quest.factionId == 2164) or
+						-- legion
+						(C("alwaysShowCourtOfFarondis") 		and (mapId == 630 or mapId == 790)) or
+						(C("alwaysShowDreamweavers") 		and mapId == 641) or
+						(C("alwaysShowHighmountainTribe") 	and mapId == 650) or
+						(C("alwaysShowNightfallen") 			and mapId == 680) or
+						(C("alwaysShowWardens") 				and quest.factionId == 1894) or
+						(C("alwaysShowValarjar") 			and mapId == 634) or
+						(C("alwaysShowArmiesOfLegionfall") 	and mapId == 646) or
+						(C("alwaysShowArmyOfTheLight") 		and quest.factionId == 2165) or
+						(C("alwaysShowArgussianReach") 		and quest.factionId == 2170) then
+					   	
 
 						-- pet battle override
 						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
@@ -787,10 +833,12 @@ local RetrieveWorldQuests = function(mapId)
 
 						if rewardType then
 							for _, rtype in next, rewardType do
-								if rtype == REWARD_TYPES.ARTIFACTPOWER and quest.reward.artifactPower then
-									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.artifactPower or 0) end
+								if rtype == REWARD_TYPES.AZERITE and quest.reward.azeriteAmount then
+									BWQ.totalAzerite = BWQ.totalAzerite + (quest.reward.azeriteAmount or 0) end
 								if rtype == REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
 									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount end
+								if rtype == REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
+									BWQ.totalWarResources = BWQ.totalWarResources + quest.reward.warResourceAmount end
 								if rtype == REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
 									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
 								if rtype == REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
@@ -905,7 +953,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalAzerite, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1175,18 +1223,13 @@ function BWQ:UpdateBlock()
 
 			-- fill and format row
 			local rewardText = ""
-			if button.quest.reward.itemName or button.quest.reward.artifactPower then
-				local itemText
-				if button.quest.reward.artifactPower then
-					itemText = string.format("|cffe5cc80[%s %s]|r", AbbreviateNumber(button.quest.reward.artifactPower), ARTIFACT_POWER)
-				else
-					itemText = string.format(
-						"%s[%s%s]|r",
-						ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex,
-						button.quest.reward.realItemLevel and (button.quest.reward.realItemLevel .. " ") or "",
-						button.quest.reward.itemName
-					)
-				end
+			if button.quest.reward.itemName or button.quest.reward.azeriteAmount then
+				local itemText = string.format(
+					"%s[%s%s]|r",
+					ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex,
+					button.quest.reward.realItemLevel and (button.quest.reward.realItemLevel .. " ") or "",
+					button.quest.reward.itemName
+				)
 
 				rewardText = string.format(
 					"|T%s$s:14:14|t %s%s",
@@ -1247,6 +1290,50 @@ function BWQ:UpdateBlock()
 					rewardText,
 					rewardText ~= "" and "   " or "", -- insert some space between rewards
 					moneyText
+				)
+			end
+			if button.quest.reward.azeriteName then
+				local currencyText = string.format("|T%1$s:14:14|t |cffe5cc80[%2$s %3$s]|r",
+					button.quest.reward.azeriteTexture,
+					AbbreviateNumber(button.quest.reward.azeriteAmount),
+					button.quest.reward.azeriteName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
+			if button.quest.reward.reputationName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.reputationTexture,
+					button.quest.reward.reputationAmount,
+					button.quest.reward.reputationName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
+			if button.quest.reward.warResourceName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.warResourceTexture,
+					button.quest.reward.warResourceAmount,
+					button.quest.reward.warResourceName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
 				)
 			end
 			if button.quest.reward.resourceName then
@@ -1425,8 +1512,9 @@ function BWQ:UpdateBlock()
 
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
-		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
+		if C("brokerShowAP")              and BWQ.totalAzerite > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalAzerite)) end
 		if C("brokerShowWakeningEssences") and BWQ.totalWakeningEssences > 0 then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
+		if C("brokerShowWarResources")       and BWQ.totalWarResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
 		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
 		if C("brokerShowLegionfallSupplies") and BWQ.totalLegionfallSupplies > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
 		if C("brokerShowHonor")           and BWQ.totalHonor > 0         then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end
@@ -1471,8 +1559,9 @@ function BWQ:SetupConfigMenu()
 		{ text = "Only show world quests with |cff0070ddrare|r or above quality", check = "onlyShowRareOrAbove" },
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
-				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "brokerShowAP" },
+				{ text = ("|T%1$s:16:16|t  Azerite"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "brokerShowAP" },
 				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
+				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "brokerShowWarResources" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
 				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
 				{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "brokerShowHonor" },
@@ -1488,22 +1577,26 @@ function BWQ:SetupConfigMenu()
 		{ text = "Sort list by time remaining instead of reward type", check = "sortByTimeRemaining" },
 		{ text = "" },
 		{ text = "Filter by reward...", isTitle = true },
-		{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\INV_Artifact_XP03"), check = "showArtifactPower" },
+		{ text = ("|T%1$s:16:16|t  Azerite"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "showArtifactPower" },
 		{ text = ("|T%1$s:16:16|t  Items"):format("Interface\\Minimap\\Tracking\\Banker"), check = "showItems", submenu = {
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "showGear" },
-				{ text = ("|T%1$s:16:16|t  Artifact Relics"):format("Interface\\Icons\\inv_misc_statue_01"), check = "showRelics" },
 				{ text = ("|T%s$s:16:16|t  Crafting Materials"):format("1417744"), check = "showCraftingMaterials" },
 				{ text = "Other", check = "showOtherItems" },
 			}
 		},
+		{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showBFAReputation" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
-		{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
-		{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
-		{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
-		{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
-		{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
+		{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "showWarResources" },
+		{ text = "     Legion", submenu = {
+				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
+				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
+				{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
+				{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
+				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
+			}
+		},
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession", submenu = {
@@ -1535,15 +1628,28 @@ function BWQ:SetupConfigMenu()
 		{ text = "" },
 		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Always show quests for faction...", isTitle = true },
-		{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },
-		{ text = "Dreamweavers", check="alwaysShowDreamweavers" },
-		{ text = "Highmountain Tribe", check="alwaysShowHighmountainTribe" },
-		{ text = "The Nightfallen", check="alwaysShowNightfallen" },
-		{ text = "The Wardens", check="alwaysShowWardens" },
-		{ text = "Valarjar", check="alwaysShowValarjar" },
-		{ text = "Armies of Legionfall", check="alwaysShowArmiesOfLegionfall" },
-		{ text = "Army of the Light", check="alwaysShowArmyOfTheLight" },
-		{ text = "Argussian Reach", check="alwaysShowArgussianReach" },
+		{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
+		{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
+		{ text = "7th Legion (Alliance)", check="alwaysShow7thLegion" },
+		{ text = "Storm's Wake (Alliance)", check="alwaysShowStormsWake" },
+		{ text = "Order of Embers (Alliance)", check="alwaysShowOrderOfEmbers" },
+		{ text = "Proudmoore Admiralty (Alliance)", check="alwaysShowProudmooreAdmiralty" },
+		{ text = "The Honorbound (Horde)", check="alwaysShowTheHonorbound" },
+		{ text = "Zandalari Empire (Horde)", check="alwaysShowZandalariEmpire" },
+		{ text = "Talanji's Expedition (Horde)", check="alwaysShowTalanjisExpedition" },
+		{ text = "Voldunai (Horde)", check="alwaysShowVoldunai" },
+		{ text = "     Legion", submenu = {
+				{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },
+				{ text = "Dreamweavers", check="alwaysShowDreamweavers" },
+				{ text = "Highmountain Tribe", check="alwaysShowHighmountainTribe" },
+				{ text = "The Nightfallen", check="alwaysShowNightfallen" },
+				{ text = "The Wardens", check="alwaysShowWardens" },
+				{ text = "Valarjar", check="alwaysShowValarjar" },
+				{ text = "Armies of Legionfall", check="alwaysShowArmiesOfLegionfall" },
+				{ text = "Army of the Light", check="alwaysShowArmyOfTheLight" },
+				{ text = "Argussian Reach", check="alwaysShowArgussianReach" },
+			}
+		},
 		{ text = "" },
 		{ text = "Enable row click to open world map\n(can cause instant world quest complete to not work)", check = "enableClickToOpenMap" },
 	}

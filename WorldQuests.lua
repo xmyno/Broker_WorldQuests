@@ -953,7 +953,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalAzerite, BWQ.totalGold, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalAzerite, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1223,7 +1223,7 @@ function BWQ:UpdateBlock()
 
 			-- fill and format row
 			local rewardText = ""
-			if button.quest.reward.itemName or button.quest.reward.azeriteAmount then
+			if button.quest.reward.itemName then
 				local itemText = string.format(
 					"%s[%s%s]|r",
 					ITEM_QUALITY_COLORS[button.quest.reward.itemQuality].hex,

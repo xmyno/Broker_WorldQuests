@@ -387,7 +387,7 @@ function BWQ:GetItemLevelValueForQuestId(questId)
 		local text = _G["BWQScanTooltipTextLeft" .. i]:GetText()
 		local e = ITEM_LEVEL_PLUS:find("%%d")
 		if text and text:find(ITEM_LEVEL_PLUS:sub(1, e - 1)) then
-			return text:match("%d+" .. ITEM_LEVEL_PLUS:sub(e + 2, ITEM_LEVEL_PLUS:len())) or ""
+			return text:match("%d+%+?") or ""
 		end
 	end
 	return ""

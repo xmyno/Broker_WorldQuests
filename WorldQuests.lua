@@ -689,8 +689,8 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showArtifactPower") then quest.hide = false end
 							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
 								quest.reward.reputationName = name
-								quest.reward.reputationTexture = name
-								quest.reward.reputationAmount = name
+								quest.reward.reputationTexture = texture
+								quest.reward.reputationAmount = numItems
 								if C("showBFAReputation") then quest.hide = false end
 							elseif currencyId == 1560 then -- War Resources (BFA)
 								quest.reward.warResourceName = name

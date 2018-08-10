@@ -12,8 +12,8 @@
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 	= ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 
-local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes,             GetQuestInfoByQuestID,             GetQuestProgressBarInfo
-	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo
+local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes,             GetQuestInfoByQuestID,             GetQuestProgressBarInfo,            QuestHasWarModeBonus
+	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo, C_QuestLog.QuestHasWarModeBonus
 
 local GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
 	= GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
@@ -227,7 +227,9 @@ local C = function(k)
 		return BWQcfg[k]
 	end
 end
+
 local expansion
+local warmodeEnabled = false
 
 local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
 BWQ:EnableMouse(true)
@@ -394,6 +396,11 @@ function BWQ:GetItemLevelValueForQuestId(questId)
 	return ""
 end
 
+function BWQ:ValueWithWarModeBonus(questId, value)
+	local multiplier = warmodeEnabled and 1.1 or 1
+	return floor(value * multiplier + 0.5)
+end
+
 local AbbreviateNumber = function(number)
 	number = tonumber(number)
 	if number >= 1000000 then
@@ -542,6 +549,7 @@ local RetrieveWorldQuests = function(mapId)
 	local numQuests
 	local currentTime = GetTime()
 	local questList = GetQuestsForPlayerByMapID(mapId)
+	warmodeEnabled = C_PvP.IsWarModeDesired()
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -656,7 +664,7 @@ local RetrieveWorldQuests = function(mapId)
 					local money = GetQuestLogRewardMoney(quest.questId);
 					if money > 20000 then -- >2g, hides these silly low gold extra rewards
 						hasReward = true
-						quest.reward.money = money
+						quest.reward.money = floor(BWQ:ValueWithWarModeBonus(quest.questId, money) / 10000) * 10000
 						quest.sort = quest.sort > SORT_ORDER.MONEY and quest.sort or SORT_ORDER.MONEY
 						rewardType[#rewardType+1] = REWARD_TYPES.MONEY
 
@@ -685,7 +693,7 @@ local RetrieveWorldQuests = function(mapId)
 							if currencyId == 1553 then -- Azerite
 								quest.reward.azeriteName = name
 								quest.reward.azeriteTexture = texture
-								quest.reward.azeriteAmount = numItems
+								quest.reward.azeriteAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.AZERITE
 								if C("showArtifactPower") then quest.hide = false end
 							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
@@ -696,37 +704,37 @@ local RetrieveWorldQuests = function(mapId)
 							elseif currencyId == 1560 then -- War Resources (BFA)
 								quest.reward.warResourceName = name
 								quest.reward.warResourceTexture = texture
-								quest.reward.warResourceAmount = numItems
+								quest.reward.warResourceAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.WAR_RESOURCES
 								if C("showWarResources") then quest.hide = false end
 							elseif texture == 1397630 then -- Order Resources (Legion)
 								quest.reward.resourceName = name
 								quest.reward.resourceTexture = texture
-								quest.reward.resourceAmount = numItems
+								quest.reward.resourceAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.RESOURCES
 								if C("showResources") then quest.hide = false end
 							elseif texture == 803763 then -- Legionfall Supplies
 								quest.reward.legionfallSuppliesName = name
 								quest.reward.legionfallSuppliesTexture = texture
-								quest.reward.legionfallSuppliesAmount = numItems
+								quest.reward.legionfallSuppliesAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
 								if C("showLegionfallSupplies") then quest.hide = false end
 							elseif texture == 132775 then -- Nethershard
 								quest.reward.nethershardsName = name
 								quest.reward.nethershardsTexture = texture
-								quest.reward.nethershardsAmount = numItems
+								quest.reward.nethershardsAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.NETHERSHARD
 								if C("showNethershards") then quest.hide = false end
 							elseif texture == 1064188 then -- Argunite
 								quest.reward.arguniteName = name
 								quest.reward.arguniteTexture = texture
-								quest.reward.arguniteAmount = numItems
+								quest.reward.arguniteAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.ARGUNITE
 								if C("showArgunite") then quest.hide = false end
 							elseif texture == 236521 then -- Wakening Essences
 								quest.reward.wakeningEssencesName = name
 								quest.reward.wakeningEssencesTexture = texture
-								quest.reward.wakeningEssencesAmount = numItems
+								quest.reward.wakeningEssencesAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
 								if C("showWakeningEssences") then quest.hide = false end
 							end

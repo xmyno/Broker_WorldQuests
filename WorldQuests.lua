@@ -52,6 +52,7 @@ local MAP_ZONES = {
 		[895] = { id = 895, name = GetMapInfo(895).name, quests = {}, buttons = {}, },  -- Tiragarde
 		[942] = { id = 942, name = GetMapInfo(942).name, quests = {}, buttons = {}, },  -- Stormsong Valley
 		[896] = { id = 896, name = GetMapInfo(896).name, quests = {}, buttons = {}, },  -- Drustvar
+		 [14] = { id =  14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 
 	},
 	["LEGION"] = {

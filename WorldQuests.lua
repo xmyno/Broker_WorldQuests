@@ -1866,9 +1866,8 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 			BWQcfg = BWQcfg or defaultConfig
 			BWQcfgPerCharacter = BWQcfgPerCharacter and BWQcfgPerCharacter or BWQcfg and BWQcfg or defaultConfig
 			for i, v in next, defaultConfig do
-				if BWQcfg[i] == nil then
-					BWQcfg[i] = v
-				end
+				if BWQcfg[i] == nil then BWQcfg[i] = v end
+				if BWQcfgPerCharacter[i] == nil then BWQcfgPerCharacter[i] = v end
 			end
 			BWQcache = BWQcache or {}
 			expansion = C("expansion")

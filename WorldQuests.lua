@@ -648,7 +648,7 @@ local RetrieveWorldQuests = function(mapId)
 									rewardType[#rewardType+1] = REWARD_TYPES.BLOODOFSARGERAS
 								end
 								if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
-							elseif equipSlot ~= "" then
+							elseif equipSlot ~= "" or itemId == 163857 --[[ Azerite Armor Cache ]] then
 								quest.sort = quest.sort > SORT_ORDER.EQUIP and quest.sort or SORT_ORDER.EQUIP
 								quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 								rewardType[#rewardType+1] = REWARD_TYPES.GEAR

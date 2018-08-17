@@ -694,7 +694,7 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.azeriteName = name
 								quest.reward.azeriteTexture = texture
 								quest.reward.azeriteAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
-								rewardType[#rewardType+1] = REWARD_TYPES.AZERITE
+								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
 								if C("showArtifactPower") then quest.hide = false end
 							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
 								quest.reward.reputationName = name
@@ -749,6 +749,7 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					if not hasReward then needsRefresh = true end -- quests always have a reward, if not api returned bad data
+					--print(needsRefresh)
 
 					for _, bounty in ipairs(bounties) do
 						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
@@ -842,8 +843,8 @@ local RetrieveWorldQuests = function(mapId)
 
 						if rewardType then
 							for _, rtype in next, rewardType do
-								if rtype == REWARD_TYPES.AZERITE and quest.reward.azeriteAmount then
-									BWQ.totalAzerite = BWQ.totalAzerite + (quest.reward.azeriteAmount or 0) end
+								if rtype == REWARD_TYPES.ARTIFACTPOWER and quest.reward.azeriteAmount then
+									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.azeriteAmount or 0) end
 								if rtype == REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
 									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount end
 								if rtype == REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
@@ -962,7 +963,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalAzerite, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1521,7 +1522,7 @@ function BWQ:UpdateBlock()
 
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
-		if C("brokerShowAP")              and BWQ.totalAzerite > 0 then brokerString = string.format("%s|TInterface\\Icons\\INV_Artifact_XP03:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalAzerite)) end
+		if C("brokerShowAP")              and BWQ.totalArtifactPower > 0 then brokerString = string.format("%s|TInterface\\Icons\\inv_smallazeriteshard:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
 		if C("brokerShowWakeningEssences") and BWQ.totalWakeningEssences > 0 then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
 		if C("brokerShowWarResources")       and BWQ.totalWarResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
 		if C("brokerShowResources")       and BWQ.totalResources > 0     then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
@@ -1568,7 +1569,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Only show world quests with |cff0070ddrare|r or above quality", check = "onlyShowRareOrAbove" },
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
-				{ text = ("|T%1$s:16:16|t  Azerite"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "brokerShowAP" },
+				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "brokerShowAP" },
 				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
 				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "brokerShowWarResources" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },

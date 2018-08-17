@@ -467,7 +467,7 @@ end
 
 -- super track map ping
 local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapFrame:GetCanvas())
-mapTextures:SetSize(64, 64)
+mapTextures:SetSize(200,200)
 mapTextures:SetFrameStrata("DIALOG")
 mapTextures:SetFrameLevel(2001)
 local highlightArrow = mapTextures:CreateTexture("highlightArrow")
@@ -532,13 +532,17 @@ local Row_OnClick = function(row)
 			if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
 			if row.quest.x and row.quest.y then
 				local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
+				local scale = WorldMapFrame:GetCanvasScale()
+				local size = 30 / scale
 				BWQ.mapTextures:ClearAllPoints()
-				BWQ.mapTextures:SetPoint("CENTER", WorldMapFrame:GetCanvas(), "TOPLEFT", x, y + 35)
+				BWQ.mapTextures.highlightArrow:SetSize(size, size)
+				BWQ.mapTextures:SetPoint("CENTER", WorldMapFrame:GetCanvas(), "TOPLEFT", x, y + 25 + (scale < 0.5 and 50 or 0))
 				BWQ.mapTextures.animationGroup:Play()
 			end
 		end
 	end
 end
+
 
 local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10 }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }

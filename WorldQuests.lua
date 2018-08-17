@@ -21,6 +21,9 @@ local GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLog
 local GetBestMapForUnit,       GetMapInfo
 	= C_Map.GetBestMapForUnit, C_Map.GetMapInfo
 
+local REPUTATION
+    = REPUTATION
+
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[116] = "worldquest-icon-blacksmithing",
 	[117] = "worldquest-icon-leatherworking",
@@ -1322,10 +1325,11 @@ function BWQ:UpdateBlock()
 			end
 			if button.quest.reward.reputationName then
 				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
+					"|T%1$s:14:14|t %3$s: %2$d %4$s",
 					button.quest.reward.reputationTexture,
 					button.quest.reward.reputationAmount,
-					button.quest.reward.reputationName
+					button.quest.reward.reputationName,
+					REPUTATION
 				)
 
 				rewardText = string.format(

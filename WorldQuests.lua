@@ -638,7 +638,6 @@ local RetrieveWorldQuests = function(mapId)
 					quest.reward = {}
 					-- item reward
 					local hasReward = false
-					C_TaskQuest.RequestPreloadRewardData(quest.questId)
 
 					local rewardType = {}
 					if GetNumQuestLogRewards(quest.questId) > 0 then
@@ -759,7 +758,6 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					if not hasReward then needsRefresh = true end -- quests always have a reward, if not api returned bad data
-					--print(needsRefresh)
 
 					for _, bounty in ipairs(bounties) do
 						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
@@ -996,7 +994,6 @@ function BWQ:UpdateQuestData()
 	end
 
 	if needsRefresh and updateTries <= 5 then
-		needsRefresh = false
 		updateTries = updateTries + 1
 		C_Timer.After(1, function() BWQ:UpdateBlock() end)
 	end
@@ -1123,7 +1120,11 @@ function BWQ:UpdateBlock()
 	BWQ:UpdateBountyData()
 	BWQ:UpdateQuestData()
 
-	if needsRefresh then return end
+	if needsRefresh then
+		-- skip updating the block, received data was incomplete
+		needsRefresh = false
+		return
+	end
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do

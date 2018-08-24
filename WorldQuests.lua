@@ -47,14 +47,17 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[136] = "worldquest-questmarker-dragon",
 }
 
+local FACTION_NEUTRAL = 0
+local FACTION_ALLIANCE = 1
+local FACTION_HORDE = 2
 local MAP_ZONES = {
 	["BFA"] = {
-		[863] = { id = 863, name = GetMapInfo(863).name, quests = {}, buttons = {}, },  -- Nazmir
-		[864] = { id = 864, name = GetMapInfo(864).name, quests = {}, buttons = {}, },  -- Vol'dun
-		[862] = { id = 862, name = GetMapInfo(862).name, quests = {}, buttons = {}, },  -- Zuldazar
-		[895] = { id = 895, name = GetMapInfo(895).name, quests = {}, buttons = {}, },  -- Tiragarde
-		[942] = { id = 942, name = GetMapInfo(942).name, quests = {}, buttons = {}, },  -- Stormsong Valley
-		[896] = { id = 896, name = GetMapInfo(896).name, quests = {}, buttons = {}, },  -- Drustvar
+		[863] = { id = 863, name = GetMapInfo(863).name, faction = FACTION_HORDE, quests = {}, buttons = {}, },  -- Nazmir
+		[864] = { id = 864, name = GetMapInfo(864).name, faction = FACTION_HORDE, quests = {}, buttons = {}, },  -- Vol'dun
+		[862] = { id = 862, name = GetMapInfo(862).name, faction = FACTION_HORDE, quests = {}, buttons = {}, },  -- Zuldazar
+		[895] = { id = 895, name = GetMapInfo(895).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Tiragarde
+		[942] = { id = 942, name = GetMapInfo(942).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
+		[896] = { id = 896, name = GetMapInfo(896).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
 		 [14] = { id =  14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 
 	},
@@ -1131,9 +1134,15 @@ function BWQ:UpdateBlock()
 				fs = BWQ:CreateFontString("BWQzoneNameFS", "OVERLAY", "SystemFont_Shadow_Med1"),
 				texture = BWQ:CreateTexture(),
 			}
+			local faction = MAP_ZONES[expansion][mapId].faction
+			local zoneText = MAP_ZONES[expansion][mapId].name
+			if faction then
+				local factionIcon = faction == FACTION_HORDE and "Interface\\Icons\\inv_misc_tournaments_banner_orc" or "Interface\\Icons\\inv_misc_tournaments_banner_human"
+				zoneText = ("%2$s   |T%1$s:12:12|t"):format(factionIcon, zoneText)
+			end
 			zoneSep.fs:SetJustifyH("LEFT")
-			zoneSep.fs:SetTextColor(.9, .8, 0)
-			zoneSep.fs:SetText(MAP_ZONES[expansion][mapId].name)
+			zoneSep.fs:SetText(zoneText)
+
 			zoneSep.texture:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-OnlineDivider")
 			zoneSep.texture:SetHeight(8)
 

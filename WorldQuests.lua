@@ -225,6 +225,8 @@ local defaultConfig = {
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
+
+	collapsedZones = {},
 }
 local C = function(k)
 	if BWQcfg.usePerCharacterSettings then
@@ -979,7 +981,9 @@ function BWQ:UpdateQuestData()
 
 	numQuestsTotal = 0
 	for mapId in next, MAP_ZONES[expansion] do
-		numQuestsTotal = numQuestsTotal + MAP_ZONES[expansion][mapId].numQuests
+		if not C("collapsedZones")[mapId] then
+			numQuestsTotal = numQuestsTotal + MAP_ZONES[expansion][mapId].numQuests
+		end
 	end
 
 	-- save quests to saved vars to check new status after reload/relog
@@ -1040,6 +1044,9 @@ function BWQ:RenderRows()
 	local rowIndex = 0
 	local rowInViewIndex = 0
 	for _, mapId in next, MAP_ZONES_SORT[expansion] do
+		
+		local collapsed = C("collapsedZones")[mapId]
+
 		if MAP_ZONES[expansion][mapId].numQuests == 0 or rowIndex < sliderval or rowIndex > sliderval + maxEntries then
 
 			MAP_ZONES[expansion][mapId].zoneSep.fs:Hide()
@@ -1051,6 +1058,10 @@ function BWQ:RenderRows()
 			MAP_ZONES[expansion][mapId].zoneSep.texture:Show()
 			MAP_ZONES[expansion][mapId].zoneSep.texture:SetPoint("TOP", BWQ, "TOP", 5, offsetTop + ROW_HEIGHT * rowInViewIndex - 3)
 
+			MAP_ZONES[expansion][mapId].zoneSep.collapse:SetAllPoints(MAP_ZONES[expansion][mapId].zoneSep.texture)
+			local color = not collapsed and {0.9, 0.8, 0} or {0.3, 0.3, 0.3}
+			MAP_ZONES[expansion][mapId].zoneSep.fs:SetTextColor(unpack(color))
+			
 			rowInViewIndex = rowInViewIndex + 1
 		end
 
@@ -1061,8 +1072,7 @@ function BWQ:RenderRows()
 		highlightedRow = true
 		local buttonIndex = 1
 		for _, button in ipairs(MAP_ZONES[expansion][mapId].buttons) do
-
-			if not button.quest.hide and buttonIndex <= MAP_ZONES[expansion][mapId].numQuests then
+			if not button.quest.hide and not collapsed and buttonIndex <= MAP_ZONES[expansion][mapId].numQuests then
 				if rowIndex < sliderval  or rowIndex > sliderval + maxEntries then
 					button:Hide()
 				else
@@ -1134,6 +1144,7 @@ function BWQ:UpdateBlock()
 			local zoneSep = {
 				fs = BWQ:CreateFontString("BWQzoneNameFS", "OVERLAY", "SystemFont_Shadow_Med1"),
 				texture = BWQ:CreateTexture(),
+				collapse = CreateFrame("Button", nil, BWQ)
 			}
 			local faction = MAP_ZONES[expansion][mapId].faction
 			local zoneText = MAP_ZONES[expansion][mapId].name
@@ -1144,11 +1155,20 @@ function BWQ:UpdateBlock()
 			zoneSep.fs:SetJustifyH("LEFT")
 			zoneSep.fs:SetText(zoneText)
 
+			zoneSep.collapse:SetFrameLevel(15)
+			zoneSep.collapse:RegisterForClicks("AnyUp")
+			zoneSep.collapse:SetScript("OnClick" , function(self)
+				C("collapsedZones")[mapId] = not C("collapsedZones")[mapId]
+				BWQ:UpdateBlock()
+			end)
+
 			zoneSep.texture:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-OnlineDivider")
 			zoneSep.texture:SetHeight(8)
 
 			MAP_ZONES[expansion][mapId].zoneSep = zoneSep
 		end
+
+		if not C("collapsedZones")[mapId] then 
 
 		for _, questId in next, MAP_ZONES[expansion][mapId].questsSort do
 
@@ -1501,6 +1521,7 @@ function BWQ:UpdateBlock()
 
 			buttonIndex = buttonIndex + 1
 		end -- quest loop
+	end
 	end -- maps loop
 
 	titleMaxWidth = 125

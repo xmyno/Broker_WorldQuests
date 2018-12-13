@@ -55,7 +55,8 @@ local MAP_ZONES = {
 		[895] = { id = 895, name = GetMapInfo(895).name, quests = {}, buttons = {}, },  -- Tiragarde
 		[942] = { id = 942, name = GetMapInfo(942).name, quests = {}, buttons = {}, },  -- Stormsong Valley
 		[896] = { id = 896, name = GetMapInfo(896).name, quests = {}, buttons = {}, },  -- Drustvar
-		 [14] = { id =  14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
+		[14] = { id = 14, name = GetMapInfo(14).name, quests = {}, buttons = {}, },  -- Arathi
+		[62] = { id = 62, name = GetMapInfo(62).name, quests = {}, buttons = {}, },  -- Darkshore
 
 	},
 	["LEGION"] = {
@@ -70,20 +71,25 @@ local MAP_ZONES = {
 		[830] = { id = 830, name = GetMapInfo(830).name, quests = {}, buttons = {}, },  -- Krokuun
 		[882] = { id = 882, name = GetMapInfo(882).name, quests = {}, buttons = {}, },  -- Mac'aree
 		[885] = { id = 885, name = GetMapInfo(885).name, quests = {}, buttons = {}, },  -- Antoran Wastes
-		 [62] = { id = 62,  name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
+
 	}
 }
 local MAP_ZONES_SORT = {
 	["BFA"] = {
-		863, 864, 862, 895, 942, 896
+		863, 864, 862, 895, 942, 896, 14, 62
 	},
 	["LEGION"] = {
 		62, 630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
 	}
 	
 }
+local MAPID_ARATHI = 14
+local MAPID_DARKSHORE = 62
 local MAPID_BROKENISLES = 619
 local MAPID_KULTIRAS = 876
+
+
+
 local SORT_ORDER = {
 	ARTIFACTPOWER = 8,
 	RESOURCES = 7,
@@ -904,7 +910,7 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
-	bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or MAPID_BROKENISLES)
+	bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or MAPID_BROKENISLES or MAPID_ARATHI or MAPID_DARKSHORE)
 
 	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do

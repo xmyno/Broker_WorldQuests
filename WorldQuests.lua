@@ -1076,7 +1076,8 @@ function BWQ:RenderRows()
 			MAP_ZONES[expansion][mapId].zoneSep.texture:Show()
 			MAP_ZONES[expansion][mapId].zoneSep.texture:SetPoint("TOP", BWQ, "TOP", 5, offsetTop + ROW_HEIGHT * rowInViewIndex - 3)
 
-			MAP_ZONES[expansion][mapId].zoneSep.collapse:SetAllPoints(MAP_ZONES[expansion][mapId].zoneSep.texture)
+			MAP_ZONES[expansion][mapId].zoneSep.collapse:Show()
+			MAP_ZONES[expansion][mapId].zoneSep.collapse:SetAllPoints(MAP_ZONES[expansion][mapId].zoneSep.fs)
 			local color = not collapsed and {0.9, 0.8, 0} or {0.3, 0.3, 0.3}
 			MAP_ZONES[expansion][mapId].zoneSep.fs:SetTextColor(unpack(color))
 			
@@ -1121,6 +1122,7 @@ function BWQ:HideRowsOfInactiveExpansions()
 				if v.zoneSep then
 					v.zoneSep.fs:Hide()
 					v.zoneSep.texture:Hide()
+					v.zoneSep.collapse:Hide()
 				end
 				for _, button in next, v.buttons do
 					button:Hide()

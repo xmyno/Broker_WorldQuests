@@ -58,7 +58,8 @@ local MAP_ZONES = {
 		[895] = { id = 895, name = GetMapInfo(895).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Tiragarde
 		[942] = { id = 942, name = GetMapInfo(942).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
 		[896] = { id = 896, name = GetMapInfo(896).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
-		 [14] = { id =  14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
+		 [14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
+		 [62] = { id = 62, name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
 
 	},
 	["LEGION"] = {
@@ -73,15 +74,14 @@ local MAP_ZONES = {
 		[830] = { id = 830, name = GetMapInfo(830).name, quests = {}, buttons = {}, },  -- Krokuun
 		[882] = { id = 882, name = GetMapInfo(882).name, quests = {}, buttons = {}, },  -- Mac'aree
 		[885] = { id = 885, name = GetMapInfo(885).name, quests = {}, buttons = {}, },  -- Antoran Wastes
-		 [62] = { id = 62,  name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
 	}
 }
 local MAP_ZONES_SORT = {
 	["BFA"] = {
-		863, 864, 862, 895, 942, 896
+		62, 14, 863, 864, 862, 895, 942, 896
 	},
 	["LEGION"] = {
-		62, 630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
+		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
 	}
 	
 }
@@ -432,7 +432,8 @@ local FormatTimeLeftString = function(timeLeft)
 	end
 	timeLeftStr = string.format("%s%s%sm", timeLeftStr, timeLeftStr ~= "" and " " or "", timeLeft % 60) -- always show minutes
 
-	if 		timeLeft <= 120 then timeLeftStr = string.format("|cffD96932%s|r", timeLeftStr)
+    if      timeLeft <= 0   then timeLeftStr = ""
+	elseif 	timeLeft <= 120 then timeLeftStr = string.format("|cffD96932%s|r", timeLeftStr)
 	elseif 	timeLeft <= 240 then timeLeftStr = string.format("|cffDBA43B%s|r", timeLeftStr)
 	elseif 	timeLeft <= 480 then timeLeftStr = string.format("|cffE6D253%s|r", timeLeftStr)
 	elseif 	timeLeft <= 960 then timeLeftStr = string.format("|cffE6DA8E%s|r", timeLeftStr)
@@ -596,8 +597,8 @@ local RetrieveWorldQuests = function(mapId)
 			]]
 
 			timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
-			if timeLeft > 0 then -- only show available quests
-				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
+				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId)
+
 				if worldQuestType ~= nil then
 					local questId = questList[i].questId
 					table.insert(MAP_ZONES[expansion][mapId].questsSort, questId)
@@ -897,7 +898,6 @@ local RetrieveWorldQuests = function(mapId)
 				end
 			end
 			end
-		end
 
 
 		if C("sortByTimeRemaining") then

@@ -45,6 +45,8 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[111] = "worldquest-questmarker-dragon",
 	[112] = "worldquest-questmarker-dragon",
 	[136] = "worldquest-questmarker-dragon",
+	[259] = UnitFactionGroup("player") == "Horde" and "worldquest-icon-horde" or "worldquest-icon-alliance",
+	[260] = UnitFactionGroup("player") == "Horde" and "worldquest-icon-horde" or "worldquest-icon-alliance",
 }
 
 local FACTION_NEUTRAL = 0
@@ -594,11 +596,11 @@ local RetrieveWorldQuests = function(mapId)
 					1 -> normal
 					2 -> rare
 					3 -> epic
-			isElite = true/false
-			tradeskillLineIndex = some number, no idea of meaning atm
-			]]
+				isElite = true/false
+				tradeskillLineIndex = some number, no idea of meaning atm
+				]]
 
-			timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
+				timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId)
 
 				if worldQuestType ~= nil then

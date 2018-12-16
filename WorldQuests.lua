@@ -153,6 +153,7 @@ local defaultConfig = {
 	onlyShowRareOrAbove = false,
 	showTotalsInBrokerText = true,
 		brokerShowAP = true,
+		brokerShowServiceMedals = true,
 		brokerShowWakeningEssences = true,
 		brokerShowWarResources = true,
 		brokerShowResources = true,
@@ -176,6 +177,7 @@ local defaultConfig = {
 		showMarkOfHonor = true,
 		showOtherItems = true,
 	showBFAReputation = true,
+	showBFAServiceMedals = true,
 	showHonor = true,
 	showLowGold = true,
 	showHighGold = true,
@@ -555,7 +557,7 @@ local Row_OnClick = function(row)
 end
 
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10, MARK_OF_HONOR = 11 }
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10, MARK_OF_HONOR = 11, SERVICE_MEDALS = 12 }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
@@ -574,24 +576,24 @@ local RetrieveWorldQuests = function(mapId)
 		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId
 		for i = 1, #questList do
 			if questList[i].mapID == mapId then 
-			--[[
-			local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
+				--[[
+				local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
 
-			tagId = 116
-			tagName = Blacksmithing World Quest
-			worldQuestType =
-				1 -> profession,
-				2 -> pve?
-				3 -> pvp
-				4 -> battle pet
-				5 -> ??
-				6 -> dungeon
-				7 -> invasion
-				8 -> raid
-			isRare =
-				1 -> normal
-				2 -> rare
-				3 -> epic
+				tagId = 116
+				tagName = Blacksmithing World Quest
+				worldQuestType =
+					1 -> profession,
+					2 -> pve?
+					3 -> pvp
+					4 -> battle pet
+					5 -> ??
+					6 -> dungeon
+					7 -> invasion
+					8 -> raid
+				isRare =
+					1 -> normal
+					2 -> rare
+					3 -> epic
 			isElite = true/false
 			tradeskillLineIndex = some number, no idea of meaning atm
 			]]
@@ -725,6 +727,12 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.warResourceAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 								rewardType[#rewardType+1] = REWARD_TYPES.WAR_RESOURCES
 								if C("showWarResources") then quest.hide = false end
+							elseif currencyId == 1716 or currencyId == 1717 then
+								quest.reward.serviceMedalName = name
+								quest.reward.serviceMedalTexture = texture
+								quest.reward.serviceMedalAmount = numItems
+								rewardType[#rewardType+1] = REWARD_TYPES.SERVICE_MEDALS
+								if C("showBFAServiceMedals") then quest.hide = false end
 							elseif texture == 1397630 then -- Order Resources (Legion)
 								quest.reward.resourceName = name
 								quest.reward.resourceTexture = texture
@@ -866,6 +874,8 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount end
 								if rtype == REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
 									BWQ.totalWarResources = BWQ.totalWarResources + quest.reward.warResourceAmount end
+								if rtype == REWARD_TYPES.SERVICE_MEDALS and quest.reward.serviceMedalAmount then
+									BWQ.totalServiceMedals = BWQ.totalServiceMedals + quest.reward.serviceMedalAmount end
 								if rtype == REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
 									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
 								if rtype == REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
@@ -981,7 +991,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1407,6 +1417,21 @@ function BWQ:UpdateBlock()
 					currencyText
 				)
 			end
+			if button.quest.reward.serviceMedalName then
+				local currencyText = string.format(
+					"|T%1$s:14:14|t %2$d %3$s",
+					button.quest.reward.serviceMedalTexture,
+					button.quest.reward.serviceMedalAmount,
+					button.quest.reward.serviceMedalName
+				)
+
+				rewardText = string.format(
+					"%s%s%s",
+					rewardText,
+					rewardText ~= "" and "   " or "", -- insert some space between rewards
+					currencyText
+				)
+			end
 			if button.quest.reward.legionfallSuppliesName then
 				local currencyText = string.format(
 					"|T%1$s:14:14|t %2$d %3$s",
@@ -1570,6 +1595,7 @@ function BWQ:UpdateBlock()
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
 		if C("brokerShowAP")                  and BWQ.totalArtifactPower > 0      then brokerString = string.format("%s|TInterface\\Icons\\inv_smallazeriteshard:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
+		if C("brokerShowServiceMedals")       and BWQ.totalServiceMedals > 0      then brokerString = string.format("%s|T%s:16:16|t %s  ", brokerString, UnitFactionGroup('player') == "Horde" and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal", BWQ.totalServiceMedals) end
 		if C("brokerShowWakeningEssences")    and BWQ.totalWakeningEssences > 0   then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
 		if C("brokerShowWarResources")        and BWQ.totalWarResources > 0       then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
 		if C("brokerShowResources")           and BWQ.totalResources > 0          then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
@@ -1618,6 +1644,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "brokerShowAP" },
+				{ text = ("|T%1$s:16:16|t  Service Medals"):format(UnitFactionGroup('player') == "Horde" and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "brokerShowServiceMedals" },
 				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
 				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "brokerShowWarResources" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
@@ -1645,6 +1672,7 @@ function BWQ:SetupConfigMenu()
 			}
 		},
 		{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showBFAReputation" },
+		{ text = ("|T%1$s:16:16|t  Service Medals"):format(UnitFactionGroup('player') == "Horde" and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "showBFAServiceMedals" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },

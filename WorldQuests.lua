@@ -918,6 +918,7 @@ local RetrieveWorldQuests = function(mapId)
 	end
 end
 
+-- --- BOUNTIES --- --
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
@@ -935,7 +936,16 @@ function BWQ:UpdateBountyData()
 			bountyCacheItem = {}
 			bountyCacheItem.icon = BWQ.bountyDisplay:CreateTexture()
 			bountyCacheItem.icon:SetSize(28, 28)
+
 			bountyCacheItem.text = BWQ.bountyDisplay:CreateFontString("BWQ_BountyDisplayText"..bountyIndex, "OVERLAY", "SystemFont_Shadow_Med1")
+			
+			bountyCacheItem.button = CreateFrame("Button", nil, BWQ)
+			bountyCacheItem.button:SetPoint("TOPLEFT", bountyCacheItem.icon)
+			bountyCacheItem.button:SetPoint("BOTTOM", bountyCacheItem.icon)
+			bountyCacheItem.button:SetPoint("RIGHT", bountyCacheItem.text)
+			bountyCacheItem.button:SetScript("OnEnter", function(self) BWQ:ShowBountyTooltip(self, bounty.questID) end)
+			bountyCacheItem.button:SetScript("OnLeave", function(self) WorldMapTooltip:Hide() end)
+			
 			BWQ.bountyCache[bountyIndex] = bountyCacheItem
 		else
 			bountyCacheItem = BWQ.bountyCache[bountyIndex]
@@ -983,6 +993,28 @@ function BWQ:UpdateBountyData()
 		BWQ.bountyDisplay:Hide()
 	end
 end
+
+function BWQ:ShowBountyTooltip(button, questId)
+	local questIndex = GetQuestLogIndexByID(questId)
+	local title = GetQuestLogTitle(questIndex)
+	if title then
+		WorldMapTooltip:SetOwner(button, "ANCHOR_BOTTOM")
+		WorldMapTooltip:SetText(title, HIGHLIGHT_FONT_COLOR:GetRGB())
+		local _, questDescription = GetQuestLogQuestText(questIndex)
+		WorldMapTooltip:AddLine(questDescription, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+	
+		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(questId, 1, false)
+		if objectiveText and #objectiveText > 0 then
+			local color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
+			WorldMapTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
+		end
+
+		GameTooltip_AddQuestRewardsToTooltip(WorldMapTooltip, questId, TOOLTIP_QUEST_REWARDS_STYLE_EMISSARY_REWARD)
+		WorldMapTooltip:Show()
+		button.UpdateTooltip = function(self) BWQ:ShowBountyTooltip(button, questId) end
+	end
+end
+
 
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()

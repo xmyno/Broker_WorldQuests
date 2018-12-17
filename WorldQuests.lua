@@ -22,7 +22,7 @@ local GetBestMapForUnit,       GetMapInfo
 	= C_Map.GetBestMapForUnit, C_Map.GetMapInfo
 
 local REPUTATION
-    = REPUTATION
+	= REPUTATION
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
@@ -432,7 +432,7 @@ local FormatTimeLeftString = function(timeLeft)
 	end
 	timeLeftStr = string.format("%s%s%sm", timeLeftStr, timeLeftStr ~= "" and " " or "", timeLeft % 60) -- always show minutes
 
-    if      timeLeft <= 0   then timeLeftStr = ""
+	if      timeLeft <= 0   then timeLeftStr = ""
 	elseif 	timeLeft <= 120 then timeLeftStr = string.format("|cffD96932%s|r", timeLeftStr)
 	elseif 	timeLeft <= 240 then timeLeftStr = string.format("|cffDBA43B%s|r", timeLeftStr)
 	elseif 	timeLeft <= 480 then timeLeftStr = string.format("|cffE6D253%s|r", timeLeftStr)
@@ -458,7 +458,7 @@ local ShowQuestObjectiveTooltip = function(row)
 
 	local percent = GetQuestProgressBarInfo(row.quest.questId)
 	if percent then
-    	GameTooltip_ShowProgressBar(tip, 0, 100, percent, PERCENTAGE_STRING:format(percent))
+		GameTooltip_ShowProgressBar(tip, 0, 100, percent, PERCENTAGE_STRING:format(percent))
 	end
 
 	tip:Show()
@@ -474,7 +474,6 @@ local ShowQuestLogItemTooltip = function(button)
 		tip:Show()
 	end
 end
-
 
 -- super track map ping
 local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapFrame:GetCanvas())
@@ -799,10 +798,10 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showProfessionMining")		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 130 then
 								questType[#questType+1] = QUEST_TYPES.FISHING
-							 	if C("showProfessionFishing")		then quest.hide = false else quest.hide = true end
+								if C("showProfessionFishing")		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 124 then
 								questType[#questType+1] = QUEST_TYPES.SKINNING
-							 	if C("showProfessionSkinning") 		then quest.hide = false else quest.hide = true end
+								if C("showProfessionSkinning") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 118 then 	if C("showProfessionAlchemy") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 129 then	if C("showProfessionArchaeology") 	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 116 then 	if C("showProfessionBlacksmithing") 	then quest.hide = false else quest.hide = true end
@@ -847,7 +846,6 @@ local RetrieveWorldQuests = function(mapId)
 						(C("alwaysShowArmiesOfLegionfall") 	and mapId == 646) or
 						(C("alwaysShowArmyOfTheLight") 		and quest.factionId == 2165) or
 						(C("alwaysShowArgussianReach") 		and quest.factionId == 2170) then
-					   	
 
 						-- pet battle override
 						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
@@ -980,7 +978,7 @@ function BWQ:UpdateBountyData()
 		BWQ.bountyDisplay:Show()
 		BWQ.bountyDisplay:SetSize(bountyWidth, 30)
 		BWQ.bountyDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
-	 	offsetTop = offsetTop - 35
+		offsetTop = offsetTop - 35
 	else
 		BWQ.bountyDisplay:Hide()
 	end

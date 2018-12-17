@@ -24,6 +24,7 @@ local GetBestMapForUnit,       GetMapInfo
 local REPUTATION
     = REPUTATION
 
+local isHorde = UnitFactionGroup("player") == "Horde"
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[116] = "worldquest-icon-blacksmithing",
 	[117] = "worldquest-icon-leatherworking",
@@ -45,8 +46,8 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[111] = "worldquest-questmarker-dragon",
 	[112] = "worldquest-questmarker-dragon",
 	[136] = "worldquest-questmarker-dragon",
-	[259] = UnitFactionGroup("player") == "Horde" and "worldquest-icon-horde" or "worldquest-icon-alliance",
-	[260] = UnitFactionGroup("player") == "Horde" and "worldquest-icon-horde" or "worldquest-icon-alliance",
+	[259] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
+	[260] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
 }
 
 local FACTION_NEUTRAL = 0
@@ -320,12 +321,7 @@ function BWQ:WorldQuestsUnlocked()
 		local level = expansion == "BFA" and "120" or "110"
 		local quest = ""
 		if expansion == "BFA" then
-			local faction = UnitFactionGroup("player")
-			if faction and faction == "Alliance" then
-				quest = "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
-			else
-				quest = "|cffffff00|Hquest:51916:-1|h[Uniting Zandalar]|h|r"
-			end
+			quest = isHorde and "|cffffff00|Hquest:51916:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
 		else
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
 		end
@@ -1599,7 +1595,7 @@ function BWQ:UpdateBlock()
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
 		if C("brokerShowAP")                  and BWQ.totalArtifactPower > 0      then brokerString = string.format("%s|TInterface\\Icons\\inv_smallazeriteshard:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
-		if C("brokerShowServiceMedals")       and BWQ.totalServiceMedals > 0      then brokerString = string.format("%s|T%s:16:16|t %s  ", brokerString, UnitFactionGroup('player') == "Horde" and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal", BWQ.totalServiceMedals) end
+		if C("brokerShowServiceMedals")       and BWQ.totalServiceMedals > 0      then brokerString = string.format("%s|T%s:16:16|t %s  ", brokerString, isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal", BWQ.totalServiceMedals) end
 		if C("brokerShowWakeningEssences")    and BWQ.totalWakeningEssences > 0   then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
 		if C("brokerShowWarResources")        and BWQ.totalWarResources > 0       then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
 		if C("brokerShowResources")           and BWQ.totalResources > 0          then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
@@ -1648,7 +1644,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },
 		{ text = "Show total counts in broker text", check = "showTotalsInBrokerText", submenu = {
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "brokerShowAP" },
-				{ text = ("|T%1$s:16:16|t  Service Medals"):format(UnitFactionGroup('player') == "Horde" and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "brokerShowServiceMedals" },
+				{ text = ("|T%1$s:16:16|t  Service Medals"):format(isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "brokerShowServiceMedals" },
 				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
 				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "brokerShowWarResources" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
@@ -1676,7 +1672,7 @@ function BWQ:SetupConfigMenu()
 			}
 		},
 		{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showBFAReputation" },
-		{ text = ("|T%1$s:16:16|t  Service Medals"):format(UnitFactionGroup('player') == "Horde" and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "showBFAServiceMedals" },
+		{ text = ("|T%1$s:16:16|t  Service Medals"):format(isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "showBFAServiceMedals" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },

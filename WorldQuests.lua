@@ -15,8 +15,8 @@ local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes,             GetQuestInfoByQuestID,             GetQuestProgressBarInfo,            QuestHasWarModeBonus
 	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo, C_QuestLog.QuestHasWarModeBonus
 
-local GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
-	= GetQuestTagInfo, GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
+local GetQuestTagInfo, GetFactionInfoByID,              IsFactionParagon,              GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
+	= GetQuestTagInfo, GetFactionInfoByID, C_Reputation.IsFactionParagon, C_Reputation.GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
 
 local GetBestMapForUnit,       GetMapInfo
 	= C_Map.GetBestMapForUnit, C_Map.GetMapInfo
@@ -918,6 +918,7 @@ local RetrieveWorldQuests = function(mapId)
 	end
 end
 
+
 -- --- BOUNTIES --- --
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
@@ -963,14 +964,14 @@ function BWQ:UpdateBountyData()
 										))
 			bountyCacheItem.icon:SetTexture(bounty.icon)
 			if bountyIndex == 1 then
-				bountyCacheItem.icon:SetPoint("LEFT", BWQ.bountyDisplay, "LEFT")
+				bountyCacheItem.icon:SetPoint("LEFT", BWQ.bountyDisplay, "LEFT", 0, 0)
 			else
 				bountyCacheItem.icon:SetPoint("LEFT", BWQ.bountyCache[bountyIndex-1].text, "RIGHT", 25, 2)
-				bountyWidth = bountyWidth + 25 -- add padding per item
+				bountyWidth = bountyWidth + 25
 			end
 			bountyCacheItem.text:SetPoint("LEFT", bountyCacheItem.icon, "RIGHT", 5, -2)
 
-			bountyWidth = bountyWidth + bountyCacheItem.text:GetStringWidth() + 33 -- icon + padding
+			bountyWidth = bountyWidth + bountyCacheItem.text:GetStringWidth() + 33
 		end
 	end
 
@@ -1013,6 +1014,86 @@ function BWQ:ShowBountyTooltip(button, questId)
 		WorldMapTooltip:Show()
 		button.UpdateTooltip = function(self) BWQ:ShowBountyTooltip(button, questId) end
 	end
+end
+
+-- --- PARAGON REWARDS --- --
+local factions = {
+	horde = {
+		[2103] = "inv__faction_zandalariempire", -- zandalari
+		[2156] = "inv__faction_talanjisexpedition", -- talanji
+		[2157] = "inv__faction_hordewareffort", -- honorbound
+		[2158] = "inv__faction_voldunai", -- voldunai
+		[2163] = "inv__faction_tortollanseekers", -- tortollan
+		[2164] = "inv__faction_championsofazeroth", -- coa
+	},
+	alliance = {
+		[2159] = "inv__faction_alliancewareffort", -- 7th legion
+		[2161] = "inv__faction_orderofembers", -- order of embers
+		[2160] = "inv__faction_proudmooreadmiralty", -- proudmoore admiralty
+		[2162] = "inv__faction_stormswake", -- storms wake
+		[2163] = "inv__faction_tortollanseekers", -- tortollan
+		[2164] = "inv__faction_championsofazeroth", -- coa
+	},
+	
+}
+BWQ.factionFramePool = {}
+BWQ.factionDisplay = CreateFrame("Frame", "BWQ_FactionDisplay", BWQ)
+function BWQ:UpdateParagonData()
+	local i = 0
+	local maxWidth = 0
+	for factionId, factionTexture in next, isHorde and factions.horde or factions.alliance do
+		if IsFactionParagon(factionId) then
+			local factionFrame
+			if not BWQ.factionFramePool[i] then
+				factionFrame = {}
+				factionFrame.name = BWQ.factionDisplay:CreateFontString("BWQ_FactionDisplayName"..i, "OVERLAY", "SystemFont_Shadow_Med1")
+
+				factionFrame.bg =  CreateFrame("Frame", "BWQ_FactionFrameBG"..i, BWQ.factionDisplay)
+				factionFrame.bg:SetSize(50, 12)
+				if (i == 0) then 
+					factionFrame.bg:SetPoint("TOPLEFT", BWQ.factionDisplay, "TOPLEFT")
+				else 
+					factionFrame.bg:SetPoint("LEFT", BWQ.factionFramePool[i - 1].bg, "RIGHT", 35, 0)
+				end
+				factionFrame.bg:SetBackdrop({ bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+				factionFrame.bg:SetBackdropColor(0.2,0.2,0.2,0.5)
+
+				factionFrame.bar = CreateFrame("Frame", "BWQ_FactionFrameBar"..i, factionFrame.bg)
+				factionFrame.bar:SetPoint("TOPLEFT", factionFrame.bg, "TOPLEFT")
+				factionFrame.bar:SetBackdrop({ bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+				factionFrame.bar:SetBackdropColor(0.1, 0.55, 0.1, 0.4)
+
+				BWQ.factionFramePool[i] = factionFrame
+			else
+				factionFrame = BWQ.factionFramePool[i]
+			end
+
+			local name = GetFactionInfoByID(factionId)
+			local current, threshold, rewardQuestId, hasRewardPending = GetFactionParagonInfo(factionId)
+
+			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", factionTexture))
+			if hasRewardPending then factionFrame.bar:SetTextColor(0, 0.7, 0.1) end
+			factionFrame.bar:SetSize(current / threshold * 100 / 2, 12)
+			factionFrame.name:SetPoint("RIGHT", factionFrame.bg, "LEFT", -5, 0)
+			
+			maxWidth = maxWidth + 77
+			i = i + 1
+		end
+	end
+
+	if (i > 0) then
+		BWQ.factionDisplay:Show()
+		BWQ.factionDisplay:SetSize(maxWidth, 15)
+		BWQ.factionDisplay:SetPoint("TOP", BWQ.bountyDisplay, "BOTTOM", 0, -10)
+		offsetTop = offsetTop - 30
+	else
+		BWQ.factionDisplay:Hide()
+	end
+end
+
+function BWQ:UpdateInfoPanel()
+	BWQ:UpdateBountyData()
+	BWQ:UpdateParagonData()
 end
 
 
@@ -1175,7 +1256,7 @@ function BWQ:UpdateBlock()
 	if not BWQ:WorldQuestsUnlocked() then return end
 
 	offsetTop = -15 -- initial padding from top
-	BWQ:UpdateBountyData()
+	BWQ:UpdateInfoPanel()
 	BWQ:UpdateQuestData()
 
 	if needsRefresh then

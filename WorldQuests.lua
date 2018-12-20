@@ -1072,7 +1072,7 @@ function BWQ:UpdateParagonData()
 			local current, threshold, rewardQuestId, hasRewardPending = GetFactionParagonInfo(factionId)
 
 			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", factionTexture))
-			if hasRewardPending then factionFrame.bar:SetTextColor(0, 0.7, 0.1) end
+			if hasRewardPending then factionFrame.bar:SetBackdropColor(0, 0.8, 0.1) end
 			factionFrame.bar:SetSize(current / threshold * 100 / 2, 12)
 			factionFrame.name:SetPoint("RIGHT", factionFrame.bg, "LEFT", -5, 0)
 			
@@ -1084,7 +1084,7 @@ function BWQ:UpdateParagonData()
 	if (i > 0) then
 		BWQ.factionDisplay:Show()
 		BWQ.factionDisplay:SetSize(maxWidth, 15)
-		BWQ.factionDisplay:SetPoint("TOP", BWQ.bountyDisplay, "BOTTOM", 0, -10)
+		BWQ.factionDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
 		offsetTop = offsetTop - 30
 	else
 		BWQ.factionDisplay:Hide()
@@ -1994,6 +1994,8 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		skipNextUpdate = false
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
 		BWQ:UpdateBlock()
+	elseif event == "UPDATE_FACTION" then
+		BWQ:UpdateBlock()
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
 		BWQ.slider:SetScript("OnValueChanged", function(self, value)
@@ -2051,6 +2053,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
+		BWQ:RegisterEvent("UPDATE_FACTION")
 	elseif event == "ADDON_LOADED" then
 		if arg1 == "Broker_WorldQuests" then
 			BWQcfg = BWQcfg or defaultConfig

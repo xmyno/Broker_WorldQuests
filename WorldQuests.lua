@@ -348,10 +348,6 @@ function BWQ:WorldQuestsUnlocked()
 	end
 
 	if not hasUnlockedWorldQuests then
-		if C("attachToWorldMap") and WorldMapFrame:IsShown() then -- don't show error box on map
-			BWQ:Hide()
-			return false
-		end
 		if not BWQ.errorFS then CreateErrorFS() end
 
 		local level = expansion == "BFA" and "120" or "110"
@@ -362,9 +358,9 @@ function BWQ:WorldQuestsUnlocked()
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
 		end
 
-		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -10)
+		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -35)
 		BWQ.errorFS:SetText(("You need to reach Level %s and complete the\nquest %s to unlock World Quests."):format(level, quest))
-		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 20)
+		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 45)
 		BWQ.errorFS:Show()
 
 		return false
@@ -1357,11 +1353,11 @@ function BWQ:RunUpdate()
 end
 
 function BWQ:UpdateBlock()
-	if not BWQ:WorldQuestsUnlocked() then return end
-
 	offsetTop = -35 -- initial padding from top
 	BWQ:UpdateInfoPanel()
 	BWQ:UpdateQuestData()
+
+	if not BWQ:WorldQuestsUnlocked() then return end
 
 	if needsRefresh then
 		-- skip updating the block, received data was incomplete
@@ -1985,9 +1981,6 @@ function BWQ:SetupConfigMenu()
 		end
 
 		BWQ:UpdateBlock()
-		if WorldMapFrame:IsShown() then
-			BWQ:OpenConfigMenu(nil)
-		end
 
 		-- toggle block when changing attach setting
 		if var == "attachToWorldMap" then

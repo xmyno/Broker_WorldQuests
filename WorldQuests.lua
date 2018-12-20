@@ -284,16 +284,8 @@ BWQ.buttonLegion.texture:SetPoint("BOTTOMRIGHT", -1, 1)
 BWQ.buttonLegion.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendLegionStart")
 BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
-BWQ.buttonBFA:SetScript("OnClick", function(self)
-	self:SetAlpha(1)
-	BWQ.buttonLegion:SetAlpha(0.4)
-	BWQ:SwitchExpansion("BFA")
-end)
-BWQ.buttonLegion:SetScript("OnClick", function(self)
-	self:SetAlpha(1)
-	BWQ.buttonBFA:SetAlpha(0.4)
-	BWQ:SwitchExpansion("LEGION")
-end)
+BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion("BFA") end)
+BWQ.buttonLegion:SetScript("OnClick", function(self) BWQ:SwitchExpansion("LEGION") end)
 
 BWQ.buttonSettings = CreateFrame("BUTTON", nil, BWQ)
 BWQ.buttonSettings:SetWidth(15)
@@ -1035,7 +1027,7 @@ function BWQ:UpdateBountyData()
 		BWQ.bountyDisplay:Show()
 		BWQ.bountyDisplay:SetSize(bountyWidth, 30)
 		BWQ.bountyDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
-		offsetTop = offsetTop - 35
+		offsetTop = offsetTop - 40
 	else
 		BWQ.bountyDisplay:Hide()
 	end
@@ -1064,7 +1056,20 @@ end
 
 -- --- PARAGON REWARDS --- --
 local factions = {
-	horde = {
+	legion = {
+		order = { 1883, 1948, 1900, 1828, 1894, 1859, 2045, 2165, 2170 },
+		[1883] = "inv_legion_faction_dreamweavers", -- valsharah
+		[1948] = "inv_legion_faction_valarjar", -- stormheim
+		[1900] = "inv_legion_faction_courtoffarnodis", -- aszuna
+		[1828] = "inv_legion_faction_hightmountaintribes", -- highmountain
+		[1894] = "inv_legion_faction_warden", -- wardens
+		[1859] = "inv_legion_faction_nightfallen", -- suramar
+		[2045] = "achievement_faction_legionfall", -- broken isles
+		[2165] = "achievement_admiral_of_the_light", -- army of light
+		[2170] = "achievement_master_of_argussian_reach", -- argussian reach
+	},
+	bfahorde = {
+		order = { 2103, 2156, 2158, 2157, 2163, 2164 },
 		[2103] = "inv__faction_zandalariempire", -- zandalari
 		[2156] = "inv__faction_talanjisexpedition", -- talanji
 		[2157] = "inv__faction_hordewareffort", -- honorbound
@@ -1072,7 +1077,8 @@ local factions = {
 		[2163] = "inv__faction_tortollanseekers", -- tortollan
 		[2164] = "inv__faction_championsofazeroth", -- coa
 	},
-	alliance = {
+	bfaalliance = {
+		order = { 2160, 2161, 2162, 2159, 2163, 2164 },
 		[2159] = "inv__faction_alliancewareffort", -- 7th legion
 		[2161] = "inv__faction_orderofembers", -- order of embers
 		[2160] = "inv__faction_proudmooreadmiralty", -- proudmoore admiralty
@@ -1082,56 +1088,92 @@ local factions = {
 	},
 	
 }
-BWQ.factionFramePool = {}
-BWQ.factionDisplay = CreateFrame("Frame", "BWQ_FactionDisplay", BWQ)
+BWQ.factionFramePool = {
+	rows = {},
+	bars = {}
+}
+BWQ.factionDisplay = CreateFrame("Frame", nil, BWQ)
 function BWQ:UpdateParagonData()
 	local i = 0
 	local maxWidth = 0
-	for factionId, factionTexture in next, isHorde and factions.horde or factions.alliance do
-		if IsFactionParagon(factionId) then
-			local factionFrame
-			if not BWQ.factionFramePool[i] then
-				factionFrame = {}
-				factionFrame.name = BWQ.factionDisplay:CreateFontString("BWQ_FactionDisplayName"..i, "OVERLAY", "SystemFont_Shadow_Med1")
+	local rowIndex = 0
+	
+	local reps
+	if expansion == "BFA" then reps = isHorde and factions.bfahorde or factions.bfaalliance
+	else  reps = factions.legion end
 
-				factionFrame.bg =  CreateFrame("Frame", "BWQ_FactionFrameBG"..i, BWQ.factionDisplay)
+	local row
+	for _, factionId in next, reps.order do
+		if IsFactionParagon(factionId) then
+			
+			local factionFrame
+
+			rowIndex = math.floor(i / 6)
+			if not BWQ.factionFramePool.rows[rowIndex] then
+				row = CreateFrame("Frame", nil, BWQ.factionDisplay)
+				BWQ.factionFramePool.rows[rowIndex] = row
+			else row = BWQ.factionFramePool.rows[rowIndex] end
+			
+			if not BWQ.factionFramePool.bars[i] then
+				factionFrame = {}
+				factionFrame.name = row:CreateFontString("BWQ_FactionDisplayName"..i, "OVERLAY", "SystemFont_Shadow_Med1")
+
+				factionFrame.bg = CreateFrame("Frame", "BWQ_FactionFrameBG"..i, row)
 				factionFrame.bg:SetSize(50, 12)
-				if (i == 0) then 
-					factionFrame.bg:SetPoint("TOPLEFT", BWQ.factionDisplay, "TOPLEFT")
-				else 
-					factionFrame.bg:SetPoint("LEFT", BWQ.factionFramePool[i - 1].bg, "RIGHT", 35, 0)
-				end
-				factionFrame.bg:SetBackdrop({ bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+				
+				factionFrame.bg:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 				factionFrame.bg:SetBackdropColor(0.2,0.2,0.2,0.5)
 
 				factionFrame.bar = CreateFrame("Frame", "BWQ_FactionFrameBar"..i, factionFrame.bg)
 				factionFrame.bar:SetPoint("TOPLEFT", factionFrame.bg, "TOPLEFT")
-				factionFrame.bar:SetBackdrop({ bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
-				factionFrame.bar:SetBackdropColor(0.1, 0.55, 0.1, 0.4)
+				factionFrame.bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 
-				BWQ.factionFramePool[i] = factionFrame
+				BWQ.factionFramePool.bars[i] = factionFrame
 			else
-				factionFrame = BWQ.factionFramePool[i]
+				factionFrame = BWQ.factionFramePool.bars[i]
 			end
+
+			local index = i % 6
+			if (index == 0) then
+				factionFrame.bg:SetPoint("TOPLEFT", row, "TOPLEFT")
+			else
+				factionFrame.bg:SetPoint("LEFT", BWQ.factionFramePool.bars[i - 1].bg, "RIGHT", 35, 0)
+			end
+
+			row:SetSize(77 * (index + 1), 15)
+			if (rowIndex == 0) then row:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
+			else row:SetPoint("TOP", BWQ.factionFramePool.rows[rowIndex - 1], "BOTTOM", 0, -5) end
+			row:Show()
 
 			local name = GetFactionInfoByID(factionId)
 			local current, threshold, rewardQuestId, hasRewardPending = GetFactionParagonInfo(factionId)
-
-			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", factionTexture))
-			if hasRewardPending then factionFrame.bar:SetBackdropColor(0, 0.8, 0.1) end
-			factionFrame.bar:SetSize(current / threshold * 100 / 2, 12)
+			
+			local progress = (current % threshold) / threshold * 50
+			if hasRewardPending then factionFrame.bar:SetBackdropColor(0, 0.8, 0.1)
+			else factionFrame.bar:SetBackdropColor(0.1, 0.55, 0.1, 0.4) end
+			if progress == 0 then factionFrame.bar:Hide() else factionFrame.bar:Show() end
+			factionFrame.bar:SetSize(hasRewardPending and 50 or progress, 12)
+			
+			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", reps[factionId]))
 			factionFrame.name:SetPoint("RIGHT", factionFrame.bg, "LEFT", -5, 0)
 			
-			maxWidth = maxWidth + 77
+			maxWidth = maxWidth > row:GetWidth() and maxWidth or row:GetWidth()
 			i = i + 1
 		end
+	end
+
+	-- hide not needed rows
+	local j = rowIndex + 1
+	while(BWQ.factionFramePool.rows[j]) do
+		BWQ.factionFramePool.rows[j]:Hide()
+		j = j + 1
 	end
 
 	if (i > 0) then
 		BWQ.factionDisplay:Show()
 		BWQ.factionDisplay:SetSize(maxWidth, 15)
 		BWQ.factionDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
-		offsetTop = offsetTop - 25
+		offsetTop = offsetTop - 20 * (rowIndex + 1)
 	else
 		BWQ.factionDisplay:Hide()
 	end
@@ -1277,6 +1319,10 @@ function BWQ:SwitchExpansion(expac)
 	else
 		BWQcfgPerCharacter["expansion"] = expac
 	end
+
+	BWQ.buttonBFA:SetAlpha(expac == "BFA" and 1 or 0.4)
+	BWQ.buttonLegion:SetAlpha(expac == "LEGION" and 1 or 0.4)
+
 	BWQ:HideRowsOfInactiveExpansions()
 	hasUnlockedWorldQuests = false
 	BWQ:UpdateBlock()
@@ -2121,7 +2167,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 				if BWQcfgPerCharacter[i] == nil then BWQcfgPerCharacter[i] = v end
 			end
 			BWQcache = BWQcache or {}
-			expansion = C("expansion")
+			BWQ:SwitchExpansion(C("expansion"))
 
 			if IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
 				BWQ:AddFlightMapHook()

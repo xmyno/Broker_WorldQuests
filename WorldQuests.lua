@@ -262,6 +262,50 @@ BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 
+BWQ.buttonBFA = CreateFrame("Button", nil, BWQ)
+BWQ.buttonBFA:SetSize(20, 15)
+BWQ.buttonBFA:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -65, -8)
+BWQ.buttonBFA:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+BWQ.buttonBFA:SetBackdropColor(0.1, 0.1, 0.1)
+BWQ.buttonBFA.texture = BWQ.buttonBFA:CreateTexture(nil, "OVERLAY")
+BWQ.buttonBFA.texture:SetPoint("TOPLEFT", 1, -1)
+BWQ.buttonBFA.texture:SetPoint("BOTTOMRIGHT", -1, 1)
+BWQ.buttonBFA.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendBattleforAzerothStart")
+BWQ.buttonBFA.texture:SetTexCoord(0.15, 0.55, 0.23, 0.45)
+
+BWQ.buttonLegion = CreateFrame("Button", nil, BWQ)
+BWQ.buttonLegion:SetSize(20, 15)
+BWQ.buttonLegion:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -38, -8)
+BWQ.buttonLegion:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+BWQ.buttonLegion:SetBackdropColor(0.1, 0.1, 0.1)
+BWQ.buttonLegion.texture = BWQ.buttonLegion:CreateTexture(nil, "OVERLAY")
+BWQ.buttonLegion.texture:SetPoint("TOPLEFT", 1, -1)
+BWQ.buttonLegion.texture:SetPoint("BOTTOMRIGHT", -1, 1)
+BWQ.buttonLegion.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendLegionStart")
+BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
+
+BWQ.buttonBFA:SetScript("OnClick", function(self)
+	self:SetAlpha(1)
+	BWQ.buttonLegion:SetAlpha(0.4)
+	BWQ:SwitchExpansion("BFA")
+end)
+BWQ.buttonLegion:SetScript("OnClick", function(self)
+	self:SetAlpha(1)
+	BWQ.buttonBFA:SetAlpha(0.4)
+	BWQ:SwitchExpansion("LEGION")
+end)
+
+BWQ.buttonSettings = CreateFrame("BUTTON", nil, BWQ)
+BWQ.buttonSettings:SetWidth(15)
+BWQ.buttonSettings:SetHeight(15)
+BWQ.buttonSettings:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -12, -8)
+BWQ.buttonSettings.texture = BWQ.buttonSettings:CreateTexture(nil, "BORDER")
+BWQ.buttonSettings.texture:SetAllPoints()
+BWQ.buttonSettings.texture:SetTexture("Interface\\WorldMap\\Gear_64.png")
+BWQ.buttonSettings.texture:SetTexCoord(0, 0.50, 0, 0.50)
+BWQ.buttonSettings.texture:SetVertexColor(1.0, 0.82, 0, 1.0)
+BWQ.buttonSettings:SetScript("OnClick", function(self) BWQ:OpenConfigMenu(self) end)
+
 local Block_OnLeave = function(self)
 	if not C("attachToWorldMap") or (C("attachToWorldMap") and not WorldMapFrame:IsShown()) then
 		if not BWQ:IsMouseOver() then
@@ -1087,7 +1131,7 @@ function BWQ:UpdateParagonData()
 		BWQ.factionDisplay:Show()
 		BWQ.factionDisplay:SetSize(maxWidth, 15)
 		BWQ.factionDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
-		offsetTop = offsetTop - 30
+		offsetTop = offsetTop - 25
 	else
 		BWQ.factionDisplay:Hide()
 	end
@@ -1226,6 +1270,18 @@ function BWQ:RenderRows()
 	end
 end
 
+function BWQ:SwitchExpansion(expac)
+	expansion = expac
+	if not C("usePerCharacterSettings") then
+		BWQcfg["expansion"] = expac
+	else
+		BWQcfgPerCharacter["expansion"] = expac
+	end
+	BWQ:HideRowsOfInactiveExpansions()
+	hasUnlockedWorldQuests = false
+	BWQ:UpdateBlock()
+end 
+
 function BWQ:HideRowsOfInactiveExpansions()
 	for k, expac in next, MAP_ZONES do
 		if k ~= expansion then
@@ -1257,7 +1313,7 @@ end
 function BWQ:UpdateBlock()
 	if not BWQ:WorldQuestsUnlocked() then return end
 
-	offsetTop = -15 -- initial padding from top
+	offsetTop = -35 -- initial padding from top
 	BWQ:UpdateInfoPanel()
 	BWQ:UpdateQuestData()
 

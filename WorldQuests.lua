@@ -923,7 +923,7 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
-	bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or MAPID_BROKENISLES)
+	bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
 
 	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do
@@ -944,8 +944,6 @@ function BWQ:UpdateBountyData()
 			bountyCacheItem.button:SetPoint("TOPLEFT", bountyCacheItem.icon)
 			bountyCacheItem.button:SetPoint("BOTTOM", bountyCacheItem.icon)
 			bountyCacheItem.button:SetPoint("RIGHT", bountyCacheItem.text)
-			bountyCacheItem.button:SetScript("OnEnter", function(self) BWQ:ShowBountyTooltip(self, bounty.questID) end)
-			bountyCacheItem.button:SetScript("OnLeave", function(self) WorldMapTooltip:Hide() end)
 			
 			BWQ.bountyCache[bountyIndex] = bountyCacheItem
 		else
@@ -971,6 +969,9 @@ function BWQ:UpdateBountyData()
 			end
 			bountyCacheItem.text:SetPoint("LEFT", bountyCacheItem.icon, "RIGHT", 5, -2)
 
+			bountyCacheItem.button:SetScript("OnEnter", function(self) BWQ:ShowBountyTooltip(self, bounty.questID) end)
+			bountyCacheItem.button:SetScript("OnLeave", function(self) WorldMapTooltip:Hide() end)
+			
 			bountyWidth = bountyWidth + bountyCacheItem.text:GetStringWidth() + 33
 		end
 	end
@@ -980,6 +981,7 @@ function BWQ:UpdateBountyData()
 		for i = #bounties + 1, #BWQ.bountyCache do
 			BWQ.bountyCache[i].icon:Hide()
 			BWQ.bountyCache[i].text:Hide()
+			BWQ.bountyCache[i].button:Hide()
 			BWQ.bountyCache[i] = nil
 		end
 	end

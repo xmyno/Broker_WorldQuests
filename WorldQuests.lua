@@ -462,7 +462,7 @@ local AbbreviateNumber = function(number)
 end
 
 local FormatTimeLeftString = function(timeLeft)
-	if not timeLeft then return "" end
+	if timeLeft <= 0 then return "" end
 	local timeLeftStr = ""
 	-- if timeLeft >= 60 * 24 then -- at least 1 day
 	-- 	timeLeftStr = string.format("%.0fd", timeLeft / 60 / 24)
@@ -472,8 +472,7 @@ local FormatTimeLeftString = function(timeLeft)
 	end
 	timeLeftStr = string.format("%s%s%sm", timeLeftStr, timeLeftStr ~= "" and " " or "", timeLeft % 60) -- always show minutes
 
-	if      timeLeft <= 0   then timeLeftStr = ""
-	elseif 	timeLeft <= 120 then timeLeftStr = string.format("|cffD96932%s|r", timeLeftStr)
+	if 		timeLeft <= 120 then timeLeftStr = string.format("|cffD96932%s|r", timeLeftStr)
 	elseif 	timeLeft <= 240 then timeLeftStr = string.format("|cffDBA43B%s|r", timeLeftStr)
 	elseif 	timeLeft <= 480 then timeLeftStr = string.format("|cffE6D253%s|r", timeLeftStr)
 	elseif 	timeLeft <= 960 then timeLeftStr = string.format("|cffE6DA8E%s|r", timeLeftStr)
@@ -635,7 +634,7 @@ local RetrieveWorldQuests = function(mapId)
 				tradeskillLineIndex = some number, no idea of meaning atm
 				]]
 
-				timeLeft = GetQuestTimeLeftMinutes(questList[i].questId)
+				timeLeft = GetQuestTimeLeftMinutes(questList[i].questId) or 0
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId)
 
 				if worldQuestType ~= nil then

@@ -593,6 +593,15 @@ local Row_OnClick = function(row)
 	end
 end
 
+local TimeLeftComparator = function(timeLeftA, timeLeftB)
+	if (timeLeftA and timeLeftB) then
+		return timeLeftA < timeLeftB
+	elseif not timeLeftA then
+		return false
+	end
+
+	return true
+end
 
 local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10, MARK_OF_HONOR = 11, SERVICE_MEDALS = 12 }
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
@@ -940,7 +949,7 @@ local RetrieveWorldQuests = function(mapId)
 
 
 		if C("sortByTimeRemaining") then
-			table.sort(MAP_ZONES[expansion][mapId].questsSort, function(a, b) return MAP_ZONES[expansion][mapId].quests[a].timeLeft < MAP_ZONES[expansion][mapId].quests[b].timeLeft end)
+			table.sort(MAP_ZONES[expansion][mapId].questsSort, function(a, b) return TimeLeftComparator(MAP_ZONES[expansion][mapId].quests[a].timeLeft, MAP_ZONES[expansion][mapId].quests[b].timeLeft) end)
 		else -- reward type
 			table.sort(MAP_ZONES[expansion][mapId].questsSort, function(a, b) return MAP_ZONES[expansion][mapId].quests[a].sort > MAP_ZONES[expansion][mapId].quests[b].sort end)
 		end

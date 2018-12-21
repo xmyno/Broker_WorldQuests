@@ -758,23 +758,28 @@ local RetrieveWorldQuests = function(mapId)
 							currency.texture = texture
 							
 							if currencyId == 1553 then -- azerite
-								currency.name = string.format("|cffe5cc80[%d %s]|r", numItems, name)
+								currency.name = string.format("|cffe5cc80[%d %s]|r", currency.amount, name)
 								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
+								quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
 								if C("showArtifactPower") then quest.hide = false end
 							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, numItems, REPUTATION)
+								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
 								if C("showBFAReputation") then quest.hide = false end
 							elseif currencyId == 1560 then -- war resources
 								rewardType[#rewardType+1] = REWARD_TYPES.WAR_RESOURCES
+								quest.reward.warResourceAmount = currency.amount
 								if C("showWarResources") then quest.hide = false end
 							elseif currencyId == 1716 or currencyId == 1717 then -- service medals
 								rewardType[#rewardType+1] = REWARD_TYPES.SERVICE_MEDALS
+								quest.reward.serviceMedalAmount = currency.amount
 								if C("showBFAServiceMedals") then quest.hide = false end
 							elseif currencyId == 1220 then -- order hall resources
 								rewardType[#rewardType+1] = REWARD_TYPES.RESOURCES
+								quest.reward.resourceAmount = currency.amount
 								if C("showResources") then quest.hide = false end
 							elseif currencyId == 1342 then -- legionfall supplies
 								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
+								quest.reward.legionfallSuppliesAmount = currency.amount
 								if C("showLegionfallSupplies") then quest.hide = false end
 							elseif currencyId == 1226 then -- nethershard
 								rewardType[#rewardType+1] = REWARD_TYPES.NETHERSHARD
@@ -784,6 +789,7 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showArgunite") then quest.hide = false end
 							elseif currencyId == 1533 then
 								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
+								quest.reward.wakeningEssencesAmount = currency.amount
 								if C("showWakeningEssences") then quest.hide = false end
 							end
 							quest.reward.currencies[#quest.reward.currencies + 1] = currency

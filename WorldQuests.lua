@@ -599,7 +599,7 @@ local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
 
-	local numQuests
+	local numQuests = 0
 	local currentTime = GetTime()
 	local questList = GetQuestsForPlayerByMapID(mapId)
 	warmodeEnabled = C_PvP.IsWarModeDesired()
@@ -938,8 +938,6 @@ local RetrieveWorldQuests = function(mapId)
 			table.sort(MAP_ZONES[expansion][mapId].questsSort, function(a, b) return MAP_ZONES[expansion][mapId].quests[a].sort > MAP_ZONES[expansion][mapId].quests[b].sort end)
 		end
 
-
-		if numQuests == nil then numQuests = 0 end
 		MAP_ZONES[expansion][mapId].numQuests = numQuests
 	end
 end

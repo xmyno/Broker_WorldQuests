@@ -462,6 +462,7 @@ local AbbreviateNumber = function(number)
 end
 
 local FormatTimeLeftString = function(timeLeft)
+	if not timeLeft then return "" end
 	local timeLeftStr = ""
 	-- if timeLeft >= 60 * 24 then -- at least 1 day
 	-- 	timeLeftStr = string.format("%.0fd", timeLeft / 60 / 24)

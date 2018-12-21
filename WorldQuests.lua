@@ -1347,9 +1347,9 @@ end
 function BWQ:UpdateBlock()
 	offsetTop = -35 -- initial padding from top
 	BWQ:UpdateInfoPanel()
-	BWQ:UpdateQuestData()
-
+	
 	if not BWQ:WorldQuestsUnlocked() then return end
+	BWQ:UpdateQuestData()
 
 	if needsRefresh then
 		-- skip updating the block, received data was incomplete

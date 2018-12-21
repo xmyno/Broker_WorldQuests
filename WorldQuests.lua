@@ -110,6 +110,28 @@ local WORLD_QUEST_TYPES = {
 	DUNGEON = 6,
 }
 
+local CURRENCIES_AFFECTED_BY_WARMODE = {
+	[1226] = true, -- nethershard
+	[1508] = true, -- argunite
+	[1533] = true, -- wakening essence
+	[1342] = true, -- legionfall supplies
+	[1220] = true, -- order hall (legion)
+	[1560] = true, -- war resources (bfa)
+	[1553] = true, -- azerite
+}
+
+local BFA_REPUTATION_CURRENCY_IDS = {
+	[1579] = true, -- both
+	[1598] = true,
+	[1600] = true, -- alliance
+	[1595] = true,
+	[1597] = true,
+	[1596] = true,
+	[1599] = true, -- horde
+	[1593] = true,
+	[1594] = true,
+	[1592] = true,
+}
 
 local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 	[42442] = true, -- Fight Night: Amalia
@@ -127,21 +149,6 @@ local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 	[41895] = true, -- The Master of Pets
 	[40337] = true, -- Flummoxed
 	[41990] = true, -- Chopped
-}
-
-local BFA_REPUTATION_CURRENCY_IDS = {
-	[1579] = 0, -- both
-	[1598] = 0,
-	
-	[1600] = 1, -- alliance
-	[1595] = 1,
-	[1597] = 1,
-	[1596] = 1,
-	
-	[1599] = 2, -- horde
-	[1593] = 2,
-	[1594] = 2,
-	[1592] = 2,
 }
 
 local defaultConfig = {
@@ -734,67 +741,54 @@ local RetrieveWorldQuests = function(mapId)
 					end
 					-- currency reward
 					local numQuestCurrencies = GetNumQuestLogRewardCurrencies(quest.questId)
+					quest.reward.currencies = {}
 					for i = 1, numQuestCurrencies do
 
 						local name, texture, numItems, currencyId = GetQuestLogRewardCurrencyInfo(i, quest.questId)
 						if name then
 							hasReward = true
-							if currencyId == 1553 then -- Azerite
-								quest.reward.azeriteName = name
-								quest.reward.azeriteTexture = texture
-								quest.reward.azeriteAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							
+							local currency = {}
+							if CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
+								currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							else
+								currency.amount = numItems
+							end
+							currency.name = string.format("%d %s", currency.amount, name)
+							currency.texture = texture
+							
+							if currencyId == 1553 then -- azerite
+								currency.name = string.format("|cffe5cc80[%d %s]|r", numItems, name)
 								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
 								if C("showArtifactPower") then quest.hide = false end
 							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
-								quest.reward.reputationName = name
-								quest.reward.reputationTexture = texture
-								quest.reward.reputationAmount = numItems
+								currency.name = string.format("%s: %d %s", name, numItems, REPUTATION)
 								if C("showBFAReputation") then quest.hide = false end
-							elseif currencyId == 1560 then -- War Resources (BFA)
-								quest.reward.warResourceName = name
-								quest.reward.warResourceTexture = texture
-								quest.reward.warResourceAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							elseif currencyId == 1560 then -- war resources
 								rewardType[#rewardType+1] = REWARD_TYPES.WAR_RESOURCES
 								if C("showWarResources") then quest.hide = false end
-							elseif currencyId == 1716 or currencyId == 1717 then
-								quest.reward.serviceMedalName = name
-								quest.reward.serviceMedalTexture = texture
-								quest.reward.serviceMedalAmount = numItems
+							elseif currencyId == 1716 or currencyId == 1717 then -- service medals
 								rewardType[#rewardType+1] = REWARD_TYPES.SERVICE_MEDALS
 								if C("showBFAServiceMedals") then quest.hide = false end
-							elseif texture == 1397630 then -- Order Resources (Legion)
-								quest.reward.resourceName = name
-								quest.reward.resourceTexture = texture
-								quest.reward.resourceAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							elseif currencyId == 1220 then -- order hall resources
 								rewardType[#rewardType+1] = REWARD_TYPES.RESOURCES
 								if C("showResources") then quest.hide = false end
-							elseif texture == 803763 then -- Legionfall Supplies
-								quest.reward.legionfallSuppliesName = name
-								quest.reward.legionfallSuppliesTexture = texture
-								quest.reward.legionfallSuppliesAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							elseif currencyId == 1342 then -- legionfall supplies
 								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
 								if C("showLegionfallSupplies") then quest.hide = false end
-							elseif texture == 132775 then -- Nethershard
-								quest.reward.nethershardsName = name
-								quest.reward.nethershardsTexture = texture
-								quest.reward.nethershardsAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							elseif currencyId == 1226 then -- nethershard
 								rewardType[#rewardType+1] = REWARD_TYPES.NETHERSHARD
 								if C("showNethershards") then quest.hide = false end
-							elseif texture == 1064188 then -- Argunite
-								quest.reward.arguniteName = name
-								quest.reward.arguniteTexture = texture
-								quest.reward.arguniteAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							elseif currencyId == 1508 then -- argunite
 								rewardType[#rewardType+1] = REWARD_TYPES.ARGUNITE
 								if C("showArgunite") then quest.hide = false end
-							elseif texture == 236521 then -- Wakening Essences
-								quest.reward.wakeningEssencesName = name
-								quest.reward.wakeningEssencesTexture = texture
-								quest.reward.wakeningEssencesAmount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+							elseif currencyId == 1533 then
 								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
 								if C("showWakeningEssences") then quest.hide = false end
 							end
+							quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
-							if quest.reward.azeriteName then
+							if currencyId == 1553 then
 								quest.sort = quest.sort > SORT_ORDER.ARTIFACTPOWER and quest.sort or SORT_ORDER.ARTIFACTPOWER
 							else
 								quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
@@ -1568,143 +1562,19 @@ function BWQ:UpdateBlock()
 					moneyText
 				)
 			end
-			if button.quest.reward.azeriteName then
-				local currencyText = string.format("|T%1$s:14:14|t |cffe5cc80[%2$s %3$s]|r",
-					button.quest.reward.azeriteTexture,
-					AbbreviateNumber(button.quest.reward.azeriteAmount),
-					button.quest.reward.azeriteName
-				)
 
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
+			if button.quest.reward.currencies then
+				for _, currency in next, button.quest.reward.currencies do
+					local currencyText = string.format("|T%1$s:14:14|t %s", currency.texture, currency.name)
+
+					rewardText = string.format(
+						"%s%s%s",
+						rewardText,
+						rewardText ~= "" and "   " or "", -- insert some space between rewards
+						currencyText
+					)
+				end
 			end
-			if button.quest.reward.reputationName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %3$s: %2$d %4$s",
-					button.quest.reward.reputationTexture,
-					button.quest.reward.reputationAmount,
-					button.quest.reward.reputationName,
-					REPUTATION
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.warResourceName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.warResourceTexture,
-					button.quest.reward.warResourceAmount,
-					button.quest.reward.warResourceName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.resourceName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.resourceTexture,
-					button.quest.reward.resourceAmount,
-					button.quest.reward.resourceName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.serviceMedalName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.serviceMedalTexture,
-					button.quest.reward.serviceMedalAmount,
-					button.quest.reward.serviceMedalName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.legionfallSuppliesName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.legionfallSuppliesTexture,
-					button.quest.reward.legionfallSuppliesAmount,
-					button.quest.reward.legionfallSuppliesName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.nethershardsName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.nethershardsTexture,
-					button.quest.reward.nethershardsAmount,
-					button.quest.reward.nethershardsName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.arguniteName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.arguniteTexture,
-					button.quest.reward.arguniteAmount,
-					button.quest.reward.arguniteName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-			if button.quest.reward.wakeningEssencesName then
-				local currencyText = string.format(
-					"|T%1$s:14:14|t %2$d %3$s",
-					button.quest.reward.wakeningEssencesTexture,
-					button.quest.reward.wakeningEssencesAmount,
-					button.quest.reward.wakeningEssencesName
-				)
-
-				rewardText = string.format(
-					"%s%s%s",
-					rewardText,
-					rewardText ~= "" and "   " or "", -- insert some space between rewards
-					currencyText
-				)
-			end
-
- 
 
 			-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
 			--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords

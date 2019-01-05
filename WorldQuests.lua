@@ -1716,12 +1716,7 @@ end
 
 
 local configMenu
-local info = {}
-function BWQ:SetupConfigMenu()
-	configMenu = CreateFrame("Frame", "BWQ_ConfigMenu")
-	configMenu.displayMode = "MENU"
-
-	local options = {
+local configMenuOptions = {
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
 		{ text = "Show list frame on click instead of mouse-over", check = "showOnClick" },
 		{ text = "Use per-character settings", check = "usePerCharacterSettings" },
@@ -1833,6 +1828,12 @@ function BWQ:SetupConfigMenu()
 		{ text = "" },
 		{ text = "Add TomTom waypoint on row click (requires TomTom AddOn)", check = "enableTomTomWaypointsOnClick" },
 	}
+local info = {}
+function BWQ:SetupConfigMenu()
+	configMenu = CreateFrame("Frame", "BWQ_ConfigMenu")
+	configMenu.displayMode = "MENU"
+
+	
 
 	local SetOption = function(bt, var, val)
 		if var == "usePerCharacterSettings" or not BWQcfg.usePerCharacterSettings then
@@ -1879,7 +1880,7 @@ function BWQ:SetupConfigMenu()
 
 	configMenu.initialize = function(self, level)
 		if not level then return end
-		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or options
+		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or configMenuOptions
 		for i, v in ipairs(opt) do
 			info = wipe(info)
 			info.text = v.text

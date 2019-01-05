@@ -574,7 +574,7 @@ local Row_OnClick = function(row)
 			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
 		end
 	else
-		if C("enableClickToOpenMap") and not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
+		if not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
 		if WorldMapFrame:IsShown() then
 			WorldMapFrame:SetMapID(row.mapId)
 			if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end

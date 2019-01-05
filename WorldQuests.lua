@@ -158,6 +158,7 @@ local defaultConfig = {
 	usePerCharacterSettings = false,
 	expansion = "BFA",
 	enableClickToOpenMap = false,
+	enableTomTomWaypointsOnClick = true,
 	alwaysShowBountyQuests = true,
 	alwaysShowEpicQuests = true,
 	onlyShowRareOrAbove = false,
@@ -549,15 +550,13 @@ BWQ.mapTextures = mapTextures
 
 
 function BWQ:QueryZoneQuestCoordinates(mapId)
-	if mapId == WorldMapFrame:GetMapID() then
-		local quests = GetQuestsForPlayerByMapID(mapId)
-		if quests then
-			for _, v in next, quests do
-				local quest = MAP_ZONES[expansion][mapId].quests[v.questId] 
-				if quest then
-					quest.x = v.x
-					quest.y = v.y
-				end
+	local quests = GetQuestsForPlayerByMapID(mapId)
+	if quests then
+		for _, v in next, quests do
+			local quest = MAP_ZONES[expansion][mapId].quests[v.questId] 
+			if quest then
+				quest.x = v.x
+				quest.y = v.y
 			end
 		end
 	end
@@ -566,7 +565,7 @@ end
 function BWQ:CalculateMapPosition(x, y)
 	return x * WorldMapFrame:GetCanvas():GetWidth() , -1 * y * WorldMapFrame:GetCanvas():GetHeight() 
 end
-
+local currentTomTomWaypoint
 local Row_OnClick = function(row)
 	if IsShiftKeyDown() then
 		if IsWorldQuestHardWatched(row.quest.questId) or (IsWorldQuestWatched(row.quest.questId) and GetSuperTrackedQuestID() == row.quest.questId) then
@@ -587,6 +586,14 @@ local Row_OnClick = function(row)
 				BWQ.mapTextures.highlightArrow:SetSize(size, size)
 				BWQ.mapTextures:SetPoint("CENTER", WorldMapFrame:GetCanvas(), "TOPLEFT", x, y + 25 + (scale < 0.5 and 50 or 0))
 				BWQ.mapTextures.animationGroup:Play()
+			end
+		end
+
+		if TomTom and C("enableTomTomWaypointsOnClick") then
+			if not row.quest.x or not row.quest.y then BWQ:QueryZoneQuestCoordinates(row.mapId) end
+			if row.quest.x and row.quest.y then
+				if currentTomTomWaypoint then TomTom:RemoveWaypoint(currentTomTomWaypoint) end
+				currentTomTomWaypoint = TomTom:AddWaypoint(row.mapId, row.quest.x, row.quest.y, { title = row.quest.title, silent = true })
 			end
 		end
 	end
@@ -1824,7 +1831,7 @@ function BWQ:SetupConfigMenu()
 			}
 		},
 		{ text = "" },
-		{ text = "Enable row click to open world map\n(can cause instant world quest complete to not work)", check = "enableClickToOpenMap" },
+		{ text = "Add TomTom waypoint on row click (requires TomTom AddOn)", check = "enableTomTomWaypointsOnClick" },
 	}
 
 	local SetOption = function(bt, var, val)
@@ -2025,6 +2032,10 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 		BWQ:RegisterEvent("UPDATE_FACTION")
+		if TomTom then
+			BWQ:RegisterEvent("PLAYER_LOGOUT")
+			BWQ:RegisterEvent("QUEST_ACCEPTED")
+		end
 	elseif event == "ADDON_LOADED" then
 		if arg1 == "Broker_WorldQuests" then
 			BWQcfg = BWQcfg or defaultConfig
@@ -2044,6 +2055,10 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 			BWQ:AddFlightMapHook()
 			BWQ:UnregisterEvent("ADDON_LOADED")
 		end
+	elseif event == "QUEST_ACCEPTED" then
+		if TomTom and currentTomTomWaypoint and (GetQuestLogTitle(arg1) == currentTomTomWaypoint.title) then TomTom:RemoveWaypoint(currentTomTomWaypoint) end
+	elseif event == "PLAYER_LOGOUT" then
+		if TomTom and currentTomTomWaypoint then TomTom:RemoveWaypoint(currentTomTomWaypoint) end
 	end
 end)
 

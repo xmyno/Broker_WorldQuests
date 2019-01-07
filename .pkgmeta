@@ -1,1 +1,5 @@
 package-as: Broker_WorldQuests
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown

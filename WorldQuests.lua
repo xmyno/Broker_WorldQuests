@@ -1149,7 +1149,8 @@ function BWQ:UpdateParagonData()
 			local name = GetFactionInfoByID(factionId)
 			local current, threshold, rewardQuestId, hasRewardPending = GetFactionParagonInfo(factionId)
 			
-			local progress = (current % threshold) / threshold * 50
+			local progress = 0
+			if current and threshold then progress = (current % threshold) / threshold * 50 end
 			if hasRewardPending then factionFrame.bar:SetBackdropColor(0, 0.8, 0.1)
 			else factionFrame.bar:SetBackdropColor(0.1, 0.55, 0.1, 0.4) end
 			if progress == 0 then factionFrame.bar:Hide() else factionFrame.bar:Show() end

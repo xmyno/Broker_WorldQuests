@@ -1737,11 +1737,6 @@ function BWQ:SetupConfigMenu()
 		{ text = "Show list frame on click instead of mouse-over", check = "showOnClick" },
 		{ text = "Use per-character settings", check = "usePerCharacterSettings" },
 		{ text = "" },
-		{ text = "     Expansion", submenu = {
-				{ text = ("Battle for Azeroth"), check = "expansion", radio = true, val = "BFA" },
-				{ text = ("Legion"), check = "expansion", radio = true, val = "LEGION" },
-			}
-		},
 		{ text = "Always show |cffa335eeepic|r world quests (e.g. world bosses)", check = "alwaysShowEpicQuests" },
 		{ text = "Only show world quests with |cff0070ddrare|r or above quality", check = "onlyShowRareOrAbove" },
 		{ text = "Don't filter quests for active bounties", check = "alwaysShowBountyQuests" },

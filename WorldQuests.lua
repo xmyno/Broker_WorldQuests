@@ -217,6 +217,7 @@ local defaultConfig = {
 	showDungeon = true,
 	showPvP = true,
 	hideFactionColumn = false,
+	hideFactionParagonBars = false,
 	--legion
 	alwaysShow7thLegion = false,
 	alwaysShowStormsWake = false,
@@ -1095,6 +1096,8 @@ BWQ.factionFramePool = {
 }
 BWQ.factionDisplay = CreateFrame("Frame", nil, BWQ)
 function BWQ:UpdateParagonData()
+	if C("hideFactionParagonBars") then return end
+
 	local i = 0
 	local maxWidth = 0
 	local rowIndex = 0
@@ -1180,6 +1183,16 @@ function BWQ:UpdateParagonData()
 		BWQ.factionDisplay:Hide()
 	end
 end
+function BWQ:UpdateFactionDisplayVisible()
+	if not C("hideFactionParagonBars") then
+		BWQ:RegisterEvent("UPDATE_FACTION")
+		BWQ.factionDisplay:Show()
+	else
+		BWQ:UnregisterEvent("UPDATE_FACTION")
+		BWQ.factionDisplay:Hide()
+	end
+end
+
 
 function BWQ:UpdateInfoPanel()
 	BWQ:UpdateBountyData()
@@ -1717,7 +1730,9 @@ end
 
 
 local configMenu
-local configMenuOptions = {
+local info = {}
+function BWQ:SetupConfigMenu()
+	local options = {
 		{ text = "Attach list frame to world map", check = "attachToWorldMap" },
 		{ text = "Show list frame on click instead of mouse-over", check = "showOnClick" },
 		{ text = "Use per-character settings", check = "usePerCharacterSettings" },
@@ -1803,18 +1818,22 @@ local configMenuOptions = {
 		{ text = "Always show quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
 		{ text = "" },
 		{ text = "Hide faction column", check="hideFactionColumn" },
+		{ text = "Hide faction paragon bars", check="hideFactionParagonBars" },
 		{ text = "Always show quests for faction...", isTitle = true },
-		{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
-		{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
-		{ text = ("|T%1$s:16:16|t  7th Legion"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShow7thLegion" },
-		{ text = ("|T%1$s:16:16|t  Storm's Wake"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowStormsWake" },
-		{ text = ("|T%1$s:16:16|t  Order of Embers"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowOrderOfEmbers" },
-		{ text = ("|T%1$s:16:16|t  Proudmoore Admiralty"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowProudmooreAdmiralty" },
-		{ text = ("|T%1$s:16:16|t  The Honorbound"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTheHonorbound" },
-		{ text = ("|T%1$s:16:16|t  Zandalari Empire"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowZandalariEmpire" },
-		{ text = ("|T%1$s:16:16|t  Talanji's Expedition"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTalanjisExpedition" },
-		{ text = ("|T%1$s:16:16|t  Voldunai"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowVoldunai" },
-		{ text = "     Legion", submenu = {
+		{ text = "Battle for Azeroth", submenu = {
+				{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
+				{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
+				{ text = ("|T%1$s:16:16|t  7th Legion"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShow7thLegion" },
+				{ text = ("|T%1$s:16:16|t  Storm's Wake"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowStormsWake" },
+				{ text = ("|T%1$s:16:16|t  Order of Embers"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowOrderOfEmbers" },
+				{ text = ("|T%1$s:16:16|t  Proudmoore Admiralty"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowProudmooreAdmiralty" },
+				{ text = ("|T%1$s:16:16|t  The Honorbound"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTheHonorbound" },
+				{ text = ("|T%1$s:16:16|t  Zandalari Empire"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowZandalariEmpire" },
+				{ text = ("|T%1$s:16:16|t  Talanji's Expedition"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTalanjisExpedition" },
+				{ text = ("|T%1$s:16:16|t  Voldunai"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowVoldunai" },
+			}
+		},
+		{ text = "Legion", submenu = {
 				{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },
 				{ text = "Dreamweavers", check="alwaysShowDreamweavers" },
 				{ text = "Highmountain Tribe", check="alwaysShowHighmountainTribe" },
@@ -1826,15 +1845,14 @@ local configMenuOptions = {
 				{ text = "Argussian Reach", check="alwaysShowArgussianReach" },
 			}
 		},
-		{ text = "" },
-		{ text = "Add TomTom waypoint on row click (requires TomTom AddOn)", check = "enableTomTomWaypointsOnClick" },
 	}
-local info = {}
-function BWQ:SetupConfigMenu()
+	if TomTom then
+		table.insert(options, { text = "" })
+		table.insert(options, { text = "Add TomTom waypoint on row click", check = "enableTomTomWaypointsOnClick" })
+	end
+	
 	configMenu = CreateFrame("Frame", "BWQ_ConfigMenu")
 	configMenu.displayMode = "MENU"
-
-	
 
 	local SetOption = function(bt, var, val)
 		if var == "usePerCharacterSettings" or not BWQcfg.usePerCharacterSettings then
@@ -1863,6 +1881,10 @@ function BWQ:SetupConfigMenu()
 			hasUnlockedWorldQuests = false
 		end
 
+		if var == "hideFactionParagonBars" then
+			BWQ:UpdateFactionDisplayVisible()
+		end
+
 		BWQ:UpdateBlock()
 
 		-- toggle block when changing attach setting
@@ -1881,7 +1903,7 @@ function BWQ:SetupConfigMenu()
 
 	configMenu.initialize = function(self, level)
 		if not level then return end
-		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or configMenuOptions
+		local opt = level > 1 and UIDROPDOWNMENU_MENU_VALUE or options
 		for i, v in ipairs(opt) do
 			info = wipe(info)
 			info.text = v.text
@@ -1914,9 +1936,8 @@ end
 function BWQ:OpenConfigMenu(anchor)
 	if not configMenu and anchor then
 		BWQ:SetupConfigMenu()
-		configMenu.anchor = anchor
 	end
-	--BWQ:Hide()
+	configMenu.anchor = anchor
 	ToggleDropDownMenu(1, nil, configMenu, configMenu.anchor, 0, 0)
 end
 
@@ -2033,7 +2054,9 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
-		BWQ:RegisterEvent("UPDATE_FACTION")
+		if (not C("hideFactionParagonBars")) then
+			BWQ:RegisterEvent("UPDATE_FACTION")
+		end
 		if TomTom then
 			BWQ:RegisterEvent("PLAYER_LOGOUT")
 			BWQ:RegisterEvent("QUEST_ACCEPTED")

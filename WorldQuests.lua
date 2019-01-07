@@ -1775,7 +1775,7 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
 		{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "showWarResources" },
-		{ text = "     Legion", submenu = {
+		{ text = "       Legion", submenu = {
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
 				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
 				{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
@@ -1785,7 +1785,7 @@ function BWQ:SetupConfigMenu()
 		},
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
-		{ text = ("|T%1$s:16:16|t  Profession Quests"):format("Interface\\Minimap\\Tracking\\Profession"), check = "showProfession", submenu = {
+		{ text = "Profession Quests", check = "showProfession", submenu = {
 				{ text = "Alchemy", check="showProfessionAlchemy" },
 				{ text = "Blacksmithing", check="showProfessionBlacksmithing" },
 				{ text = "Inscription", check="showProfessionInscription" },
@@ -1805,17 +1805,17 @@ function BWQ:SetupConfigMenu()
 			}
 		},
 		{ text = "Dungeon Quests", check = "showDungeon" },
-		{ text = ("|T%1$s:16:16|t  PvP Quests"):format("Interface\\Minimap\\Tracking\\BattleMaster"), check = "showPvP" },
-		{ text = "" },
-		{ text = ("|T%1$s:16:16|t  Pet Battle Quests"):format("Interface\\Icons\\tracking_wildpet"), isTitle = true },
-		{ text = "Show Pet Battle Quests", check = "showPetBattle" },
-		{ text = "Hide Pet Battle Quests even when active bounty", check = "hidePetBattleBountyQuests" },
-		{ text = "Always show quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
+		{ text = "PvP Quests", check = "showPvP" },
+		{ text = "Pet Battle Quests", check = "showPetBattle", submenu = {
+				{ text = "Hide Pet Battle Quests even when active bounty", check = "hidePetBattleBountyQuests" },
+				{ text = "Always show quests for \"Family Familiar\" achievement", check = "alwaysShowPetBattleFamilyFamiliar" },
+			}
+		},
 		{ text = "" },
 		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Hide faction paragon bars", check="hideFactionParagonBars" },
 		{ text = "Always show quests for faction...", isTitle = true },
-		{ text = "Battle for Azeroth", submenu = {
+		{ text = "       Battle for Azeroth", submenu = {
 				{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
 				{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
 				{ text = ("|T%1$s:16:16|t  7th Legion"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShow7thLegion" },
@@ -1828,7 +1828,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Voldunai"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowVoldunai" },
 			}
 		},
-		{ text = "Legion", submenu = {
+		{ text = "       Legion", submenu = {
 				{ text = "Court of Farondis", check="alwaysShowCourtOfFarondis" },
 				{ text = "Dreamweavers", check="alwaysShowDreamweavers" },
 				{ text = "Highmountain Tribe", check="alwaysShowHighmountainTribe" },

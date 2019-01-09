@@ -46,6 +46,8 @@ local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[111] = "worldquest-questmarker-dragon",
 	[112] = "worldquest-questmarker-dragon",
 	[136] = "worldquest-questmarker-dragon",
+	[139] = "worldquest-icon-burninglegion",
+	[142] = "worldquest-icon-burninglegion",
 	[259] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
 	[260] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
 }

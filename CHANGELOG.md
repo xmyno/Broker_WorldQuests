@@ -1,3 +1,12 @@
+### 8.1.57
+
+* Added quest title highlight for achievement quest criterias
+    * Fishing 'Round The Isles (Legion Fishing)
+    * Battle on the Broken Isles (Legion Pet Battle)
+    * Battle on Zandalar and Kul Tiras (Legion Pet Battle)
+* Fixed faction display anchoring/width
+* Fixed no world quests error message showing when all zones are collapsed
+
 ### 8.1.56
 
 * Added basic TomTom support. Clicking a row will set this quest as waypoint.

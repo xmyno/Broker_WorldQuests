@@ -24,6 +24,9 @@ local GetBestMapForUnit,       GetMapInfo
 local REPUTATION
 	= REPUTATION
 
+local _, addon = ...
+local CONSTANTS = addon.CONSTANTS
+
 local isHorde = UnitFactionGroup("player") == "Horde"
 local WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[116] = "worldquest-icon-blacksmithing",
@@ -454,6 +457,16 @@ function BWQ:ValueWithWarModeBonus(questId, value)
 	return floor(value * multiplier + 0.5)
 end
 
+function BWQ:IsQuestAchievementCriteriaMissing(achievementId, questId)
+	local criteriaId = CONSTANTS.ACHIEVEMENT_CRITERIAS[questId]
+	if criteriaId then
+		local _, _, completed = GetAchievementCriteriaInfo(achievementId, criteriaId)
+		return not completed
+	else
+		return false
+	end
+end
+
 local AbbreviateNumber = function(number)
 	number = tonumber(number)
 	if number >= 1000000 then
@@ -829,6 +842,7 @@ local RetrieveWorldQuests = function(mapId)
 						else
 							quest.hide = true
 						end
+						quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(expansion == "BFA" and 12936 or 10876, quest.questId)
 					elseif quest.worldQuestType == 1 then
 						if C("showProfession") then
 
@@ -837,13 +851,14 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showProfessionHerbalism")	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 120 then
 								questType[#questType+1] = QUEST_TYPES.MINING
-								if C("showProfessionMining")		then quest.hide = false else quest.hide = true end
+								if C("showProfessionMining") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 130 then
 								questType[#questType+1] = QUEST_TYPES.FISHING
-								if C("showProfessionFishing")		then quest.hide = false else quest.hide = true end
+								quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(10598, quest.questId)
+								if C("showProfessionFishing") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 124 then
 								questType[#questType+1] = QUEST_TYPES.SKINNING
-								if C("showProfessionSkinning") 		then quest.hide = false else quest.hide = true end
+								if C("showProfessionSkinning") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 118 then 	if C("showProfessionAlchemy") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 129 then	if C("showProfessionArchaeology") 	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 116 then 	if C("showProfessionBlacksmithing") 	then quest.hide = false else quest.hide = true end
@@ -1613,7 +1628,11 @@ function BWQ:UpdateBlock()
 			end
 			button.icon:SetSize(12, 12)
 
-			button.titleFS:SetText(string.format("|cffe5cc80%s|r%s%s|r", button.quest.isNew and "NEW  " or "", WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex, button.quest.title))
+			button.titleFS:SetText(string.format("%s%s%s|r",
+				button.quest.isNew and "|cffe5cc80NEW|r  " or "",
+				button.quest.isMissingAchievementCriteria and "|cff1EFF00" or WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex,
+				button.quest.title
+			))
 			--local titleWidth = button.titleFS:GetStringWidth()
 			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 

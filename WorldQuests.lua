@@ -341,6 +341,7 @@ BWQ.slider:Hide()
 local bounties = {}
 local questIds = {}
 local numQuestsTotal, totalWidth, offsetTop = 0, 0, -15
+local hasCollapsedQuests = false
 local showDownwards = false
 local blockYPos = 0
 local highlightedRow = true
@@ -1227,9 +1228,15 @@ function BWQ:UpdateQuestData()
 	end
 
 	numQuestsTotal = 0
+	hasCollapsedQuests = false
 	for mapId in next, MAP_ZONES[expansion] do
-		if not C("collapsedZones")[mapId] then
-			numQuestsTotal = numQuestsTotal + MAP_ZONES[expansion][mapId].numQuests
+		local num = MAP_ZONES[expansion][mapId].numQuests
+		if num > 0 then
+			if not C("collapsedZones")[mapId] then
+				numQuestsTotal = numQuestsTotal + num
+			else
+				hasCollapsedQuests = true
+			end
 		end
 	end
 
@@ -1277,9 +1284,8 @@ function BWQ:RenderRows()
 		BWQ.slider:SetMinMaxValues(0, numEntries - 1 - maxEntries)
 	end
 
-
 	-- all quests filtered or all done (haha.)
-	if numQuestsTotal == 0 then
+	if numQuestsTotal == 0 and not hasCollapsedQuests then
 		BWQ:ShowNoWorldQuestsInfo()
 		BWQ:SetHeight((offsetTop * -1) + 10 + 30)
 	else

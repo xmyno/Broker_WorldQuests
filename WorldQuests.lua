@@ -1126,6 +1126,7 @@ function BWQ:UpdateParagonData()
 
 				factionFrame.bg = CreateFrame("Frame", "BWQ_FactionFrameBG"..i, row)
 				factionFrame.bg:SetSize(50, 12)
+				factionFrame.bg:SetPoint("LEFT", factionFrame.name, "RIGHT", 5, 0)
 				
 				factionFrame.bg:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 				factionFrame.bg:SetBackdropColor(0.2,0.2,0.2,0.5)
@@ -1141,13 +1142,13 @@ function BWQ:UpdateParagonData()
 
 			local index = i % 6
 			if (index == 0) then
-				factionFrame.bg:SetPoint("TOPLEFT", row, "TOPLEFT")
+				factionFrame.name:SetPoint("TOPLEFT", row, "TOPLEFT", 8, 0)
 			else
-				factionFrame.bg:SetPoint("LEFT", BWQ.factionFramePool.bars[i - 1].bg, "RIGHT", 35, 0)
+				factionFrame.name:SetPoint("LEFT", BWQ.factionFramePool.bars[i - 1].bg, "RIGHT", 18, 0)
 			end
 
-			row:SetSize(77 * (index + 1), 15)
-			if (rowIndex == 0) then row:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
+			row:SetSize(85 * (index + 1), 15)
+			if (rowIndex == 0) then row:SetPoint("TOP", BWQ.factionDisplay, "TOP", 0, 0)
 			else row:SetPoint("TOP", BWQ.factionFramePool.rows[rowIndex - 1], "BOTTOM", 0, -5) end
 			row:Show()
 
@@ -1162,7 +1163,6 @@ function BWQ:UpdateParagonData()
 			factionFrame.bar:SetSize(hasRewardPending and 50 or progress, 12)
 			
 			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", reps[factionId]))
-			factionFrame.name:SetPoint("RIGHT", factionFrame.bg, "LEFT", -5, 0)
 			
 			maxWidth = maxWidth > row:GetWidth() and maxWidth or row:GetWidth()
 			i = i + 1
@@ -1672,9 +1672,11 @@ function BWQ:UpdateBlock()
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 80
 
 	local bountyBoardWidth = BWQ.bountyDisplay:GetWidth()
-	if totalWidth < bountyBoardWidth then
-		local diff = bountyBoardWidth - totalWidth
-		totalWidth = bountyBoardWidth
+	local factionDisplayWidth = BWQ.factionDisplay:GetWidth()
+	local infoPanelWidth = bountyBoardWidth > factionDisplayWidth and bountyBoardWidth or factionDisplayWidth
+	if totalWidth < infoPanelWidth then
+		local diff = infoPanelWidth - totalWidth
+		totalWidth = infoPanelWidth
 		rewardMaxWidth = rewardMaxWidth + diff
 	end
 

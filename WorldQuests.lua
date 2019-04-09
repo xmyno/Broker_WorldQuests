@@ -1027,7 +1027,7 @@ function BWQ:UpdateBountyData()
 			bountyCacheItem.text:SetPoint("LEFT", bountyCacheItem.icon, "RIGHT", 5, -2)
 
 			bountyCacheItem.button:SetScript("OnEnter", function(self) BWQ:ShowBountyTooltip(self, bounty.questID) end)
-			bountyCacheItem.button:SetScript("OnLeave", function(self) WorldMapTooltip:Hide() end)
+			bountyCacheItem.button:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
 			
 			bountyWidth = bountyWidth + bountyCacheItem.text:GetStringWidth() + 33
 		end
@@ -1058,19 +1058,20 @@ function BWQ:ShowBountyTooltip(button, questId)
 	local questIndex = GetQuestLogIndexByID(questId)
 	local title = GetQuestLogTitle(questIndex)
 	if title then
-		WorldMapTooltip:SetOwner(button, "ANCHOR_BOTTOM")
-		WorldMapTooltip:SetText(title, HIGHLIGHT_FONT_COLOR:GetRGB())
+		GameTooltip:SetOwner(button, "ANCHOR_BOTTOM")
+		GameTooltip:SetText(title, HIGHLIGHT_FONT_COLOR:GetRGB())
 		local _, questDescription = GetQuestLogQuestText(questIndex)
-		WorldMapTooltip:AddLine(questDescription, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+		GameTooltip:AddLine(questDescription, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
 	
 		local objectiveText, objectiveType, finished = GetQuestObjectiveInfo(questId, 1, false)
 		if objectiveText and #objectiveText > 0 then
 			local color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR;
-			WorldMapTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
+			GameTooltip:AddLine(QUEST_DASH .. objectiveText, color.r, color.g, color.b, true);
 		end
 
-		GameTooltip_AddQuestRewardsToTooltip(WorldMapTooltip, questId, TOOLTIP_QUEST_REWARDS_STYLE_EMISSARY_REWARD)
-		WorldMapTooltip:Show()
+		GameTooltip_AddQuestRewardsToTooltip(GameTooltip, questId, TOOLTIP_QUEST_REWARDS_STYLE_EMISSARY_REWARD)
+		GameTooltip:Show()
+		GameTooltip.recalculatePadding = true
 		button.UpdateTooltip = function(self) BWQ:ShowBountyTooltip(button, questId) end
 	end
 end

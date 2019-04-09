@@ -66,6 +66,7 @@ local MAP_ZONES = {
 		[895] = { id = 895, name = GetMapInfo(895).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Tiragarde
 		[942] = { id = 942, name = GetMapInfo(942).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
 		[896] = { id = 896, name = GetMapInfo(896).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
+		[1161] = { id = 1161, name = GetMapInfo(1161).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Boralus
 		 [14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 		 [62] = { id = 62, name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
 
@@ -86,7 +87,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	["BFA"] = {
-		62, 14, 863, 864, 862, 895, 942, 896
+		62, 14, 863, 864, 862, 895, 942, 896, 1161
 	},
 	["LEGION"] = {
 		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885

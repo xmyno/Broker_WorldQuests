@@ -67,6 +67,8 @@ local MAP_ZONES = {
 		[942] = { id = 942, name = GetMapInfo(942).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
 		[896] = { id = 896, name = GetMapInfo(896).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
 		[1161] = { id = 1161, name = GetMapInfo(1161).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Boralus
+		[1355] = { id = 1355, name = GetMapInfo(1355).name, quests = {}, buttons = {}, },  -- Nazjatar 8.2
+		[1462] = { id = 1462, name = GetMapInfo(1462).name, quests = {}, buttons = {}, },  -- Mechagon 8.2
 		 [14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 		 [62] = { id = 62, name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
 
@@ -87,7 +89,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	["BFA"] = {
-		62, 14, 863, 864, 862, 895, 942, 896, 1161
+		62, 14, 863, 864, 862, 895, 942, 896, 1161,1355,1462
 	},
 	["LEGION"] = {
 		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
@@ -173,6 +175,7 @@ local defaultConfig = {
 		brokerShowServiceMedals = true,
 		brokerShowWakeningEssences = true,
 		brokerShowWarResources = true,
+		brokerShowPrismaticManapearl = true,
 		brokerShowResources = true,
 		brokerShowLegionfallSupplies = true,
 		brokerShowHonor = true,
@@ -187,6 +190,7 @@ local defaultConfig = {
 	sortByTimeRemaining = false,
 	-- reward type
 	showArtifactPower = true,
+	showPrismaticManapearl = true,
 	showItems = true,
 		showGear = true,
 		showRelics = true,
@@ -229,10 +233,12 @@ local defaultConfig = {
 	alwaysShowStormsWake = false,
 	alwaysShowOrderOfEmbers = false,
 	alwaysShowProudmooreAdmiralty = false,
+	alwaysShowWavebladeAnkoan = false,
 	alwaysShowTheHonorbound = false,
 	alwaysShowZandalariEmpire = false,
 	alwaysShowTalanjisExpedition = false,
 	alwaysShowVoldunai = false,
+	alwaysShowTheUnshackled = false,
 	alwaysShowTortollanSeekers = false,
 	alwaysShowChampionsOfAzeroth = false,
 		alwaysShowCourtOfFarondis = false,
@@ -618,7 +624,7 @@ local Row_OnClick = function(row)
 end
 
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10, MARK_OF_HONOR = 11, SERVICE_MEDALS = 12 }
+local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10, MARK_OF_HONOR = 11, SERVICE_MEDALS = 12, PRISMATICMANAPEARL = 13}
 local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
@@ -816,6 +822,10 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
 								quest.reward.wakeningEssencesAmount = currency.amount
 								if C("showWakeningEssences") then quest.hide = false end
+							elseif currencyId == 1721 then -- prismatic manapearl
+								rewardType[#rewardType+1] = REWARD_TYPES.PRISMATICMANAPEARL
+								quest.reward.prismaticManapearlAmount = currency.amount
+								if C("showPrismaticManapearl") then quest.hide = false end
 							end
 							quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
@@ -895,6 +905,9 @@ local RetrieveWorldQuests = function(mapId)
 						(C("alwaysShowVoldunai") and quest.factionId == 2158) or
 						(C("alwaysShowTortollanSeekers") and quest.factionId == 2163) or
 						(C("alwaysShowChampionsOfAzeroth") and quest.factionId == 2164) or
+						-- 8.2 --
+						(C("alwaysShowTheUnshackled") and quest.factionId == 2373) or
+						(C("alwaysShowWavebladeAnkoan") and quest.factionId == 2400) or
 						-- legion
 						(C("alwaysShowCourtOfFarondis") 		and (mapId == 630 or mapId == 790)) or
 						(C("alwaysShowDreamweavers") 		and mapId == 641) or
@@ -945,6 +958,9 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalGear = BWQ.totalGear + 1 end
 								if rtype == REWARD_TYPES.MARK_OF_HONOR then
 									BWQ.totalMarkOfHonor = BWQ.totalMarkOfHonor + quest.reward.itemQuantity end
+								if rtype == REWARD_TYPES.PRISMATICMANAPEARL then
+									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount end
+									
 							end
 						end
 						if questType then
@@ -1223,7 +1239,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1735,6 +1751,7 @@ function BWQ:UpdateBlock()
 		if C("brokerShowServiceMedals")       and BWQ.totalServiceMedals > 0      then brokerString = string.format("%s|T%s:16:16|t %s  ", brokerString, isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal", BWQ.totalServiceMedals) end
 		if C("brokerShowWakeningEssences")    and BWQ.totalWakeningEssences > 0   then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
 		if C("brokerShowWarResources")        and BWQ.totalWarResources > 0       then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
+		if C("brokerShowPrismaticManapearl")  and BWQ.totalPrismaticManapearl > 0 then brokerString = string.format("%s|TInterface\\Icons\\Inv_misc_enchantedpearlf:16:16|t %d  ", brokerString, BWQ.totalPrismaticManapearl) end
 		if C("brokerShowResources")           and BWQ.totalResources > 0          then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
 		if C("brokerShowLegionfallSupplies")  and BWQ.totalLegionfallSupplies > 0 then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
 		if C("brokerShowHonor")               and BWQ.totalHonor > 0              then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end
@@ -1775,6 +1792,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Artifact Power"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "brokerShowAP" },
 				{ text = ("|T%1$s:16:16|t  Service Medals"):format(isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "brokerShowServiceMedals" },
 				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
+				{ text = ("|T%1$s:16:16|t  Prismatic Manapearls"):format("Interface\\Icons\\Inv_misc_enchantedpearlf"), check = "brokerShowPrismaticManapearl" },
 				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "brokerShowWarResources" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
 				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
@@ -1793,6 +1811,7 @@ function BWQ:SetupConfigMenu()
 		{ text = "" },
 		{ text = "Filter by reward...", isTitle = true },
 		{ text = ("|T%1$s:16:16|t  Azerite"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "showArtifactPower" },
+		{ text = ("|T%1$s:16:16|t  Prismatic Manapearl"):format("Interface\\Icons\\Inv_misc_enchantedpearlf"), check = "showPrismaticManapearl" },
 		{ text = ("|T%1$s:16:16|t  Items"):format("Interface\\Minimap\\Tracking\\Banker"), check = "showItems", submenu = {
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "showGear" },
 				{ text = ("|T%s$s:16:16|t  Crafting Materials"):format("1417744"), check = "showCraftingMaterials" },
@@ -1853,10 +1872,12 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Storm's Wake"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowStormsWake" },
 				{ text = ("|T%1$s:16:16|t  Order of Embers"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowOrderOfEmbers" },
 				{ text = ("|T%1$s:16:16|t  Proudmoore Admiralty"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowProudmooreAdmiralty" },
+				{ text = "Waveblade Ankoan", check="alwaysShowWavebladeAnkoan" },
 				{ text = ("|T%1$s:16:16|t  The Honorbound"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTheHonorbound" },
 				{ text = ("|T%1$s:16:16|t  Zandalari Empire"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowZandalariEmpire" },
 				{ text = ("|T%1$s:16:16|t  Talanji's Expedition"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTalanjisExpedition" },
 				{ text = ("|T%1$s:16:16|t  Voldunai"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowVoldunai" },
+				{ text = "The Unshackled", check="alwaysShowTheUnshackled" },
 			}
 		},
 		{ text = "       Legion", submenu = {

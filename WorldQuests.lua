@@ -228,7 +228,7 @@ local defaultConfig = {
 	showPvP = true,
 	hideFactionColumn = false,
 	hideFactionParagonBars = false,
-	--legion
+	-- BFA
 	alwaysShow7thLegion = false,
 	alwaysShowStormsWake = false,
 	alwaysShowOrderOfEmbers = false,
@@ -239,8 +239,10 @@ local defaultConfig = {
 	alwaysShowTalanjisExpedition = false,
 	alwaysShowVoldunai = false,
 	alwaysShowTheUnshackled = false,
+	alwaysShowRustboltResistance = false,
 	alwaysShowTortollanSeekers = false,
 	alwaysShowChampionsOfAzeroth = false,
+		-- Legion
 		alwaysShowCourtOfFarondis = false,
 		alwaysShowDreamweavers = false,
 		alwaysShowHighmountainTribe = false,
@@ -908,6 +910,7 @@ local RetrieveWorldQuests = function(mapId)
 						-- 8.2 --
 						(C("alwaysShowTheUnshackled") and quest.factionId == 2373) or
 						(C("alwaysShowWavebladeAnkoan") and quest.factionId == 2400) or
+						(C("alwaysShowRustboltResistance") and quest.factionId == 2391) or
 						-- legion
 						(C("alwaysShowCourtOfFarondis") 		and (mapId == 630 or mapId == 790)) or
 						(C("alwaysShowDreamweavers") 		and mapId == 641) or
@@ -1866,18 +1869,19 @@ function BWQ:SetupConfigMenu()
 		{ text = "Hide faction paragon bars", check="hideFactionParagonBars" },
 		{ text = "Always show quests for faction...", isTitle = true },
 		{ text = "       Battle for Azeroth", submenu = {
+				{ text = "Rustbolt Resistance", check="alwaysShowRustboltResistance" },		
 				{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
 				{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
 				{ text = ("|T%1$s:16:16|t  7th Legion"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShow7thLegion" },
 				{ text = ("|T%1$s:16:16|t  Storm's Wake"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowStormsWake" },
 				{ text = ("|T%1$s:16:16|t  Order of Embers"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowOrderOfEmbers" },
 				{ text = ("|T%1$s:16:16|t  Proudmoore Admiralty"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowProudmooreAdmiralty" },
-				{ text = "Waveblade Ankoan", check="alwaysShowWavebladeAnkoan" },
+				{ text = ("|T%1$s:16:16|t  Waveblade Ankoan"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShowWavebladeAnkoan" },
 				{ text = ("|T%1$s:16:16|t  The Honorbound"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTheHonorbound" },
 				{ text = ("|T%1$s:16:16|t  Zandalari Empire"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowZandalariEmpire" },
 				{ text = ("|T%1$s:16:16|t  Talanji's Expedition"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTalanjisExpedition" },
 				{ text = ("|T%1$s:16:16|t  Voldunai"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowVoldunai" },
-				{ text = "The Unshackled", check="alwaysShowTheUnshackled" },
+				{ text = ("|T%1$s:16:16|t  The Unshackled"):format("Interface\\Icons\\inv_misc_tournaments_banner_orc"), check="alwaysShowTheUnshackled" },
 			}
 		},
 		{ text = "       Legion", submenu = {

@@ -1110,22 +1110,26 @@ local factions = {
 		[2170] = "achievement_master_of_argussian_reach", -- argussian reach
 	},
 	bfahorde = {
-		order = { 2103, 2156, 2158, 2157, 2163, 2164 },
+		order = { 2103, 2156, 2158, 2157, 2163, 2164, 2373, 2391 },
 		[2103] = "inv__faction_zandalariempire", -- zandalari
 		[2156] = "inv__faction_talanjisexpedition", -- talanji
 		[2157] = "inv__faction_hordewareffort", -- honorbound
 		[2158] = "inv__faction_voldunai", -- voldunai
 		[2163] = "inv__faction_tortollanseekers", -- tortollan
 		[2164] = "inv__faction_championsofazeroth", -- coa
+		[2373] = "inv__faction_unshackled", -- unshackled
+		[2391] = "inv__faction_rustboltresistance", -- rustbolt resistance
 	},
 	bfaalliance = {
-		order = { 2160, 2161, 2162, 2159, 2163, 2164 },
+		order = { 2160, 2161, 2162, 2159, 2163, 2164, 2400, 2391 },
 		[2159] = "inv__faction_alliancewareffort", -- 7th legion
 		[2161] = "inv__faction_orderofembers", -- order of embers
 		[2160] = "inv__faction_proudmooreadmiralty", -- proudmoore admiralty
 		[2162] = "inv__faction_stormswake", -- storms wake
 		[2163] = "inv__faction_tortollanseekers", -- tortollan
 		[2164] = "inv__faction_championsofazeroth", -- coa
+		[2400] = "inv__faction_wavebladeankoan", -- waveblade ankoan
+		[2391] = "inv__faction_rustboltresistance", -- rustbolt resistance
 	},
 	
 }

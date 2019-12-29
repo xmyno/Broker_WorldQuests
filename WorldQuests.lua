@@ -69,6 +69,8 @@ local MAP_ZONES = {
 		[1161] = { id = 1161, name = GetMapInfo(1161).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Boralus
 		[1355] = { id = 1355, name = GetMapInfo(1355).name, quests = {}, buttons = {}, },  -- Nazjatar 8.2
 		[1462] = { id = 1462, name = GetMapInfo(1462).name, quests = {}, buttons = {}, },  -- Mechagon 8.2
+		[1527] = { id = 1527, name = GetMapInfo(1527).name, quests = {}, buttons = {}, },  -- Uldum 8.3
+		[1530] = { id = 1530, name = GetMapInfo(1530).name, quests = {}, buttons = {}, },  -- Valley of Eternal Blossoms 8.3
 		 [14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 		 [62] = { id = 62, name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
 
@@ -89,7 +91,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	["BFA"] = {
-		1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
+		1530, 1527, 1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
 	},
 	["LEGION"] = {
 		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885

@@ -554,7 +554,7 @@ end
 local tip = GameTooltip
 local ShowQuestObjectiveTooltip = function(row)
 	tip:SetOwner(row, "ANCHOR_CURSOR")
-	local color = WORLD_QUEST_QUALITY_COLORS[row.quest.isRare]
+	local color = WORLD_QUEST_QUALITY_COLORS[row.quest.quality]
 	tip:AddLine(row.quest.title, color.r, color.g, color.b, true)
 
 	for objectiveIndex = 1, row.quest.numObjectives do
@@ -685,45 +685,35 @@ local RetrieveWorldQuests = function(mapId)
 		numQuests = 0
 		MAP_ZONES[expansion][mapId].questsSort = {}
 
-		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, title, factionId
+		local timeLeft, questTagInfo, title, factionId
 		for i = 1, #questList do
 			if questList[i].mapID == mapId then 
 				--[[
-				local tagID, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(v);
-
-				tagId = 116
-				tagName = Blacksmithing World Quest
-				worldQuestType =
-					1 -> profession,
-					2 -> pve?
-					3 -> pvp
-					4 -> battle pet
-					5 -> ??
-					6 -> dungeon
-					7 -> invasion
-					8 -> raid
-				isRare =
-					1 -> normal
-					2 -> rare
-					3 -> epic
-				isElite = true/false
-				tradeskillLineIndex = some number, no idea of meaning atm
+					questTagInfo = {
+						tagId = 116
+						tagName = Blacksmithing World Quest
+						worldQuestType =
+							1 -> profession,
+							2 -> pve?
+							3 -> pvp
+							4 -> battle pet
+							5 -> ??
+							6 -> dungeon
+							7 -> invasion
+							8 -> raid
+						quality =
+							1 -> normal
+							2 -> rare
+							3 -> epic
+						isElite = true/false
+						tradeskillLineIndex = some number, no idea of meaning atm
+					}
 				]]
 
 				timeLeft = GetQuestTimeLeftMinutes(questList[i].questId) or 0
+				questTagInfo = GetQuestTagInfo(questList[i].questId)
 
-				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId)
-
-				--tagId = C_QuestLog.GetQuestTagInfo(questList[i].questId).tagID
-				--tagName = C_QuestLog.GetQuestTagInfo(questList[i].questId).tagName
-				--worldQuestType = C_QuestLog.GetQuestTagInfo(questList[i].questId).worldQuestType
-				--isRare = C_QuestLog.GetQuestTagInfo(questList[i].questId).quality
-				--isElite = C_QuestLog.GetQuestTagInfo(questList[i].questId).isElite
-
--- print(tagId, tagName, worldQuestType, isRare, isElite, i)
-
-				if worldQuestType ~= nil then
-
+				if questTagInfo and questTagInfo.worldQuestType then
 					local questId = questList[i].questId
 					table.insert(MAP_ZONES[expansion][mapId].questsSort, questId)
 					local quest = MAP_ZONES[expansion][mapId].quests[questId] or {}
@@ -748,11 +738,11 @@ local RetrieveWorldQuests = function(mapId)
 					quest.yFlight = questList[i].y
 
 					-- GetQuestTagInfo fields
-					quest.tagId = tagId
-					quest.tagName = tagName
-					quest.worldQuestType = worldQuestType
-					quest.isRare = isRare
-					quest.isElite = isElite
+					quest.tagId = questTagInfo.tagId
+					quest.tagName = questTagInfo.tagName
+					quest.worldQuestType = questTagInfo.worldQuestType
+					quest.quality = questTagInfo.quality
+					quest.isElite = questTagInfo.isElite
 					--quest.tradeskillLineIndex = tradeskillLineIndex
 
 					title, factionId = GetQuestInfoByQuestID(quest.questId)
@@ -945,7 +935,7 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					-- only show quest that are blue or above quality
-					if (C("onlyShowRareOrAbove") and quest.isRare < 2) then quest.hide = true end
+					if (C("onlyShowRareOrAbove") and quest.quality < 2) then quest.hide = true end
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
@@ -989,7 +979,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 					-- don't filter epic quests based on setting
-					if C("alwaysShowEpicQuests") and (quest.isRare == 3 or quest.worldQuestType == 8) then quest.hide = false end
+					if C("alwaysShowEpicQuests") and (quest.quality == 3 or quest.worldQuestType == 8) then quest.hide = false end
 
 					MAP_ZONES[expansion][mapId].quests[questId] = quest
 
@@ -1720,7 +1710,7 @@ function BWQ:UpdateBlock()
 
 			button.titleFS:SetText(string.format("%s%s%s|r",
 				button.quest.isNew and "|cffe5cc80NEW|r  " or "",
-				button.quest.isMissingAchievementCriteria and "|cff1EFF00" or WORLD_QUEST_QUALITY_COLORS[button.quest.isRare].hex,
+				button.quest.isMissingAchievementCriteria and "|cff1EFF00" or WORLD_QUEST_QUALITY_COLORS[button.quest.quality].hex,
 				button.quest.title
 			))
 			--local titleWidth = button.titleFS:GetStringWidth()

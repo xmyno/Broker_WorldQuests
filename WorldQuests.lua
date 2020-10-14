@@ -318,7 +318,7 @@ BWQ:Hide()
 
 BWQ.buttonBFA = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 BWQ.buttonBFA:SetSize(20, 15)
-BWQ.buttonBFA:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -65, -8)
+BWQ.buttonBFA:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -92, -8)
 BWQ.buttonBFA:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 BWQ.buttonBFA:SetBackdropColor(0.1, 0.1, 0.1)
 BWQ.buttonBFA.texture = BWQ.buttonBFA:CreateTexture(nil, "OVERLAY")
@@ -329,7 +329,7 @@ BWQ.buttonBFA.texture:SetTexCoord(0.15, 0.55, 0.23, 0.45)
 
 BWQ.buttonLegion = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 BWQ.buttonLegion:SetSize(20, 15)
-BWQ.buttonLegion:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -38, -8)
+BWQ.buttonLegion:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -65, -8)
 BWQ.buttonLegion:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 BWQ.buttonLegion:SetBackdropColor(0.1, 0.1, 0.1)
 BWQ.buttonLegion.texture = BWQ.buttonLegion:CreateTexture(nil, "OVERLAY")
@@ -338,6 +338,18 @@ BWQ.buttonLegion.texture:SetPoint("BOTTOMRIGHT", -1, 1)
 BWQ.buttonLegion.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendLegionStart")
 BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
+BWQ.buttonShadowlands = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
+BWQ.buttonShadowlands:SetSize(20, 15)
+BWQ.buttonShadowlands:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -38, -8)
+BWQ.buttonShadowlands:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+BWQ.buttonShadowlands:SetBackdropColor(0.1, 0.1, 0.1)
+BWQ.buttonShadowlands.texture = BWQ.buttonShadowlands:CreateTexture(nil, "OVERLAY")
+BWQ.buttonShadowlands.texture:SetPoint("TOPLEFT", 1, -1)
+BWQ.buttonShadowlands.texture:SetPoint("BOTTOMRIGHT", -1, 1)
+BWQ.buttonShadowlands.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendShadowlandsStart")
+BWQ.buttonShadowlands.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
+
+BWQ.buttonShadowlands:SetScript("OnClick", function(self) BWQ:SwitchExpansion("SHADOWLANDS") end)
 BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion("BFA") end)
 BWQ.buttonLegion:SetScript("OnClick", function(self) BWQ:SwitchExpansion("LEGION") end)
 
@@ -1429,6 +1441,7 @@ function BWQ:SwitchExpansion(expac)
 		BWQcfgPerCharacter["expansion"] = expac
 	end
 
+	BWQ.buttonShadowlands:SetAlpha(expac == "SHADOWLANDS" and 1 or 0.4)
 	BWQ.buttonBFA:SetAlpha(expac == "BFA" and 1 or 0.4)
 	BWQ.buttonLegion:SetAlpha(expac == "LEGION" and 1 or 0.4)
 

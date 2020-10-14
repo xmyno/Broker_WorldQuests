@@ -1716,11 +1716,12 @@ function BWQ:UpdateBlock()
 			--local titleWidth = button.titleFS:GetStringWidth()
 			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 
-			if IsWorldQuestHardWatched(button.quest.questId) or GetSuperTrackedQuestID() == button.quest.questId then
-				button.track:Show()
-			else
-				button.track:Hide()
-			end
+			-- TODO:
+			--if IsWorldQuestHardWatched(button.quest.questId) or GetSuperTrackedQuestID() == button.quest.questId then
+			--	button.track:Show()
+			--else
+			button.track:Hide()
+			--end
 
 			local bountyText = ""
 			for _, bountyIcon in ipairs(button.quest.bounties) do

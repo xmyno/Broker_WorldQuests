@@ -16,7 +16,7 @@ local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes
 	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo, C_QuestLog.QuestHasWarModeBonus
 
 local GetQuestTagInfo, GetFactionInfoByID,              IsFactionParagon,              GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
-	= GetQuestTagInfo, GetFactionInfoByID, C_Reputation.IsFactionParagon, C_Reputation.GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
+	= C_QuestLog.GetQuestTagInfo, GetFactionInfoByID, C_Reputation.IsFactionParagon, C_Reputation.GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, C_QuestLog.IsQuestFlaggedCompleted
 
 local GetBestMapForUnit,       GetMapInfo
 	= C_Map.GetBestMapForUnit, C_Map.GetMapInfo
@@ -71,6 +71,11 @@ local MAP_ZONES = {
 		[1462] = { id = 1462, name = GetMapInfo(1462).name, quests = {}, buttons = {}, },  -- Mechagon 8.2
 		 [14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 		 [62] = { id = 62, name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
+			-- TODO: HACK: Shadowlands needs own category
+		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, --Revendreth 9.0
+		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
+		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
+		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
 
 	},
 	["LEGION"] = {
@@ -85,6 +90,12 @@ local MAP_ZONES = {
 		[830] = { id = 830, name = GetMapInfo(830).name, quests = {}, buttons = {}, },  -- Krokuun
 		[882] = { id = 882, name = GetMapInfo(882).name, quests = {}, buttons = {}, },  -- Mac'aree
 		[885] = { id = 885, name = GetMapInfo(885).name, quests = {}, buttons = {}, },  -- Antoran Wastes
+	},
+	["SHADOWLANDS"] = {
+		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, --Revendreth 9.0
+		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
+		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
+		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
 	}
 }
 local MAP_ZONES_SORT = {
@@ -93,8 +104,11 @@ local MAP_ZONES_SORT = {
 	},
 	["LEGION"] = {
 		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
+	},
+	["SHADOWLANDS"] = {
+		1525, 1533, 1536, 1565
 	}
-	
+
 }
 local MAPID_BROKENISLES = 619
 local MAPID_KULTIRAS = 876
@@ -252,6 +266,14 @@ local defaultConfig = {
 		alwaysShowArmiesOfLegionfall = false,
 		alwaysShowArmyOfTheLight = false,
 		alwaysShowArgussianReach = false,
+		
+		-- Shadowlands
+		alwaysShowAscended = false,
+		alwaysShowUndyingArmy = false,
+		alwaysShowCourtofHarvesters = false,
+		alwaysShowAvowed = false,
+		alwaysShowWildHunt = false,
+
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -269,7 +291,7 @@ end
 local expansion
 local warmodeEnabled = false
 
-local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent)
+local BWQ = CreateFrame("Frame", "Broker_WorldQuests", UIParent, "BackdropTemplate")
 BWQ:EnableMouse(true)
 BWQ:SetBackdrop({
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -285,7 +307,7 @@ BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
 
-BWQ.buttonBFA = CreateFrame("Button", nil, BWQ)
+BWQ.buttonBFA = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 BWQ.buttonBFA:SetSize(20, 15)
 BWQ.buttonBFA:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -65, -8)
 BWQ.buttonBFA:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
@@ -296,7 +318,7 @@ BWQ.buttonBFA.texture:SetPoint("BOTTOMRIGHT", -1, 1)
 BWQ.buttonBFA.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendBattleforAzerothStart")
 BWQ.buttonBFA.texture:SetTexCoord(0.15, 0.55, 0.23, 0.45)
 
-BWQ.buttonLegion = CreateFrame("Button", nil, BWQ)
+BWQ.buttonLegion = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 BWQ.buttonLegion:SetSize(20, 15)
 BWQ.buttonLegion:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -38, -8)
 BWQ.buttonLegion:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
@@ -310,7 +332,7 @@ BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion("BFA") end)
 BWQ.buttonLegion:SetScript("OnClick", function(self) BWQ:SwitchExpansion("LEGION") end)
 
-BWQ.buttonSettings = CreateFrame("BUTTON", nil, BWQ)
+BWQ.buttonSettings = CreateFrame("BUTTON", nil, BWQ, "BackdropTemplate")
 BWQ.buttonSettings:SetWidth(15)
 BWQ.buttonSettings:SetHeight(15)
 BWQ.buttonSettings:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -12, -8)
@@ -330,7 +352,7 @@ local Block_OnLeave = function(self)
 end
 BWQ:SetScript("OnLeave", Block_OnLeave)
 
-BWQ.slider = CreateFrame("Slider", nil, BWQ)
+BWQ.slider = CreateFrame("Slider", nil, BWQ, "BackdropTemplate")
 BWQ.slider:SetWidth(16)
 BWQ.slider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
 BWQ.slider:SetBackdrop( {
@@ -364,17 +386,17 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		hasUnlockedWorldQuests = (expansion == "BFA" and UnitLevel("player") >= 120 and
-				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
-				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
-			or (expansion == "LEGION" and UnitLevel("player") >= 110 and
-				(IsQuestFlaggedCompleted(43341) or IsQuestFlaggedCompleted(45727))) -- broken isles
+		hasUnlockedWorldQuests = (expansion == "BFA" and UnitLevel("player") >= 50 and
+				(C_QuestLog.IsQuestFlaggedCompleted(51916) or C_QuestLog.IsQuestFlaggedCompleted(52451) -- horde
+				or C_QuestLog.IsQuestFlaggedCompleted(51918) or C_QuestLog.IsQuestFlaggedCompleted(52450))) -- alliance
+			or (expansion == "LEGION" and UnitLevel("player") >= 45 and
+				(C_QuestLog.IsQuestFlaggedCompleted(43341) or C_QuestLog.IsQuestFlaggedCompleted(45727))) -- broken isles
 	end
 
 	if not hasUnlockedWorldQuests then
 		if not BWQ.errorFS then CreateErrorFS() end
 
-		local level = expansion == "BFA" and "120" or "110"
+		local level = expansion == "BFA" and "50" or "45"
 		local quest = ""
 		if expansion == "BFA" then
 			quest = isHorde and "|cffffff00|Hquest:51916:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
@@ -410,7 +432,7 @@ end
 local locale = GetLocale()
 local millionSearchLocalized = { enUS = "million", enGB = "million", zhCN = "万", frFR = "million", deDE = "Million", esES = "mill", itIT = "milion", koKR = "만", esMX = "mill", ptBR = "milh", ruRU = "млн", zhTW = "萬", }
 local billionSearchLocalized = { enUS = "billion", enGB = "billion", zhCN = "亿", frFR = "milliard", deDE = "Milliarde", esES = "mil millones", itIT = "miliard", koKR = "억", esMX = "mil millones", ptBR = "bilh", ruRU = "млрд", zhTW = "億", }
-local BWQScanTooltip = CreateFrame("GameTooltip", "BWQScanTooltip", nil, "GameTooltipTemplate")
+local BWQScanTooltip = CreateFrame("GameTooltip", "BWQScanTooltip", nil, "GameTooltipTemplate", "BackdropTemplate")
 BWQScanTooltip:Hide()
 function BWQ:GetArtifactPowerValue(itemId)
 	local _, itemLink = GetItemInfo(itemId)
@@ -642,7 +664,7 @@ local RetrieveWorldQuests = function(mapId)
 		numQuests = 0
 		MAP_ZONES[expansion][mapId].questsSort = {}
 
-		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex, title, factionId
+		local timeLeft, tagId, tagName, worldQuestType, isRare, isElite, title, factionId
 		for i = 1, #questList do
 			if questList[i].mapID == mapId then 
 				--[[
@@ -668,9 +690,19 @@ local RetrieveWorldQuests = function(mapId)
 				]]
 
 				timeLeft = GetQuestTimeLeftMinutes(questList[i].questId) or 0
+
 				tagId, tagName, worldQuestType, isRare, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId)
 
+				--tagId = C_QuestLog.GetQuestTagInfo(questList[i].questId).tagID
+				--tagName = C_QuestLog.GetQuestTagInfo(questList[i].questId).tagName
+				--worldQuestType = C_QuestLog.GetQuestTagInfo(questList[i].questId).worldQuestType
+				--isRare = C_QuestLog.GetQuestTagInfo(questList[i].questId).quality
+				--isElite = C_QuestLog.GetQuestTagInfo(questList[i].questId).isElite
+
+-- print(tagId, tagName, worldQuestType, isRare, isElite, i)
+
 				if worldQuestType ~= nil then
+
 					local questId = questList[i].questId
 					table.insert(MAP_ZONES[expansion][mapId].questsSort, questId)
 					local quest = MAP_ZONES[expansion][mapId].quests[questId] or {}
@@ -700,7 +732,7 @@ local RetrieveWorldQuests = function(mapId)
 					quest.worldQuestType = worldQuestType
 					quest.isRare = isRare
 					quest.isElite = isElite
-					quest.tradeskillLineIndex = tradeskillLineIndex
+					--quest.tradeskillLineIndex = tradeskillLineIndex
 
 					title, factionId = GetQuestInfoByQuestID(quest.questId)
 					quest.title = title
@@ -843,7 +875,8 @@ local RetrieveWorldQuests = function(mapId)
 					if not hasReward then needsRefresh = true end -- quests always have a reward, if not api returned bad data
 
 					for _, bounty in ipairs(bounties) do
-						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
+						-- if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
+						if  C_QuestLog.IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
 							quest.bounties[#quest.bounties + 1] = bounty.icon
 						end
 					end
@@ -896,6 +929,12 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
+						-- Shadowlands
+						(C("alwaysShowAscended") and quest.factionId == 2407) or
+						(C("alwaysShowUndyingArmy") and quest.factionId == 2410) or
+						(C("alwaysShowCourtofHarvesters") and quest.factionId == 2413) or
+						(C("alwaysShowAvowed") and quest.factionId == 2439) or
+						(C("alwaysShowWildHunt") and quest.factionId == 2465) or
 						-- bfa
 						(C("alwaysShow7thLegion") and quest.factionId == 2159) or
 						(C("alwaysShowStormsWake") and quest.factionId == 2162) or
@@ -999,12 +1038,15 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
-	bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
-
+	--bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
+	--print (expansion)
+	bounties = C_QuestLog.GetBountiesForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
 	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do
-		local questIndex = GetQuestLogIndexByID(bounty.questID)
-		local title = GetQuestLogTitle(questIndex)
+		--local questIndex = C_QuestLog.GetQuestLogIndexByID(bounty.questID)
+		local questIndex = C_QuestLog.GetLogIndexForQuestID(bounty.questID)
+		--local title = GetQuestLogTitle(questIndex)
+		local title = C_QuestLog.GetTitleForLogIndex(questIndex)
 		local timeleft = GetQuestTimeLeftMinutes(bounty.questID)
 		local _, _, finished, numFulfilled, numRequired = GetQuestObjectiveInfo(bounty.questID, 1, false)
 
@@ -1016,7 +1058,7 @@ function BWQ:UpdateBountyData()
 
 			bountyCacheItem.text = BWQ.bountyDisplay:CreateFontString("BWQ_BountyDisplayText"..bountyIndex, "OVERLAY", "SystemFont_Shadow_Med1")
 			
-			bountyCacheItem.button = CreateFrame("Button", nil, BWQ)
+			bountyCacheItem.button = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 			bountyCacheItem.button:SetPoint("TOPLEFT", bountyCacheItem.icon)
 			bountyCacheItem.button:SetPoint("BOTTOM", bountyCacheItem.icon)
 			bountyCacheItem.button:SetPoint("RIGHT", bountyCacheItem.text)
@@ -1024,7 +1066,7 @@ function BWQ:UpdateBountyData()
 			BWQ.bountyCache[bountyIndex] = bountyCacheItem
 		else
 			bountyCacheItem = BWQ.bountyCache[bountyIndex]
-		end
+		end 
 
 		if bounty.icon and title then
 
@@ -1074,8 +1116,10 @@ function BWQ:UpdateBountyData()
 end
 
 function BWQ:ShowBountyTooltip(button, questId)
-	local questIndex = GetQuestLogIndexByID(questId)
-	local title = GetQuestLogTitle(questIndex)
+	--local questIndex = GetQuestLogIndexByID(questId)
+	local questIndex = C_QuestLog.GetLogIndexForQuestID(questId)
+	--local title = GetQuestLogTitle(questIndex)
+	local title = C_QuestLog.GetTitleForLogIndex(questIndex)
 	if title then
 		GameTooltip:SetOwner(button, "ANCHOR_BOTTOM")
 		GameTooltip:SetText(title, HIGHLIGHT_FONT_COLOR:GetRGB())
@@ -1157,7 +1201,7 @@ function BWQ:UpdateParagonData()
 
 			rowIndex = math.floor(i / 6)
 			if not BWQ.factionFramePool.rows[rowIndex] then
-				row = CreateFrame("Frame", nil, BWQ.factionDisplay)
+				row = CreateFrame("Frame", nil, BWQ.factionDisplay, "BackdropTemplate")
 				BWQ.factionFramePool.rows[rowIndex] = row
 			else row = BWQ.factionFramePool.rows[rowIndex] end
 			
@@ -1165,14 +1209,14 @@ function BWQ:UpdateParagonData()
 				factionFrame = {}
 				factionFrame.name = row:CreateFontString("BWQ_FactionDisplayName"..i, "OVERLAY", "SystemFont_Shadow_Med1")
 
-				factionFrame.bg = CreateFrame("Frame", "BWQ_FactionFrameBG"..i, row)
+				factionFrame.bg = CreateFrame("Frame", "BWQ_FactionFrameBG"..i, row, "BackdropTemplate")
 				factionFrame.bg:SetSize(50, 12)
 				factionFrame.bg:SetPoint("LEFT", factionFrame.name, "RIGHT", 5, 0)
 				
 				factionFrame.bg:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 				factionFrame.bg:SetBackdropColor(0.2,0.2,0.2,0.5)
 
-				factionFrame.bar = CreateFrame("Frame", "BWQ_FactionFrameBar"..i, factionFrame.bg)
+				factionFrame.bar = CreateFrame("Frame", "BWQ_FactionFrameBar"..i, factionFrame.bg, "BackdropTemplate")
 				factionFrame.bar:SetPoint("TOPLEFT", factionFrame.bg, "TOPLEFT")
 				factionFrame.bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
 
@@ -1440,7 +1484,7 @@ function BWQ:UpdateBlock()
 			local zoneSep = {
 				fs = BWQ:CreateFontString("BWQzoneNameFS", "OVERLAY", "SystemFont_Shadow_Med1"),
 				texture = BWQ:CreateTexture(),
-				collapse = CreateFrame("Button", nil, BWQ)
+				collapse = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 			}
 			local faction = MAP_ZONES[expansion][mapId].faction
 			local zoneText = MAP_ZONES[expansion][mapId].name

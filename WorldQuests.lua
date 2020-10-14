@@ -15,11 +15,20 @@ local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes,             GetQuestInfoByQuestID,             GetQuestProgressBarInfo,            QuestHasWarModeBonus
 	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo, C_QuestLog.QuestHasWarModeBonus
 
-local GetQuestTagInfo, GetFactionInfoByID,              IsFactionParagon,              GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, IsQuestFlaggedCompleted
-	= C_QuestLog.GetQuestTagInfo, GetFactionInfoByID, C_Reputation.IsFactionParagon, C_Reputation.GetFactionParagonInfo, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, C_QuestLog.IsQuestFlaggedCompleted
+local            GetQuestTagInfo,            IsQuestFlaggedCompleted,            IsQuestCriteriaForBounty,            GetBountiesForMapID,            GetLogIndexForQuestID,            GetTitleForLogIndex
+	= C_QuestLog.GetQuestTagInfo, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLog.IsQuestCriteriaForBounty, C_QuestLog.GetBountiesForMapID, C_QuestLog.GetLogIndexForQuestID, C_QuestLog.GetTitleForLogIndex
 
-local GetBestMapForUnit,       GetMapInfo
+local              IsFactionParagon,              GetFactionParagonInfo
+	= C_Reputation.IsFactionParagon, C_Reputation.GetFactionParagonInfo
+
+local       GetBestMapForUnit,       GetMapInfo
 	= C_Map.GetBestMapForUnit, C_Map.GetMapInfo
+
+local       IsWarModeDesired
+	= C_PvP.IsWarModeDesired
+
+local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
+	= GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
 
 local REPUTATION
 	= REPUTATION
@@ -387,10 +396,10 @@ local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
 		hasUnlockedWorldQuests = (expansion == "BFA" and UnitLevel("player") >= 50 and
-				(C_QuestLog.IsQuestFlaggedCompleted(51916) or C_QuestLog.IsQuestFlaggedCompleted(52451) -- horde
-				or C_QuestLog.IsQuestFlaggedCompleted(51918) or C_QuestLog.IsQuestFlaggedCompleted(52450))) -- alliance
+				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
+				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
 			or (expansion == "LEGION" and UnitLevel("player") >= 45 and
-				(C_QuestLog.IsQuestFlaggedCompleted(43341) or C_QuestLog.IsQuestFlaggedCompleted(45727))) -- broken isles
+				(IsQuestFlaggedCompleted(43341) or IsQuestFlaggedCompleted(45727))) -- broken isles
 	end
 
 	if not hasUnlockedWorldQuests then
@@ -657,7 +666,7 @@ local RetrieveWorldQuests = function(mapId)
 	local numQuests = 0
 	local currentTime = GetTime()
 	local questList = GetQuestsForPlayerByMapID(mapId)
-	warmodeEnabled = C_PvP.IsWarModeDesired()
+	warmodeEnabled = IsWarModeDesired()
 
 	-- quest object fields are: x, y, floor, numObjectives, questId, inProgress
 	if questList then
@@ -875,8 +884,7 @@ local RetrieveWorldQuests = function(mapId)
 					if not hasReward then needsRefresh = true end -- quests always have a reward, if not api returned bad data
 
 					for _, bounty in ipairs(bounties) do
-						-- if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
-						if  C_QuestLog.IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
+						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
 							quest.bounties[#quest.bounties + 1] = bounty.icon
 						end
 					end
@@ -1038,15 +1046,11 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
-	--bounties = GetQuestBountyInfoForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
-	--print (expansion)
-	bounties = C_QuestLog.GetBountiesForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
+	bounties = GetBountiesForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
 	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do
-		--local questIndex = C_QuestLog.GetQuestLogIndexByID(bounty.questID)
-		local questIndex = C_QuestLog.GetLogIndexForQuestID(bounty.questID)
-		--local title = GetQuestLogTitle(questIndex)
-		local title = C_QuestLog.GetTitleForLogIndex(questIndex)
+		local questIndex = GetLogIndexForQuestID(bounty.questID)
+		local title = GetTitleForLogIndex(questIndex)
 		local timeleft = GetQuestTimeLeftMinutes(bounty.questID)
 		local _, _, finished, numFulfilled, numRequired = GetQuestObjectiveInfo(bounty.questID, 1, false)
 
@@ -1116,10 +1120,8 @@ function BWQ:UpdateBountyData()
 end
 
 function BWQ:ShowBountyTooltip(button, questId)
-	--local questIndex = GetQuestLogIndexByID(questId)
-	local questIndex = C_QuestLog.GetLogIndexForQuestID(questId)
-	--local title = GetQuestLogTitle(questIndex)
-	local title = C_QuestLog.GetTitleForLogIndex(questIndex)
+	local questIndex = GetLogIndexForQuestID(questId)
+	local title = GetTitleForLogIndex(questIndex)
 	if title then
 		GameTooltip:SetOwner(button, "ANCHOR_BOTTOM")
 		GameTooltip:SetText(title, HIGHLIGHT_FONT_COLOR:GetRGB())

@@ -883,8 +883,6 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 
-					if not hasReward then needsRefresh = true end -- quests always have a reward, if not api returned bad data
-
 					for _, bounty in ipairs(bounties) do
 						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
 							quest.bounties[#quest.bounties + 1] = bounty.icon
@@ -1474,12 +1472,6 @@ function BWQ:UpdateBlock()
 	
 	if not BWQ:WorldQuestsUnlocked() then return end
 	BWQ:UpdateQuestData()
-
-	if needsRefresh then
-		-- skip updating the block, received data was incomplete
-		needsRefresh = false
-		return
-	end
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do

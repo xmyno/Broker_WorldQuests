@@ -894,6 +894,8 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 
+					if not hasReward then needsRefresh = true end -- in most cases no reward means api return incomplete data
+					
 					for _, bounty in ipairs(bounties) do
 						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then
 							quest.bounties[#quest.bounties + 1] = bounty.icon
@@ -1356,7 +1358,7 @@ function BWQ:UpdateQuestData()
 		BWQcache.questIds = questIds
 	end
 
-	if needsRefresh and updateTries <= 5 then
+	if needsRefresh and updateTries < 3 then
 		updateTries = updateTries + 1
 		C_Timer.After(1, function() BWQ:UpdateBlock() end)
 	end
@@ -1469,6 +1471,7 @@ function BWQ:SwitchExpansion(expac)
 
 	BWQ:HideRowsOfInactiveExpansions()
 	hasUnlockedWorldQuests = false
+	updateTries = 0
 	BWQ:UpdateBlock()
 end 
 
@@ -1494,7 +1497,7 @@ end
 function BWQ:RunUpdate()
 	local currentTime = GetTime()
 	if currentTime - lastUpdate > 5 then
-		updateTries = 1
+		updateTries = 0
 		BWQ:UpdateBlock()
 		lastUpdate = currentTime
 	end
@@ -1506,6 +1509,13 @@ function BWQ:UpdateBlock()
 	
 	if not BWQ:WorldQuestsUnlocked() then return end
 	BWQ:UpdateQuestData()
+
+	-- refreshing is limited to 3 runs and then gets forced to render the block
+	if needsRefresh and updateTries < 3 then
+		-- skip updating the block, received data was incomplete
+		needsRefresh = false
+		return
+	end
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do

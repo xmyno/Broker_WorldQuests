@@ -145,6 +145,13 @@ local CURRENCIES_AFFECTED_BY_WARMODE = {
 	[1553] = true, -- azerite
 }
 
+local SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
+	[1804] = true, -- The Ascended
+	[1805] = true, -- Undying Army
+	[1806] = true, -- Wild Hunt
+	[1807] = true, -- Court of Harvesters
+}
+
 local BFA_REPUTATION_CURRENCY_IDS = {
 	[1579] = true, -- both
 	[1598] = true,
@@ -214,6 +221,7 @@ local defaultConfig = {
 		showCraftingMaterials = true,
 		showMarkOfHonor = true,
 		showOtherItems = true,
+	showSLReputation = true,
 	showBFAReputation = true,
 	showBFAServiceMedals = true,
 	showHonor = true,
@@ -631,7 +639,7 @@ end
 local currentTomTomWaypoint
 local Row_OnClick = function(row)
 	if IsShiftKeyDown() then
-		if IsWorldQuestHardWatched(row.quest.questId) or (IsWorldQuestWatched(row.quest.questId) and GetSuperTrackedQuestID() == row.quest.questId) then
+		if (IsWorldQuestWatched(row.quest.questId) and C_SuperTrack.GetSuperTrackedQuestID() == row.quest.questId) then
 			BonusObjectiveTracker_UntrackWorldQuest(row.quest.questId)
 		else
 			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
@@ -832,6 +840,9 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
 								quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
 								if C("showArtifactPower") then quest.hide = false end
+							elseif SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
+								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+								if C("showSLReputation") then quest.hide = false end
 							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
 								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
 								if C("showBFAReputation") then quest.hide = false end
@@ -1703,7 +1714,7 @@ function BWQ:UpdateBlock()
 			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 
 			-- TODO:
-			--if IsWorldQuestHardWatched(button.quest.questId) or GetSuperTrackedQuestID() == button.quest.questId then
+			--if C_SuperTrack.GetSuperTrackedQuestID() == button.quest.questId then
 			--	button.track:Show()
 			--else
 			button.track:Hide()
@@ -1907,9 +1918,15 @@ function BWQ:SetupConfigMenu()
 		{ text = "" },
 		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Hide faction paragon bars", check="hideFactionParagonBars" },
-		{ text = "Always show quests for faction...", isTitle = true },
+		{ text = "Always show quests for faction...", isTitle = true },		
+		{ text = "       BLABLATEST", submenu = {
+				{ text = "Rustbolt Resistance", check="alwaysShowRustboltResistance" },
+				{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
+				{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
+			}
+		},
 		{ text = "       Battle for Azeroth", submenu = {
-				{ text = "Rustbolt Resistance", check="alwaysShowRustboltResistance" },		
+				{ text = "Rustbolt Resistance", check="alwaysShowRustboltResistance" },
 				{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
 				{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
 				{ text = ("|T%1$s:16:16|t  7th Legion"):format("Interface\\Icons\\inv_misc_tournaments_banner_human"), check="alwaysShow7thLegion" },
@@ -2034,7 +2051,7 @@ end
 
 local SetFlightMapPins = function(self)
 	for pin, active in self:GetMap():EnumeratePinsByTemplate("WorldQuestPinTemplate") do
-		if IsWorldQuestHardWatched(pin.questID) or GetSuperTrackedQuestID() == pin.questID then
+		if C_SuperTrack.GetSuperTrackedQuestID() == pin.questID then
 			pin:SetAlphaLimits(nil, 0.0, 1.0)
 			pin:SetAlpha(1)
 			pin:Show()
@@ -2172,7 +2189,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 			BWQ:UnregisterEvent("ADDON_LOADED")
 		end
 	elseif event == "QUEST_ACCEPTED" then
-		if TomTom and currentTomTomWaypoint and (GetQuestLogTitle(arg1) == currentTomTomWaypoint.title) then TomTom:RemoveWaypoint(currentTomTomWaypoint) end
+		if TomTom and currentTomTomWaypoint and (GetTitleForLogIndex(arg1) == currentTomTomWaypoint.title) then TomTom:RemoveWaypoint(currentTomTomWaypoint) end
 	elseif event == "PLAYER_LOGOUT" then
 		if TomTom and currentTomTomWaypoint then TomTom:RemoveWaypoint(currentTomTomWaypoint) end
 	end

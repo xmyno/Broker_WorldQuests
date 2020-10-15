@@ -1926,10 +1926,12 @@ function BWQ:SetupConfigMenu()
 		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Hide faction paragon bars", check="hideFactionParagonBars" },
 		{ text = "Always show quests for faction...", isTitle = true },		
-		{ text = "       BLABLATEST", submenu = {
-				{ text = "Rustbolt Resistance", check="alwaysShowRustboltResistance" },
-				{ text = "Tortollan Seekers", check="alwaysShowTortollanSeekers" },
-				{ text = "Champions of Azeroth", check="alwaysShowChampionsOfAzeroth" },
+		{ text = "       Shadowlands", submenu = {
+				{ text = "The Avowed", check="alwaysShowAvowed" },
+				{ text = "The Wild Hunt", check="alwaysShowWildHunt" },
+				{ text = "Court of Harvesters", check="alwaysShowCourtofHarvesters" },
+				{ text = "The Undying Army", check="alwaysShowUndyingArmy" },
+				{ text = "The Ascended", check="alwaysShowAscended" },
 			}
 		},
 		{ text = "       Battle for Azeroth", submenu = {

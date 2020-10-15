@@ -15,8 +15,11 @@ local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 local             GetQuestsForPlayerByMapID,             GetQuestTimeLeftMinutes,             GetQuestInfoByQuestID,             GetQuestProgressBarInfo,            QuestHasWarModeBonus
 	= C_TaskQuest.GetQuestsForPlayerByMapID, C_TaskQuest.GetQuestTimeLeftMinutes, C_TaskQuest.GetQuestInfoByQuestID, C_TaskQuest.GetQuestProgressBarInfo, C_QuestLog.QuestHasWarModeBonus
 
-local            GetQuestTagInfo,            IsQuestFlaggedCompleted,            IsQuestCriteriaForBounty,            GetBountiesForMapID,            GetLogIndexForQuestID,            GetTitleForLogIndex
-	= C_QuestLog.GetQuestTagInfo, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLog.IsQuestCriteriaForBounty, C_QuestLog.GetBountiesForMapID, C_QuestLog.GetLogIndexForQuestID, C_QuestLog.GetTitleForLogIndex
+local            GetQuestTagInfo,            IsQuestFlaggedCompleted,            IsQuestCriteriaForBounty,            GetBountiesForMapID,            GetLogIndexForQuestID,            GetTitleForLogIndex,            GetQuestWatchType
+	= C_QuestLog.GetQuestTagInfo, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLog.IsQuestCriteriaForBounty, C_QuestLog.GetBountiesForMapID, C_QuestLog.GetLogIndexForQuestID, C_QuestLog.GetTitleForLogIndex, C_QuestLog.GetQuestWatchType
+
+local              GetSuperTrackedQuestID
+	= C_SuperTrack.GetSuperTrackedQuestID
 
 local              IsFactionParagon,              GetFactionParagonInfo
 	= C_Reputation.IsFactionParagon, C_Reputation.GetFactionParagonInfo
@@ -639,10 +642,10 @@ end
 local currentTomTomWaypoint
 local Row_OnClick = function(row)
 	if IsShiftKeyDown() then
-		if (IsWorldQuestWatched(row.quest.questId) and C_SuperTrack.GetSuperTrackedQuestID() == row.quest.questId) then
+		if (GetQuestWatchType(row.quest.questId) == Enum.QuestWatchType.Manual or GetSuperTrackedQuestID() == row.quest.questId) then
 			BonusObjectiveTracker_UntrackWorldQuest(row.quest.questId)
 		else
-			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, true)
+			BonusObjectiveTracker_TrackWorldQuest(row.quest.questId, Enum.QuestWatchType.Manual)
 		end
 	else
 		if not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
@@ -1713,12 +1716,11 @@ function BWQ:UpdateBlock()
 			--local titleWidth = button.titleFS:GetStringWidth()
 			--if titleWidth > titleMaxWidth then titleMaxWidth = titleWidth end
 
-			-- TODO:
-			--if C_SuperTrack.GetSuperTrackedQuestID() == button.quest.questId then
-			--	button.track:Show()
-			--else
-			button.track:Hide()
-			--end
+			if GetQuestWatchType(button.quest.questId) == Enum.QuestWatchType.Manual or GetSuperTrackedQuestID() == button.quest.questId then
+				button.track:Show()
+			else
+				button.track:Hide()
+			end
 
 			local bountyText = ""
 			for _, bountyIcon in ipairs(button.quest.bounties) do

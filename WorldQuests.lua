@@ -412,7 +412,8 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		hasUnlockedWorldQuests = (expansion == "BFA" and UnitLevel("player") >= 50 and
+		hasUnlockedWorldQuests = (expansion == "SHADOWLANDS" and UnitLevel("player") >= 60)
+			or (expansion == "BFA" and UnitLevel("player") >= 50 and
 				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
 				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
 			or (expansion == "LEGION" and UnitLevel("player") >= 45 and
@@ -422,9 +423,11 @@ function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
 		if not BWQ.errorFS then CreateErrorFS() end
 
-		local level = expansion == "BFA" and "50" or "45"
+		local level = expansion == "SHADOWLANDS" and "60" or expansion == "BFA" and "50" or "45"
 		local quest = ""
-		if expansion == "BFA" then
+		if expansion == "SHADOWLANDS" then
+			quest = "[tbd]" -- TODO
+		elseif expansion == "BFA" then
 			quest = isHorde and "|cffffff00|Hquest:51916:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
 		else
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
@@ -1054,6 +1057,11 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
+	if expansion == "SHADOWLANDS" then -- TODO
+		BWQ.bountyDisplay:Hide()
+		return
+	end
+
 	bounties = GetBountiesForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
 	if bounties == nil then
 		BWQ.bountyDisplay:Hide()
@@ -1190,6 +1198,14 @@ local factions = {
 		[2400] = "inv__faction_wavebladeankoan", -- waveblade ankoan
 		[2391] = "inv__faction_rustboltresistance", -- rustbolt resistance
 	},
+	shadowlands = {
+		order = { 2407, 2410, 2413, 2465 },
+		[2407] = "ui_sigil_kyrian", -- ascended
+		[2410] = "inv_shoulder_mail_maldraxxus_d_01", -- undying army
+		[2413] = "inv_cape_special_revendreth_d_01", -- court of harvesters
+		-- [2439] = "", -- avowed
+		[2465] = "inv_wand_1h_ardenweald_d_01", -- wild hunt
+	}
 	
 }
 BWQ.factionFramePool = {
@@ -1205,8 +1221,13 @@ function BWQ:UpdateParagonData()
 	local rowIndex = 0
 	
 	local reps
-	if expansion == "BFA" then reps = isHorde and factions.bfahorde or factions.bfaalliance
-	else  reps = factions.legion end
+	if expansion == "SHADOWLANDS" then 
+		reps = factions.shadowlands
+	elseif
+		expansion == "BFA" then reps = isHorde and factions.bfahorde or factions.bfaalliance
+	else 
+		reps = factions.legion
+	end
 
 	local row
 	for _, factionId in next, reps.order do

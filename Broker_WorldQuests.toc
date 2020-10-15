@@ -1,4 +1,4 @@
-## Interface: 80100
+## Interface: 90001
 ## Author: myno
 ## Title: Broker_WorldQuests
 ## Version: @project-version@

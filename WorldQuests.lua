@@ -1055,6 +1055,11 @@ BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
 	bounties = GetBountiesForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
+	if bounties == nil then
+		BWQ.bountyDisplay:Hide()
+		return
+	end
+
 	local bountyWidth = 0 -- added width of all items inside the bounty block
 	for bountyIndex, bounty in ipairs(bounties) do
 		local questIndex = GetLogIndexForQuestID(bounty.questID)

@@ -434,7 +434,7 @@ function BWQ:WorldQuestsUnlocked()
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
 		end
 
-		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, -35)
+		BWQ:SetErrorFSPosition(offsetTop)
 		BWQ.errorFS:SetText(("You need to reach Level %s and complete the\nquest %s to unlock World Quests."):format(level, quest))
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 45)
 		BWQ.errorFS:Show()
@@ -453,10 +453,19 @@ function BWQ:ShowNoWorldQuestsInfo()
 	if not BWQ.errorFS then CreateErrorFS() end
 
 	BWQ.errorFS:ClearAllPoints()
+	BWQ:SetErrorFSPosition(offsetTop - 10)
 	BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, offsetTop - 10)
 
 	BWQ.errorFS:SetText("There are no world quests available that match your filter settings.")
 	BWQ.errorFS:Show()
+end
+
+function BWQ:SetErrorFSPosition(offsetTop)
+	if BWQ.factionDisplay:IsShown() then
+		BWQ.errorFS:SetPoint("TOP", BWQ.factionDisplay, "BOTTOM", 0, -10)
+	else 
+		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
+	end
 end
 
 local locale = GetLocale()
@@ -1285,6 +1294,9 @@ function BWQ:UpdateParagonData()
 			else factionFrame.bar:SetBackdropColor(0.1, 0.55, 0.1, 0.4) end
 			if progress == 0 then factionFrame.bar:Hide() else factionFrame.bar:Show() end
 			factionFrame.bar:SetSize(hasRewardPending and 50 or progress, 12)
+			factionFrame.name:Show()
+			factionFrame.bg:Show()
+			factionFrame.bar:Show()
 			
 			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", reps[factionId]))
 			
@@ -1299,10 +1311,21 @@ function BWQ:UpdateParagonData()
 		BWQ.factionFramePool.rows[j]:Hide()
 		j = j + 1
 	end
+	-- hide not needed bars
+	local barsInPool = #BWQ.factionFramePool.bars
+	if barsInPool > 0 then
+		local j = i
+		while (j <= barsInPool) do
+			BWQ.factionFramePool.bars[j].name:Hide()
+			BWQ.factionFramePool.bars[j].bg:Hide()
+			BWQ.factionFramePool.bars[j].bar:Hide()
+			j = j + 1
+		end
+	end
 
 	if (i > 0) then
 		BWQ.factionDisplay:Show()
-		BWQ.factionDisplay:SetSize(maxWidth, 15)
+		BWQ.factionDisplay:SetSize(maxWidth, 20 * (rowIndex + 1))
 		BWQ.factionDisplay:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
 		offsetTop = offsetTop - 20 * (rowIndex + 1)
 	else
@@ -1508,7 +1531,11 @@ function BWQ:UpdateBlock()
 	offsetTop = -35 -- initial padding from top
 	BWQ:UpdateInfoPanel()
 	
-	if not BWQ:WorldQuestsUnlocked() then return end
+	if not BWQ:WorldQuestsUnlocked() then
+		BWQ:SetHeight(offsetTop * -1 + 20 + 30) -- padding + errorFS height
+		BWQ:SetWidth(math.max(BWQ.factionDisplay:GetWidth(), BWQ.errorFS:GetWidth()) + 20)
+		return
+	end
 	BWQ:UpdateQuestData()
 
 	-- refreshing is limited to 3 runs and then gets forced to render the block

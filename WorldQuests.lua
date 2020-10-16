@@ -1198,8 +1198,8 @@ local factions = {
 		[2162] = "inv__faction_stormswake", -- storms wake
 		[2163] = "inv__faction_tortollanseekers", -- tortollan
 		[2164] = "inv__faction_championsofazeroth", -- coa
-		[2400] = "inv__faction_wavebladeankoan", -- waveblade ankoan
-		[2391] = "inv__faction_rustboltresistance", -- rustbolt resistance
+		[2400] = "inv_faction_akoan", -- waveblade ankoan
+		[2391] = "inv_faction_rustbolt", -- rustbolt resistance
 	},
 	shadowlands = {
 		order = { 2407, 2410, 2413, 2465 },

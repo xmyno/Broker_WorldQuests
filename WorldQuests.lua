@@ -1071,6 +1071,9 @@ BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
 	if expansion == "SHADOWLANDS" then -- TODO
 		BWQ.bountyDisplay:Hide()
+		for i, item in pairs(BWQ.bountyCache) do
+			item.button:Hide()
+		end
 		return
 	end
 

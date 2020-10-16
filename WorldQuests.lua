@@ -153,6 +153,7 @@ local SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
 	[1805] = true, -- Undying Army
 	[1806] = true, -- Wild Hunt
 	[1807] = true, -- Court of Harvesters
+	[1877] = true, -- XP
 }
 
 local BFA_REPUTATION_CURRENCY_IDS = {
@@ -412,7 +413,7 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		hasUnlockedWorldQuests = (expansion == "SHADOWLANDS" and UnitLevel("player") >= 60)
+		hasUnlockedWorldQuests = (expansion == "SHADOWLANDS" and UnitLevel("player") >= 51 and IsQuestFlaggedCompleted(57559))
 			or (expansion == "BFA" and UnitLevel("player") >= 50 and
 				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
 				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
@@ -423,12 +424,12 @@ function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
 		if not BWQ.errorFS then CreateErrorFS() end
 
-		local level = expansion == "SHADOWLANDS" and "60" or expansion == "BFA" and "50" or "45"
+		local level = expansion == "SHADOWLANDS" and "51" or expansion == "BFA" and "50" or "45"
 		local quest = ""
 		if expansion == "SHADOWLANDS" then
-			quest = "[tbd]" -- TODO
+			quest = "|cffffff00|Hquest:57559:-1|h[UNKNOWN TITLE]|h|r" -- TODO , find the corresponding Covenant lines
 		elseif expansion == "BFA" then
-			quest = isHorde and "|cffffff00|Hquest:51916:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
+			quest = isHorde and "|cffffff00|Hquest:57559:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
 		else
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
 		end

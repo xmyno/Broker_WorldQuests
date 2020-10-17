@@ -140,6 +140,15 @@ CONSTANTS.FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 	[41990] = true, -- Chopped
 }
 
+CONSTANTS.ACHIEVEMENT_IDS = {
+	PET_BATTLE_WQ = {
+		[CONSTANTS.EXPANSIONS.SHADOWLANDS] = 14625,
+		[CONSTANTS.EXPANSIONS.BFA] = 12936,
+		[CONSTANTS.EXPANSIONS.LEGION] = 10876,
+	},
+	LEGION_FISHING_WQ = 10598,
+}
+
 -- achievement id, quest id and criteria index combinations for world quest achievements
 CONSTANTS.ACHIEVEMENT_CRITERIAS = {
 	-- Fishing 'Round The Isles
@@ -230,6 +239,23 @@ CONSTANTS.ACHIEVEMENT_CRITERIAS = {
 	[52923] = 22,
 	[52937] = 23,
 	[52938] = 24,
+	-- Battle in the shadowlands
+	[61949] = 1,
+	[61948] = 2,
+	[61947] = 3,
+	[61946] = 4,
+	[61886] = 5,
+	[61885] = 6,
+	[61883] = 7,
+	[61879] = 8,
+	[61870] = 9,
+	[61868] = 10,
+	[61867] = 11,
+	[61866] = 12,
+	[61791] = 13,
+	[61787] = 14,
+	[61784] = 15,
+	[61783] = 16,
 }
 
 -- faction ids and icon name for factions with paragon reputation

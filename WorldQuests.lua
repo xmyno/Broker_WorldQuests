@@ -1000,7 +1000,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 					-- don't filter epic quests based on setting
-					if C("alwaysShowEpicQuests") and (quest.quality == 3 or quest.worldQuestType == 8) then quest.hide = false end
+					if C("alwaysShowEpicQuests") and (quest.quality == 2 or quest.worldQuestType == 8) then quest.hide = false end
 
 					MAP_ZONES[expansion][mapId].quests[questId] = quest
 

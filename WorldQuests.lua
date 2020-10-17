@@ -956,7 +956,7 @@ local RetrieveWorldQuests = function(mapId)
 					end
 
 					-- only show quest that are blue or above quality
-					if (C("onlyShowRareOrAbove") and quest.quality < 2) then quest.hide = true end
+					if (C("onlyShowRareOrAbove") and quest.quality < 1) then quest.hide = true end
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or

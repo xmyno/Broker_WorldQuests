@@ -821,7 +821,8 @@ local RetrieveWorldQuests = function(mapId)
 						else
 							quest.hide = true
 						end
-						quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(expansion == CONSTANTS.EXPANSIONS.BFA and 12936 or 10876, quest.questId)
+
+						quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(CONSTANTS.ACHIEVEMENT_IDS.PET_BATTLE_WQ[expansion], quest.questId)
 					elseif quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.PROFESSION then
 						if C("showProfession") then
 
@@ -833,7 +834,7 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showProfessionMining") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 130 then
 								questType[#questType+1] = CONSTANTS.QUEST_TYPES.FISHING
-								quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(10598, quest.questId)
+								quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(CONSTANTS.ACHIEVEMENT_IDS.LEGION_FISHING_WQ, quest.questId)
 								if C("showProfessionFishing") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 124 then
 								questType[#questType+1] = CONSTANTS.QUEST_TYPES.SKINNING

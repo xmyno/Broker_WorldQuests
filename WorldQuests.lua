@@ -40,51 +40,28 @@ local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
 
 local isHorde = UnitFactionGroup("player") == "Horde"
-local WORLD_QUEST_ICONS_BY_TAG_ID = {
-	[116] = "worldquest-icon-blacksmithing",
-	[117] = "worldquest-icon-leatherworking",
-	[118] = "worldquest-icon-alchemy",
-	[119] = "worldquest-icon-herbalism",
-	[120] = "worldquest-icon-mining",
-	[122] = "worldquest-icon-engineering",
-	[123] = "worldquest-icon-enchanting",
-	[125] = "worldquest-icon-jewelcrafting",
-	[126] = "worldquest-icon-inscription",
-	[129] = "worldquest-icon-archaeology",
-	[130] = "worldquest-icon-fishing",
-	[131] = "worldquest-icon-cooking",
-	[121] = "worldquest-icon-tailoring",
-	[124] = "worldquest-icon-skinning",
-	[137] = "worldquest-icon-dungeon",
-	[113] = "worldquest-icon-pvp-ffa",
-	[115] = "worldquest-icon-petbattle",
-	[111] = "worldquest-questmarker-dragon",
-	[112] = "worldquest-questmarker-dragon",
-	[136] = "worldquest-questmarker-dragon",
-	[139] = "worldquest-icon-burninglegion",
-	[142] = "worldquest-icon-burninglegion",
-	[259] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
-	[260] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
-}
 
-local FACTION_NEUTRAL = 0
-local FACTION_ALLIANCE = 1
-local FACTION_HORDE = 2
 local MAP_ZONES = {
-	["BFA"] = {
-		[863] = { id = 863, name = GetMapInfo(863).name, faction = FACTION_HORDE, quests = {}, buttons = {}, },  -- Nazmir
-		[864] = { id = 864, name = GetMapInfo(864).name, faction = FACTION_HORDE, quests = {}, buttons = {}, },  -- Vol'dun
-		[862] = { id = 862, name = GetMapInfo(862).name, faction = FACTION_HORDE, quests = {}, buttons = {}, },  -- Zuldazar
-		[895] = { id = 895, name = GetMapInfo(895).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Tiragarde
-		[942] = { id = 942, name = GetMapInfo(942).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
-		[896] = { id = 896, name = GetMapInfo(896).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
-		[1161] = { id = 1161, name = GetMapInfo(1161).name, faction = FACTION_ALLIANCE, quests = {}, buttons = {}, },  -- Boralus
+	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
+		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, --Revendreth 9.0
+		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
+		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
+		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
+	},
+	[CONSTANTS.EXPANSIONS.BFA] = {
+		[863] = { id = 863, name = GetMapInfo(863).name, faction = CONSTANTS.FACTIONS.HORDE, quests = {}, buttons = {}, },  -- Nazmir
+		[864] = { id = 864, name = GetMapInfo(864).name, faction = CONSTANTS.FACTIONS.HORDE, quests = {}, buttons = {}, },  -- Vol'dun
+		[862] = { id = 862, name = GetMapInfo(862).name, faction = CONSTANTS.FACTIONS.HORDE, quests = {}, buttons = {}, },  -- Zuldazar
+		[895] = { id = 895, name = GetMapInfo(895).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Tiragarde
+		[942] = { id = 942, name = GetMapInfo(942).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
+		[896] = { id = 896, name = GetMapInfo(896).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
+		[1161] = { id = 1161, name = GetMapInfo(1161).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Boralus
 		[1355] = { id = 1355, name = GetMapInfo(1355).name, quests = {}, buttons = {}, },  -- Nazjatar 8.2
 		[1462] = { id = 1462, name = GetMapInfo(1462).name, quests = {}, buttons = {}, },  -- Mechagon 8.2
 		[14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
 		[62] = { id = 62, name = GetMapInfo(62).name,  quests = {}, buttons = {}, },  -- Darkshore
 	},
-	["LEGION"] = {
+	[CONSTANTS.EXPANSIONS.LEGION] = {
 		[630] = { id = 630, name = GetMapInfo(630).name, quests = {}, buttons = {}, },  -- Aszuna
 		[790] = { id = 790, name = GetMapInfo(790).name, quests = {}, buttons = {}, },  -- Eye of Azshara
 		[641] = { id = 641, name = GetMapInfo(641).name, quests = {}, buttons = {}, },  -- Val'sharah
@@ -97,102 +74,26 @@ local MAP_ZONES = {
 		[882] = { id = 882, name = GetMapInfo(882).name, quests = {}, buttons = {}, },  -- Mac'aree
 		[885] = { id = 885, name = GetMapInfo(885).name, quests = {}, buttons = {}, },  -- Antoran Wastes
 	},
-	["SHADOWLANDS"] = {
-		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, --Revendreth 9.0
-		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
-		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
-		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
-	}
 }
 local MAP_ZONES_SORT = {
-	["BFA"] = {
+	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
+		1525, 1533, 1536, 1565
+	},
+	[CONSTANTS.EXPANSIONS.BFA] = {
 		1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
 	},
-	["LEGION"] = {
+	[CONSTANTS.EXPANSIONS.LEGION] = {
 		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885
 	},
-	["SHADOWLANDS"] = {
-		1525, 1533, 1536, 1565
-	}
-
-}
-local MAPID_BROKENISLES = 619
-local MAPID_KULTIRAS = 876
-local SORT_ORDER = {
-	ARTIFACTPOWER = 8,
-	RESOURCES = 7,
-	HONOR = 6,
-	RELIC = 5,
-	EQUIP = 4,
-	ITEM = 3,
-	PROFESSION = 2,
-	MONEY = 1,
 }
 
-local WORLD_QUEST_TYPES = {
-	PROFESSION = 1,
-	PVE = 2,
-	PVP = 3,
-	PETBATTLE = 4,
-	-- ?? = 5,
-	DUNGEON = 6,
-}
-
-local CURRENCIES_AFFECTED_BY_WARMODE = {
-	[1226] = true, -- nethershard
-	[1508] = true, -- argunite
-	[1533] = true, -- wakening essence
-	[1342] = true, -- legionfall supplies
-	[1220] = true, -- order hall (legion)
-	[1560] = true, -- war resources (bfa)
-	[1553] = true, -- azerite
-}
-
-local SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
-	[1804] = true, -- The Ascended
-	[1805] = true, -- Undying Army
-	[1806] = true, -- Wild Hunt
-	[1807] = true, -- Court of Harvesters
-	[1877] = true, -- XP
-}
-
-local BFA_REPUTATION_CURRENCY_IDS = {
-	[1579] = true, -- both
-	[1598] = true,
-	[1600] = true, -- alliance
-	[1595] = true,
-	[1597] = true,
-	[1596] = true,
-	[1599] = true, -- horde
-	[1593] = true,
-	[1594] = true,
-	[1592] = true,
-}
-
-local FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
-	[42442] = true, -- Fight Night: Amalia
-	[40299] = true, -- Fight Night: Bodhi Sunwayver
-	[40298] = true, -- Fight Night: Sir Galveston
-	[40277] = true, -- Fight Night: Tiffany Nelson
-	[42159] = true, -- Training with the Nightwatchers
-	[41860] = true, -- Dealing with Satyrs
-	[40279] = true, -- Training with Durian
-	[40280] = true, -- Training with Bredda
-	[41687] = true, -- Snail Fight!
-	[40282] = true, -- Tiny Poacher, Tiny Animals
-	[40278] = true, -- My Beasts's Bidding
-	[41944] = true, -- Jarrun's Ladder
-	[41895] = true, -- The Master of Pets
-	[40337] = true, -- Flummoxed
-	[41990] = true, -- Chopped
-}
 
 local defaultConfig = {
 	-- general
 	attachToWorldMap = false,
 	showOnClick = false,
 	usePerCharacterSettings = false,
-	expansion = "BFA",
+	expansion = CONSTANTS.EXPANSIONS.BFA, -- TODO: set to SHADOWLANDS on launch
 	enableClickToOpenMap = false,
 	enableTomTomWaypointsOnClick = true,
 	alwaysShowBountyQuests = true,
@@ -355,9 +256,9 @@ BWQ.buttonLegion.texture:SetPoint("BOTTOMRIGHT", -1, 1)
 BWQ.buttonLegion.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendLegionStart")
 BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
-BWQ.buttonShadowlands:SetScript("OnClick", function(self) BWQ:SwitchExpansion("SHADOWLANDS") end)
-BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion("BFA") end)
-BWQ.buttonLegion:SetScript("OnClick", function(self) BWQ:SwitchExpansion("LEGION") end)
+BWQ.buttonShadowlands:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.SHADOWLANDS) end)
+BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.BFA) end)
+BWQ.buttonLegion:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.LEGION) end)
 
 BWQ.buttonSettings = CreateFrame("BUTTON", nil, BWQ, "BackdropTemplate")
 BWQ.buttonSettings:SetWidth(15)
@@ -413,24 +314,26 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		hasUnlockedWorldQuests = (expansion == "SHADOWLANDS" and UnitLevel("player") >= 51 and IsQuestFlaggedCompleted(57559))
-			or (expansion == "BFA" and UnitLevel("player") >= 50 and
+		hasUnlockedWorldQuests = (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS and UnitLevel("player") >= 51 and IsQuestFlaggedCompleted(57559))
+			or (expansion == CONSTANTS.EXPANSIONS.BFA and UnitLevel("player") >= 50 and
 				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
 				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
-			or (expansion == "LEGION" and UnitLevel("player") >= 45 and
+			or (expansion == CONSTANTS.EXPANSIONS.LEGION and UnitLevel("player") >= 45 and
 				(IsQuestFlaggedCompleted(43341) or IsQuestFlaggedCompleted(45727))) -- broken isles
 	end
 
 	if not hasUnlockedWorldQuests then
 		if not BWQ.errorFS then CreateErrorFS() end
 
-		local level = expansion == "SHADOWLANDS" and "51" or expansion == "BFA" and "50" or "45"
-		local quest = ""
-		if expansion == "SHADOWLANDS" then
-			quest = "|cffffff00|Hquest:57559:-1|h[UNKNOWN TITLE]|h|r" -- TODO , find the corresponding Covenant lines
-		elseif expansion == "BFA" then
+		local level, quest
+		if expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then
+			level = "51" -- TODO: can we somehow find out if we have a character that reached 60?
+			quest = "|cffffff00|Hquest:57559:-1|h[UNKNOWN TITLE]|h|r" -- TODO: find the corresponding Covenant lines
+		elseif expansion == CONSTANTS.EXPANSIONS.BFA then
+			level = "50"
 			quest = isHorde and "|cffffff00|Hquest:57559:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
-		else
+		else -- legion
+			level = "45"
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
 		end
 
@@ -687,8 +590,6 @@ local Row_OnClick = function(row)
 end
 
 
-local REWARD_TYPES = { ARTIFACTPOWER = 0, RESOURCES = 1, MONEY = 2, GEAR = 3, BLOODOFSARGERAS = 4, LEGIONFALL_SUPPLIES = 5, HONOR = 6, NETHERSHARD = 7, ARGUNITE = 8, WAKENING_ESSENCES = 9, WAR_RESOURCES = 10, MARK_OF_HONOR = 11, SERVICE_MEDALS = 12, PRISMATICMANAPEARL = 13}
-local QUEST_TYPES = { HERBALISM = 0, MINING = 1, FISHING = 2, SKINNING = 3, }
 local lastUpdate, updateTries = 0, 0
 local needsRefresh = false
 local RetrieveWorldQuests = function(mapId)
@@ -789,23 +690,23 @@ local RetrieveWorldQuests = function(mapId)
 							
 							local _, _, _, _, _, _, _, _, equipSlot, _, _, classId, subClassId = GetItemInfo(quest.reward.itemId)
 							if classId == 7 then
-								quest.sort = quest.sort > SORT_ORDER.PROFESSION and quest.sort or SORT_ORDER.PROFESSION
+								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.PROFESSION and quest.sort or CONSTANTS.SORT_ORDER.PROFESSION
 								if quest.reward.itemId == 124124 then
-									rewardType[#rewardType+1] = REWARD_TYPES.BLOODOFSARGERAS
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.BLOODOFSARGERAS
 								end
 								if C("showItems") and C("showCraftingMaterials") then quest.hide = false end
 							elseif equipSlot ~= "" or itemId == 163857 --[[ Azerite Armor Cache ]] then
-								quest.sort = quest.sort > SORT_ORDER.EQUIP and quest.sort or SORT_ORDER.EQUIP
+								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.EQUIP and quest.sort or CONSTANTS.SORT_ORDER.EQUIP
 								quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
-								rewardType[#rewardType+1] = REWARD_TYPES.GEAR
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GEAR
 
 								if C("showItems") and C("showGear") then quest.hide = false end
 							elseif itemId == 137642 then
-								quest.sort = quest.sort > SORT_ORDER.ITEM and quest.sort or SORT_ORDER.ITEM
-								rewardType[#rewardType+1] = REWARD_TYPES.MARK_OF_HONOR
+								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MARK_OF_HONOR
 								if C("showItems") and C("showMarkOfHonor") then quest.hide = false end
 							else
-								quest.sort = quest.sort > SORT_ORDER.ITEM and quest.sort or SORT_ORDER.ITEM
+								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
 								if C("showItems") and C("showOtherItems") then quest.hide = false end
 							end
 						end
@@ -815,8 +716,8 @@ local RetrieveWorldQuests = function(mapId)
 					if money > 20000 then -- >2g, hides these silly low gold extra rewards
 						hasReward = true
 						quest.reward.money = floor(BWQ:ValueWithWarModeBonus(quest.questId, money) / 10000) * 10000
-						quest.sort = quest.sort > SORT_ORDER.MONEY and quest.sort or SORT_ORDER.MONEY
-						rewardType[#rewardType+1] = REWARD_TYPES.MONEY
+						quest.sort = quest.sort > CONSTANTS.SORT_ORDER.MONEY and quest.sort or CONSTANTS.SORT_ORDER.MONEY
+						rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MONEY
 
 						if money < 1000000 then
 							if C("showLowGold") then quest.hide = false end
@@ -828,8 +729,8 @@ local RetrieveWorldQuests = function(mapId)
 					if honor > 0 then
 						hasReward = true
 						quest.reward.honor = honor
-						quest.sort = quest.sort > SORT_ORDER.HONOR and quest.sort or SORT_ORDER.HONOR
-						rewardType[#rewardType+1] = REWARD_TYPES.HONOR
+						quest.sort = quest.sort > CONSTANTS.SORT_ORDER.HONOR and quest.sort or CONSTANTS.SORT_ORDER.HONOR
+						rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.HONOR
 
 						if C("showHonor") then quest.hide = false end
 					end
@@ -843,7 +744,7 @@ local RetrieveWorldQuests = function(mapId)
 							hasReward = true
 							
 							local currency = {}
-							if CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
+							if CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
 								currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
 							else
 								currency.amount = numItems
@@ -853,52 +754,52 @@ local RetrieveWorldQuests = function(mapId)
 							
 							if currencyId == 1553 then -- azerite
 								currency.name = string.format("|cffe5cc80[%d %s]|r", currency.amount, name)
-								rewardType[#rewardType+1] = REWARD_TYPES.ARTIFACTPOWER
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARTIFACTPOWER
 								quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
 								if C("showArtifactPower") then quest.hide = false end
-							elseif SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
+							elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
 								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
 								if C("showSLReputation") then quest.hide = false end
-							elseif BFA_REPUTATION_CURRENCY_IDS[currencyId] then
+							elseif CONSTANTS.BFA_REPUTATION_CURRENCY_IDS[currencyId] then
 								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
 								if C("showBFAReputation") then quest.hide = false end
 							elseif currencyId == 1560 then -- war resources
-								rewardType[#rewardType+1] = REWARD_TYPES.WAR_RESOURCES
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAR_RESOURCES
 								quest.reward.warResourceAmount = currency.amount
 								if C("showWarResources") then quest.hide = false end
 							elseif currencyId == 1716 or currencyId == 1717 then -- service medals
-								rewardType[#rewardType+1] = REWARD_TYPES.SERVICE_MEDALS
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDALS
 								quest.reward.serviceMedalAmount = currency.amount
 								if C("showBFAServiceMedals") then quest.hide = false end
 							elseif currencyId == 1220 then -- order hall resources
-								rewardType[#rewardType+1] = REWARD_TYPES.RESOURCES
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESOURCES
 								quest.reward.resourceAmount = currency.amount
 								if C("showResources") then quest.hide = false end
 							elseif currencyId == 1342 then -- legionfall supplies
-								rewardType[#rewardType+1] = REWARD_TYPES.LEGIONFALL_SUPPLIES
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES
 								quest.reward.legionfallSuppliesAmount = currency.amount
 								if C("showLegionfallSupplies") then quest.hide = false end
 							elseif currencyId == 1226 then -- nethershard
-								rewardType[#rewardType+1] = REWARD_TYPES.NETHERSHARD
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.NETHERSHARD
 								if C("showNethershards") then quest.hide = false end
 							elseif currencyId == 1508 then -- argunite
-								rewardType[#rewardType+1] = REWARD_TYPES.ARGUNITE
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARGUNITE
 								if C("showArgunite") then quest.hide = false end
 							elseif currencyId == 1533 then
-								rewardType[#rewardType+1] = REWARD_TYPES.WAKENING_ESSENCES
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCES
 								quest.reward.wakeningEssencesAmount = currency.amount
 								if C("showWakeningEssences") then quest.hide = false end
 							elseif currencyId == 1721 then -- prismatic manapearl
-								rewardType[#rewardType+1] = REWARD_TYPES.PRISMATICMANAPEARL
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL
 								quest.reward.prismaticManapearlAmount = currency.amount
 								if C("showPrismaticManapearl") then quest.hide = false end
 							end
 							quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
 							if currencyId == 1553 then
-								quest.sort = quest.sort > SORT_ORDER.ARTIFACTPOWER and quest.sort or SORT_ORDER.ARTIFACTPOWER
+								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ARTIFACTPOWER and quest.sort or CONSTANTS.SORT_ORDER.ARTIFACTPOWER
 							else
-								quest.sort = quest.sort > SORT_ORDER.RESOURCES and quest.sort or SORT_ORDER.RESOURCES
+								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.RESOURCES and quest.sort or CONSTANTS.SORT_ORDER.RESOURCES
 							end
 							
 						end
@@ -914,36 +815,36 @@ local RetrieveWorldQuests = function(mapId)
 
 					local questType = {}
 					-- quest type filters
-					if quest.worldQuestType == 4 then
-						if C("showPetBattle") or (C("alwaysShowPetBattleFamilyFamiliar") and FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
+					if quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.PETBATTLE then
+						if C("showPetBattle") or (C("alwaysShowPetBattleFamilyFamiliar") and CONSTANTS.FAMILY_FAMILIAR_QUEST_IDS[quest.questId] ~= nil) then
 							quest.hide = false
 						else
 							quest.hide = true
 						end
-						quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(expansion == "BFA" and 12936 or 10876, quest.questId)
-					elseif quest.worldQuestType == 1 then
+						quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(expansion == CONSTANTS.EXPANSIONS.BFA and 12936 or 10876, quest.questId)
+					elseif quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.PROFESSION then
 						if C("showProfession") then
 
 							if quest.tagId == 119 then
-								questType[#questType+1] = QUEST_TYPES.HERBALISM
+								questType[#questType+1] = CONSTANTS.QUEST_TYPES.HERBALISM
 								if C("showProfessionHerbalism")	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 120 then
-								questType[#questType+1] = QUEST_TYPES.MINING
+								questType[#questType+1] = CONSTANTS.QUEST_TYPES.MINING
 								if C("showProfessionMining") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 130 then
-								questType[#questType+1] = QUEST_TYPES.FISHING
+								questType[#questType+1] = CONSTANTS.QUEST_TYPES.FISHING
 								quest.isMissingAchievementCriteria = BWQ:IsQuestAchievementCriteriaMissing(10598, quest.questId)
 								if C("showProfessionFishing") then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 124 then
-								questType[#questType+1] = QUEST_TYPES.SKINNING
+								questType[#questType+1] = CONSTANTS.QUEST_TYPES.SKINNING
 								if C("showProfessionSkinning") then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 118 then 	if C("showProfessionAlchemy") 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 129 then	if C("showProfessionArchaeology") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 118 then 	if C("showProfessionAlchemy") 			then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 129 then	if C("showProfessionArchaeology") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 116 then 	if C("showProfessionBlacksmithing") 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 131 then 	if C("showProfessionCooking") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 131 then 	if C("showProfessionCooking") 			then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 123 then 	if C("showProfessionEnchanting") 		then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 122 then 	if C("showProfessionEngineering") 	then quest.hide = false else quest.hide = true end
-							elseif quest.tagId == 126 then 	if C("showProfessionInscription") 	then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 122 then 	if C("showProfessionEngineering") 		then quest.hide = false else quest.hide = true end
+							elseif quest.tagId == 126 then 	if C("showProfessionInscription") 		then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 125 then 	if C("showProfessionJewelcrafting") 	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 117 then 	if C("showProfessionLeatherworking") 	then quest.hide = false else quest.hide = true end
 							elseif quest.tagId == 121 then 	if C("showProfessionTailoring") 		then quest.hide = false else quest.hide = true end
@@ -951,8 +852,8 @@ local RetrieveWorldQuests = function(mapId)
 						else
 							quest.hide = true
 						end
-					elseif not C("showPvP") and quest.worldQuestType == 3 then quest.hide = true
-					elseif not C("showDungeon") and quest.worldQuestType == 6 then quest.hide = true
+					elseif not C("showPvP") and quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.PVP then quest.hide = true
+					elseif not C("showDungeon") and quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.DUNGEON then quest.hide = true
 					end
 
 					-- only show quest that are blue or above quality
@@ -982,25 +883,25 @@ local RetrieveWorldQuests = function(mapId)
 						(C("alwaysShowWavebladeAnkoan") and quest.factionId == 2400) or
 						(C("alwaysShowRustboltResistance") and quest.factionId == 2391) or
 						-- legion
-						(C("alwaysShowCourtOfFarondis") 		and (mapId == 630 or mapId == 790)) or
-						(C("alwaysShowDreamweavers") 		and mapId == 641) or
-						(C("alwaysShowHighmountainTribe") 	and mapId == 650) or
-						(C("alwaysShowNightfallen") 			and mapId == 680) or
-						(C("alwaysShowWardens") 				and quest.factionId == 1894) or
-						(C("alwaysShowValarjar") 			and mapId == 634) or
-						(C("alwaysShowArmiesOfLegionfall") 	and mapId == 646) or
-						(C("alwaysShowArmyOfTheLight") 		and quest.factionId == 2165) or
-						(C("alwaysShowArgussianReach") 		and quest.factionId == 2170) then
+						(C("alwaysShowCourtOfFarondis") and (mapId == 630 or mapId == 790)) or
+						(C("alwaysShowDreamweavers") and mapId == 641) or
+						(C("alwaysShowHighmountainTribe") and mapId == 650) or
+						(C("alwaysShowNightfallen") and mapId == 680) or
+						(C("alwaysShowWardens") and quest.factionId == 1894) or
+						(C("alwaysShowValarjar") and mapId == 634) or
+						(C("alwaysShowArmiesOfLegionfall") and mapId == 646) or
+						(C("alwaysShowArmyOfTheLight") and quest.factionId == 2165) or
+						(C("alwaysShowArgussianReach") and quest.factionId == 2170) then
 
 						-- pet battle override
-						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == 4 then
+						if C("hidePetBattleBountyQuests") and not C("showPetBattle") and quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.PETBATTLE then
 							quest.hide = true
 						else
 							quest.hide = false
 						end
 					end
 					-- don't filter epic quests based on setting
-					if C("alwaysShowEpicQuests") and (quest.quality == 2 or quest.worldQuestType == 8) then quest.hide = false end
+					if C("alwaysShowEpicQuests") and (quest.quality == 2 or quest.worldQuestType == CONSTANTS.WORLD_QUEST_TYPES.RAID) then quest.hide = false end
 
 					MAP_ZONES[expansion][mapId].quests[questId] = quest
 
@@ -1009,49 +910,49 @@ local RetrieveWorldQuests = function(mapId)
 
 						if rewardType then
 							for _, rtype in next, rewardType do
-								if rtype == REWARD_TYPES.ARTIFACTPOWER and quest.reward.azeriteAmount then
+								if rtype == CONSTANTS.REWARD_TYPES.ARTIFACTPOWER and quest.reward.azeriteAmount then
 									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.azeriteAmount or 0) end
-								if rtype == REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
+								if rtype == CONSTANTS.REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
 									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount end
-								if rtype == REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
+								if rtype == CONSTANTS.REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
 									BWQ.totalWarResources = BWQ.totalWarResources + quest.reward.warResourceAmount end
-								if rtype == REWARD_TYPES.SERVICE_MEDALS and quest.reward.serviceMedalAmount then
+								if rtype == CONSTANTS.REWARD_TYPES.SERVICE_MEDALS and quest.reward.serviceMedalAmount then
 									BWQ.totalServiceMedals = BWQ.totalServiceMedals + quest.reward.serviceMedalAmount end
-								if rtype == REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
+								if rtype == CONSTANTS.REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
 									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
-								if rtype == REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
+								if rtype == CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
 									BWQ.totalLegionfallSupplies = BWQ.totalLegionfallSupplies + quest.reward.legionfallSuppliesAmount end
-								if rtype == REWARD_TYPES.HONOR and quest.reward.honor then
+								if rtype == CONSTANTS.REWARD_TYPES.HONOR and quest.reward.honor then
 									BWQ.totalHonor = BWQ.totalHonor + quest.reward.honor end
-								if rtype == REWARD_TYPES.MONEY and quest.reward.money then
+								if rtype == CONSTANTS.REWARD_TYPES.MONEY and quest.reward.money then
 									BWQ.totalGold = BWQ.totalGold + quest.reward.money end
-								if rtype == REWARD_TYPES.BLOODOFSARGERAS and quest.reward.itemQuantity then
+								if rtype == CONSTANTS.REWARD_TYPES.BLOODOFSARGERAS and quest.reward.itemQuantity then
 									BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity end
-								if rtype == REWARD_TYPES.GEAR then
+								if rtype == CONSTANTS.REWARD_TYPES.GEAR then
 									BWQ.totalGear = BWQ.totalGear + 1 end
-								if rtype == REWARD_TYPES.MARK_OF_HONOR then
+								if rtype == CONSTANTS.REWARD_TYPES.MARK_OF_HONOR then
 									BWQ.totalMarkOfHonor = BWQ.totalMarkOfHonor + quest.reward.itemQuantity end
-								if rtype == REWARD_TYPES.PRISMATICMANAPEARL then
+								if rtype == CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL then
 									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount end
 									
 							end
 						end
 						if questType then
 							for _, qtype in next, questType do
-								if qtype == QUEST_TYPES.HERBALISM then
+								if qtype == CONSTANTS.QUEST_TYPES.HERBALISM then
 									BWQ.totalHerbalism = BWQ.totalHerbalism + 1 end
-								if qtype == QUEST_TYPES.MINING then
+								if qtype == CONSTANTS.QUEST_TYPES.MINING then
 									BWQ.totalMining = BWQ.totalMining + 1 end
-								if qtype == QUEST_TYPES.FISHING then
+								if qtype == CONSTANTS.QUEST_TYPES.FISHING then
 									BWQ.totalFishing = BWQ.totalFishing + 1 end
-								if qtype == QUEST_TYPES.SKINNING then
+								if qtype == CONSTANTS.QUEST_TYPES.SKINNING then
 									BWQ.totalSkinning = BWQ.totalSkinning + 1 end
 							end
 						end
 					end
 				end
 			end
-			end
+		end
 
 
 		if C("sortByTimeRemaining") then
@@ -1069,7 +970,7 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
-	if expansion == "SHADOWLANDS" then -- TODO
+	if expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then -- TODO: get map id for retrieving bounties
 		BWQ.bountyDisplay:Hide()
 		for i, item in pairs(BWQ.bountyCache) do
 			item.button:Hide()
@@ -1077,7 +978,7 @@ function BWQ:UpdateBountyData()
 		return
 	end
 
-	bounties = GetBountiesForMapID(expansion == "BFA" and MAPID_KULTIRAS or 627)
+	bounties = GetBountiesForMapID(expansion == CONSTANTS.EXPANSIONS.BFA and CONSTANTS.MAPID_KUL_TIRAS or CONSTANTS.MAPID_DALARAN_BROKEN_ISLES)
 	if bounties == nil then
 		BWQ.bountyDisplay:Hide()
 		return
@@ -1177,52 +1078,8 @@ function BWQ:ShowBountyTooltip(button, questId)
 	end
 end
 
+
 -- --- PARAGON REWARDS --- --
-local factions = {
-	legion = {
-		order = { 1883, 1948, 1900, 1828, 1894, 1859, 2045, 2165, 2170 },
-		[1883] = "inv_legion_faction_dreamweavers", -- valsharah
-		[1948] = "inv_legion_faction_valarjar", -- stormheim
-		[1900] = "inv_legion_faction_courtoffarnodis", -- aszuna
-		[1828] = "inv_legion_faction_hightmountaintribes", -- highmountain
-		[1894] = "inv_legion_faction_warden", -- wardens
-		[1859] = "inv_legion_faction_nightfallen", -- suramar
-		[2045] = "achievement_faction_legionfall", -- broken isles
-		[2165] = "achievement_admiral_of_the_light", -- army of light
-		[2170] = "achievement_master_of_argussian_reach", -- argussian reach
-	},
-	bfahorde = {
-		order = { 2103, 2156, 2158, 2157, 2163, 2164, 2373, 2391 },
-		[2103] = "inv__faction_zandalariempire", -- zandalari
-		[2156] = "inv__faction_talanjisexpedition", -- talanji
-		[2157] = "inv__faction_hordewareffort", -- honorbound
-		[2158] = "inv__faction_voldunai", -- voldunai
-		[2163] = "inv__faction_tortollanseekers", -- tortollan
-		[2164] = "inv__faction_championsofazeroth", -- coa
-		[2373] = "inv__faction_unshackled", -- unshackled
-		[2391] = "inv__faction_rustboltresistance", -- rustbolt resistance
-	},
-	bfaalliance = {
-		order = { 2160, 2161, 2162, 2159, 2163, 2164, 2400, 2391 },
-		[2159] = "inv__faction_alliancewareffort", -- 7th legion
-		[2161] = "inv__faction_orderofembers", -- order of embers
-		[2160] = "inv__faction_proudmooreadmiralty", -- proudmoore admiralty
-		[2162] = "inv__faction_stormswake", -- storms wake
-		[2163] = "inv__faction_tortollanseekers", -- tortollan
-		[2164] = "inv__faction_championsofazeroth", -- coa
-		[2400] = "inv_faction_akoan", -- waveblade ankoan
-		[2391] = "inv_faction_rustbolt", -- rustbolt resistance
-	},
-	shadowlands = {
-		order = { 2407, 2410, 2413, 2465 },
-		[2407] = "ui_sigil_kyrian", -- ascended
-		[2410] = "inv_shoulder_mail_maldraxxus_d_01", -- undying army
-		[2413] = "inv_cape_special_revendreth_d_01", -- court of harvesters
-		-- [2439] = "", -- avowed
-		[2465] = "inv_wand_1h_ardenweald_d_01", -- wild hunt
-	}
-	
-}
 BWQ.factionFramePool = {
 	rows = {},
 	bars = {}
@@ -1236,12 +1093,12 @@ function BWQ:UpdateParagonData()
 	local rowIndex = 0
 	
 	local reps
-	if expansion == "SHADOWLANDS" then 
-		reps = factions.shadowlands
+	if expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then 
+		reps = CONSTANTS.PARAGON_FACTIONS.shadowlands
 	elseif
-		expansion == "BFA" then reps = isHorde and factions.bfahorde or factions.bfaalliance
-	else 
-		reps = factions.legion
+		expansion == CONSTANTS.EXPANSIONS.BFA then reps = isHorde and CONSTANTS.PARAGON_FACTIONS.bfahorde or CONSTANTS.PARAGON_FACTIONS.bfaalliance
+	else
+		reps = CONSTANTS.PARAGON_FACTIONS.legion
 	end
 
 	local row
@@ -1492,9 +1349,9 @@ function BWQ:SwitchExpansion(expac)
 		BWQcfgPerCharacter["expansion"] = expac
 	end
 
-	BWQ.buttonShadowlands:SetAlpha(expac == "SHADOWLANDS" and 1 or 0.4)
-	BWQ.buttonBFA:SetAlpha(expac == "BFA" and 1 or 0.4)
-	BWQ.buttonLegion:SetAlpha(expac == "LEGION" and 1 or 0.4)
+	BWQ.buttonShadowlands:SetAlpha(expac == CONSTANTS.EXPANSIONS.SHADOWLANDS and 1 or 0.4)
+	BWQ.buttonBFA:SetAlpha(expac == CONSTANTS.EXPANSIONS.BFA and 1 or 0.4)
+	BWQ.buttonLegion:SetAlpha(expac == CONSTANTS.EXPANSIONS.LEGION and 1 or 0.4)
 
 	BWQ:HideRowsOfInactiveExpansions()
 	hasUnlockedWorldQuests = false
@@ -1561,7 +1418,7 @@ function BWQ:UpdateBlock()
 			local faction = MAP_ZONES[expansion][mapId].faction
 			local zoneText = MAP_ZONES[expansion][mapId].name
 			if faction then
-				local factionIcon = faction == FACTION_HORDE and "Interface\\Icons\\inv_misc_tournaments_banner_orc" or "Interface\\Icons\\inv_misc_tournaments_banner_human"
+				local factionIcon = faction == CONSTANTS.FACTIONS.HORDE and "Interface\\Icons\\inv_misc_tournaments_banner_orc" or "Interface\\Icons\\inv_misc_tournaments_banner_human"
 				zoneText = ("%2$s   |T%1$s:12:12|t"):format(factionIcon, zoneText)
 			end
 			zoneSep.fs:SetJustifyH("LEFT")
@@ -1767,8 +1624,8 @@ function BWQ:UpdateBlock()
 
 			-- if button.quest.tagId == 136 or button.quest.tagId == 111 or button.quest.tagId == 112 then
 			--button.icon:SetTexCoord(.81, .84, .68, .79) -- skull tex coords
-			if WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId] then
-				button.icon:SetAtlas(WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId], true)
+			if CONSTANTS.WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId] then
+				button.icon:SetAtlas(CONSTANTS.WORLD_QUEST_ICONS_BY_TAG_ID[button.quest.tagId], true)
 				button.icon:SetAlpha(1)
 			else
 				button.icon:SetAlpha(0)

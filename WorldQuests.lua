@@ -794,6 +794,8 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL
 								quest.reward.prismaticManapearlAmount = currency.amount
 								if C("showPrismaticManapearl") then quest.hide = false end
+							else 
+								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
 							end
 							quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
@@ -806,7 +808,10 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 
-					if not hasReward then needsRefresh = true end -- in most cases no reward means api return incomplete data
+					if DEBUG and not hasReward and not HaveQuestData(quest.questId) then
+						print(string.format("[BWQ] Quest with no reward found: ID %s (%s)", quest.questId, quest.title))
+					end
+					if not hasReward then needsRefresh = true end -- in most cases no reward means api returned incomplete data
 					
 					for _, bounty in ipairs(bounties) do
 						if IsQuestCriteriaForBounty(quest.questId, bounty.questID) then

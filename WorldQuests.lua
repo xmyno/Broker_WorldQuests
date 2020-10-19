@@ -30,14 +30,15 @@ local       GetBestMapForUnit,       GetMapInfo
 local       IsWarModeDesired
 	= C_PvP.IsWarModeDesired
 
-local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
-	= GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
+local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
+	= GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
 
 local REPUTATION
 	= REPUTATION
 
 local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
+local DEBUG = false
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 
@@ -605,8 +606,8 @@ local RetrieveWorldQuests = function(mapId)
 		MAP_ZONES[expansion][mapId].questsSort = {}
 
 		local timeLeft, questTagInfo, title, factionId
-		for i = 1, #questList do
-			if questList[i].mapID == mapId then 
+		for i, q in ipairs(questList) do
+				if HaveQuestData(q.questId) and q.mapID == mapId then 
 				--[[
 					questTagInfo = {
 						tagId = 116
@@ -629,11 +630,11 @@ local RetrieveWorldQuests = function(mapId)
 					}
 				]]
 
-				timeLeft = GetQuestTimeLeftMinutes(questList[i].questId) or 0
-				questTagInfo = GetQuestTagInfo(questList[i].questId)
+				timeLeft = GetQuestTimeLeftMinutes(q.questId) or 0
+				questTagInfo = GetQuestTagInfo(q.questId)
 
 				if questTagInfo and questTagInfo.worldQuestType then
-					local questId = questList[i].questId
+					local questId = q.questId
 					table.insert(MAP_ZONES[expansion][mapId].questsSort, questId)
 					local quest = MAP_ZONES[expansion][mapId].quests[questId] or {}
 
@@ -652,9 +653,9 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- GetQuestsForPlayerByMapID fields
 					quest.questId = questId
-					quest.numObjectives = questList[i].numObjectives
-					quest.xFlight = questList[i].x
-					quest.yFlight = questList[i].y
+					quest.numObjectives = q.numObjectives
+					quest.xFlight = q.x
+					quest.yFlight = q.y
 
 					-- GetQuestTagInfo fields
 					quest.tagId = questTagInfo.tagId
@@ -662,7 +663,6 @@ local RetrieveWorldQuests = function(mapId)
 					quest.worldQuestType = questTagInfo.worldQuestType
 					quest.quality = questTagInfo.quality
 					quest.isElite = questTagInfo.isElite
-					--quest.tradeskillLineIndex = tradeskillLineIndex
 
 					title, factionId = GetQuestInfoByQuestID(quest.questId)
 					quest.title = title
@@ -674,10 +674,10 @@ local RetrieveWorldQuests = function(mapId)
 					quest.bounties = {}
 
 					quest.reward = {}
-					-- item reward
-					local hasReward = false
-
 					local rewardType = {}
+					local hasReward = false
+					
+					-- item reward
 					if GetNumQuestLogRewards(quest.questId) > 0 then
 						local itemName, itemTexture, quantity, quality, isUsable, itemId = GetQuestLogRewardInfo(1, quest.questId)
 						if itemName then
@@ -707,6 +707,7 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showItems") and C("showMarkOfHonor") then quest.hide = false end
 							else
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
 								if C("showItems") and C("showOtherItems") then quest.hide = false end
 							end
 						end
@@ -738,11 +739,9 @@ local RetrieveWorldQuests = function(mapId)
 					local numQuestCurrencies = GetNumQuestLogRewardCurrencies(quest.questId)
 					quest.reward.currencies = {}
 					for i = 1, numQuestCurrencies do
-
 						local name, texture, numItems, currencyId = GetQuestLogRewardCurrencyInfo(i, quest.questId)
 						if name then
 							hasReward = true
-							
 							local currency = {}
 							if CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
 								currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
@@ -759,9 +758,11 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showArtifactPower") then quest.hide = false end
 							elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
 								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
 								if C("showSLReputation") then quest.hide = false end
 							elseif CONSTANTS.BFA_REPUTATION_CURRENCY_IDS[currencyId] then
 								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
 								if C("showBFAReputation") then quest.hide = false end
 							elseif currencyId == 1560 then -- war resources
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAR_RESOURCES
@@ -935,7 +936,6 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalMarkOfHonor = BWQ.totalMarkOfHonor + quest.reward.itemQuantity end
 								if rtype == CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL then
 									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount end
-									
 							end
 						end
 						if questType then
@@ -954,7 +954,6 @@ local RetrieveWorldQuests = function(mapId)
 				end
 			end
 		end
-
 
 		if C("sortByTimeRemaining") then
 			table.sort(MAP_ZONES[expansion][mapId].questsSort, function(a, b) return MAP_ZONES[expansion][mapId].quests[a].timeLeft < MAP_ZONES[expansion][mapId].quests[b].timeLeft end)

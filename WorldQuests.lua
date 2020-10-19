@@ -658,7 +658,7 @@ local RetrieveWorldQuests = function(mapId)
 					quest.yFlight = q.y
 
 					-- GetQuestTagInfo fields
-					quest.tagId = questTagInfo.tagId
+					quest.tagId = questTagInfo.tagID
 					quest.tagName = questTagInfo.tagName
 					quest.worldQuestType = questTagInfo.worldQuestType
 					quest.quality = questTagInfo.quality

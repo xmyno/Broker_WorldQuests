@@ -1093,6 +1093,47 @@ BWQ.factionFramePool = {
 	bars = {}
 }
 BWQ.factionDisplay = CreateFrame("Frame", nil, BWQ)
+
+local paragonFactions
+local factionIncreaseString1 = FACTION_STANDING_INCREASED:gsub("%%d", "([0-9]+)"):gsub("%%s", "(.*)")
+local factionIncreaseString2 = FACTION_STANDING_INCREASED_ACH_BONUS:gsub("%%d", "([0-9]+)"):gsub("%%s", "(.*)"):gsub(" %(%+.*%)" ,"")
+local factionIncreaseString3 = FACTION_STANDING_INCREASED_GENERIC:gsub("%%s", "(.*)"):gsub(" %(%+.*%)" ,"")
+
+function BWQ:SetParagonFactionsByActiveExpansion()
+	if expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then 
+		paragonFactions = CONSTANTS.PARAGON_FACTIONS.shadowlands
+	elseif
+		expansion == CONSTANTS.EXPANSIONS.BFA then paragonFactions = isHorde and CONSTANTS.PARAGON_FACTIONS.bfahorde or CONSTANTS.PARAGON_FACTIONS.bfaalliance
+	else
+		paragonFactions = CONSTANTS.PARAGON_FACTIONS.legion
+	end
+end
+BWQ:SetParagonFactionsByActiveExpansion()
+
+function BWQ:OnFactionUpdate(msg)
+	if C("hideFactionParagonBars") then return end
+
+	msg = msg:gsub(" %(%+.*%)" ,"")
+	local faction = msg:match(factionIncreaseString1)
+	if not faction then
+		faction = msg:match(factionIncreaseString2)
+		if not faction then
+			faction = msg:match(factionIncreaseString3)
+			if not faction then
+				return
+			end
+		end
+	end
+
+	local name, factionId
+	for i = 1, GetNumFactions() do
+		name, _, _, _, _, _, _, _, _, _, _, _, _, factionId = GetFactionInfo(i)
+		if faction == name and paragonFactions[factionId] then
+			BWQ:UpdateParagonData()
+		end
+	end
+end
+
 function BWQ:UpdateParagonData()
 	if C("hideFactionParagonBars") then return end
 
@@ -1100,17 +1141,8 @@ function BWQ:UpdateParagonData()
 	local maxWidth = 0
 	local rowIndex = 0
 	
-	local reps
-	if expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then 
-		reps = CONSTANTS.PARAGON_FACTIONS.shadowlands
-	elseif
-		expansion == CONSTANTS.EXPANSIONS.BFA then reps = isHorde and CONSTANTS.PARAGON_FACTIONS.bfahorde or CONSTANTS.PARAGON_FACTIONS.bfaalliance
-	else
-		reps = CONSTANTS.PARAGON_FACTIONS.legion
-	end
-
 	local row
-	for _, factionId in next, reps.order do
+	for _, factionId in next, paragonFactions.order do
 		if IsFactionParagon(factionId) then
 			
 			local factionFrame
@@ -1202,10 +1234,10 @@ function BWQ:UpdateParagonData()
 end
 function BWQ:UpdateFactionDisplayVisible()
 	if not C("hideFactionParagonBars") then
-		BWQ:RegisterEvent("UPDATE_FACTION")
+		BWQ:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")
 		BWQ.factionDisplay:Show()
 	else
-		BWQ:UnregisterEvent("UPDATE_FACTION")
+		BWQ:UnregisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")
 		BWQ.factionDisplay:Hide()
 	end
 end
@@ -1356,6 +1388,7 @@ function BWQ:SwitchExpansion(expac)
 	else
 		BWQcfgPerCharacter["expansion"] = expac
 	end
+	BWQ:SetParagonFactionsByActiveExpansion()
 
 	BWQ.buttonShadowlands:SetAlpha(expac == CONSTANTS.EXPANSIONS.SHADOWLANDS and 1 or 0.4)
 	BWQ.buttonBFA:SetAlpha(expac == CONSTANTS.EXPANSIONS.BFA and 1 or 0.4)
@@ -2039,8 +2072,8 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		skipNextUpdate = false
 	elseif event == "QUEST_WATCH_LIST_CHANGED" then
 		BWQ:UpdateBlock()
-	elseif event == "UPDATE_FACTION" then
-		BWQ:UpdateBlock()
+	elseif event == "CHAT_MSG_COMBAT_FACTION_CHANGE" then
+		BWQ:OnFactionUpdate(arg1)
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		BWQ.slider:SetScript("OnLeave", Block_OnLeave )
 		BWQ.slider:SetScript("OnValueChanged", function(self, value)
@@ -2099,7 +2132,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 		BWQ:RegisterEvent("QUEST_LOG_UPDATE")
 		BWQ:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 		if (not C("hideFactionParagonBars")) then
-			BWQ:RegisterEvent("UPDATE_FACTION")
+			BWQ:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")
 		end
 		if TomTom then
 			BWQ:RegisterEvent("PLAYER_LOGOUT")

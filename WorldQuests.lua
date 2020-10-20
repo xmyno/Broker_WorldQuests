@@ -982,6 +982,9 @@ function BWQ:UpdateBountyData()
 		end
 		return
 	end
+	for i, item in pairs(BWQ.bountyCache) do
+		item.button:Show()
+	end
 
 	bounties = GetBountiesForMapID(expansion == CONSTANTS.EXPANSIONS.BFA and CONSTANTS.MAPID_KUL_TIRAS or CONSTANTS.MAPID_DALARAN_BROKEN_ISLES)
 	if bounties == nil then

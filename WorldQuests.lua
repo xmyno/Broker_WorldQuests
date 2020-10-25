@@ -57,6 +57,8 @@ local MAP_ZONES = {
 		[942] = { id = 942, name = GetMapInfo(942).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Stormsong Valley
 		[896] = { id = 896, name = GetMapInfo(896).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Drustvar
 		[1161] = { id = 1161, name = GetMapInfo(1161).name, faction = CONSTANTS.FACTIONS.ALLIANCE, quests = {}, buttons = {}, },  -- Boralus
+		[1527] = { id = 1527, name = GetMapInfo(1527).name, quests = {}, buttons = {}, },  -- Uldum 8.3
+		[1530] = { id = 1530, name = GetMapInfo(1530).name, quests = {}, buttons = {}, },  -- Valley of Eternal Blossoms 8.3
 		[1355] = { id = 1355, name = GetMapInfo(1355).name, quests = {}, buttons = {}, },  -- Nazjatar 8.2
 		[1462] = { id = 1462, name = GetMapInfo(1462).name, quests = {}, buttons = {}, },  -- Mechagon 8.2
 		[14] = { id = 14, name = GetMapInfo(14).name,  quests = {}, buttons = {}, },  -- Arathi
@@ -81,7 +83,7 @@ local MAP_ZONES_SORT = {
 		1525, 1533, 1536, 1565
 	},
 	[CONSTANTS.EXPANSIONS.BFA] = {
-		1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
+		1530, 1527, 1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
 	},
 	[CONSTANTS.EXPANSIONS.LEGION] = {
 		630, 790, 641, 650, 634, 680, 627, 646, 830, 882, 885

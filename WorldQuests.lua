@@ -1200,7 +1200,7 @@ function BWQ:UpdateParagonData()
 			factionFrame.bg:Show()
 			factionFrame.bar:Show()
 			
-			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", reps[factionId]))
+			factionFrame.name:SetText(string.format("|TInterface\\Icons\\%1$s:12:12|t", paragonFactions[factionId]))
 			
 			maxWidth = maxWidth > row:GetWidth() and maxWidth or row:GetWidth()
 			i = i + 1
@@ -1432,21 +1432,22 @@ end
 
 function BWQ:UpdateBlock()
 	offsetTop = -35 -- initial padding from top
-	BWQ:UpdateInfoPanel()
 	
 	if not BWQ:WorldQuestsUnlocked() then
 		BWQ:SetHeight(offsetTop * -1 + 20 + 30) -- padding + errorFS height
 		BWQ:SetWidth(math.max(BWQ.factionDisplay:GetWidth(), BWQ.errorFS:GetWidth()) + 20)
 		return
 	end
-	BWQ:UpdateQuestData()
 
+	BWQ:UpdateQuestData()
 	-- refreshing is limited to 3 runs and then gets forced to render the block
 	if needsRefresh and updateTries < 3 then
 		-- skip updating the block, received data was incomplete
 		needsRefresh = false
 		return
 	end
+
+	BWQ:UpdateInfoPanel()
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do

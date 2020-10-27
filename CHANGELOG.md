@@ -1,3 +1,13 @@
+### 9.0.62
+
+* Added BfA assault zones
+* Fixed paragon faction bar performance issue
+* Fixed some filters
+
+### 9.0.61
+
+* Bug fixes for Shadowlands pre-patch
+
 ### 8.1.58
 
 * Fixed incorrect questIds for Battle on Zandalar and Kul Tiras

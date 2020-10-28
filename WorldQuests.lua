@@ -988,8 +988,8 @@ function BWQ:UpdateBountyData()
 		item.button:Show()
 	end
 
-	bounties = GetBountiesForMapID(expansion == CONSTANTS.EXPANSIONS.BFA and CONSTANTS.MAPID_KUL_TIRAS or CONSTANTS.MAPID_DALARAN_BROKEN_ISLES)
-	if bounties == nil then
+	bounties = GetBountiesForMapID(expansion == CONSTANTS.EXPANSIONS.BFA and CONSTANTS.MAPID_KUL_TIRAS or CONSTANTS.MAPID_DALARAN_BROKEN_ISLES) or {}
+	if #bounties == 0 then
 		BWQ.bountyDisplay:Hide()
 		return
 	end

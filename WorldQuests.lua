@@ -1433,6 +1433,7 @@ end
 function BWQ:UpdateBlock()
 	offsetTop = -35 -- initial padding from top
 	
+	BWQ:UpdateInfoPanel()
 	if not BWQ:WorldQuestsUnlocked() then
 		BWQ:SetHeight(offsetTop * -1 + 20 + 30) -- padding + errorFS height
 		BWQ:SetWidth(math.max(BWQ.factionDisplay:GetWidth(), BWQ.errorFS:GetWidth()) + 20)
@@ -1447,7 +1448,7 @@ function BWQ:UpdateBlock()
 		return
 	end
 
-	BWQ:UpdateInfoPanel()
+	
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do

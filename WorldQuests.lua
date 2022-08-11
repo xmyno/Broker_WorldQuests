@@ -138,6 +138,7 @@ local defaultConfig = {
 	showLowGold = true,
 	showHighGold = true,
 	showWarResources = true,
+	showAnima = true,
 	showResources = true,
 	showLegionfallSupplies = true,
 	showNethershards = true,
@@ -707,7 +708,7 @@ local RetrieveWorldQuests = function(mapId)
 -- Shadowlands
 							elseif C_Soulbinds.IsItemConduitByItemInfo(itemId) == true then
 								if C("showConduits") then quest.hide = false end
-							elseif IsAnimaItem(itemId) == true then
+							elseif C_Item.IsAnimaItemByID(itemId) == true then
 								if C("showAnima") then quest.hide = false end
 -- Shadow End
 							elseif itemId == 137642 then
@@ -1864,14 +1865,14 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
 		{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "showWarResources" },
-				{ text = ("|T%s$s:16:16|t AnimaItem"):format("1417744"), check = "showAnima" },
-		{ text = "       Legion", submenu = {
-				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
-				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
-				{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
-				{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
-				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
-			}
+		{ text = ("|T%s$s:16:16|t  Anima Item"):format("3528288"), check = "showAnima" },
+		{ text = "      Legion", submenu = {
+							{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
+							{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
+							{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
+							{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
+							{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
+						}
 		},
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },

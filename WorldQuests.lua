@@ -38,7 +38,7 @@ local REPUTATION
 
 local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
-local DEBUG = false
+local DEBUG = true
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 
@@ -48,6 +48,7 @@ local MAP_ZONES = {
 		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
 		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
 		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
+		[1543] = { id = 1543, name = GetMapInfo(1543).name, quests = {}, buttons = {}, }, -- The Maw 9.0
 		[1970] = { id = 1970, name = GetMapInfo(1970).name, quests = {}, buttons = {}, }, -- Zereth Mortis 9.2
 	},
 	[CONSTANTS.EXPANSIONS.BFA] = {
@@ -81,7 +82,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
-		1525, 1533, 1536, 1565, 1970
+		1525, 1533, 1536, 1565, 1543, 1970
 	},
 	[CONSTANTS.EXPANSIONS.BFA] = {
 		1530, 1527, 1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
@@ -130,6 +131,7 @@ local defaultConfig = {
 		showGear = true,
 		showRelics = true,
 		showCraftingMaterials = true,
+		showConduits = true,
 		showMarkOfHonor = true,
 		showOtherItems = true,
 	showSLReputation = true,
@@ -139,6 +141,7 @@ local defaultConfig = {
 	showLowGold = true,
 	showHighGold = true,
 	showWarResources = true,
+	showAnima = true,
 	showResources = true,
 	showLegionfallSupplies = true,
 	showNethershards = true,
@@ -705,8 +708,13 @@ local RetrieveWorldQuests = function(mapId)
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.EQUIP and quest.sort or CONSTANTS.SORT_ORDER.EQUIP
 								quest.reward.realItemLevel = BWQ:GetItemLevelValueForQuestId(quest.questId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GEAR
-
 								if C("showItems") and C("showGear") then quest.hide = false end
+-- Shadowlands
+							elseif C_Soulbinds.IsItemConduitByItemInfo(itemId) == true then
+								if C("showConduits") then quest.hide = false end
+							elseif C_Item.IsAnimaItemByID(itemId) == true then
+								if C("showAnima") then quest.hide = false end
+-- Shadow End
 							elseif itemId == 137642 then
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MARK_OF_HONOR
@@ -804,6 +812,10 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES
 								quest.reward.cyphersOfTheFirstOnesAmount = currency.amount
 								if C("showCyphersOfTheFirstOnes") then quest.hide = false end
+							elseif currencyId == 1885 then -- grateful offering
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING
+								quest.reward.gratefulOfferingAmount = currency.amount
+								if C("ShowGratefulOffering") then quest.hide = false end
 							else 
 								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
 							end
@@ -954,6 +966,8 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount end
 								if rtype == CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES then
 									BWQ.totalCyphersOfTheFirstOnes = BWQ.totalCyphersOfTheFirstOnes + quest.reward.cyphersOfTheFirstOnesAmount end
+                if rtype == CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING then
+                  BWQ.totalGratefulOffering = BWQ.totalGratefulOffering + quest.reward.gratefulOfferingAmount end
 							end
 						end
 						if questType then
@@ -982,7 +996,6 @@ local RetrieveWorldQuests = function(mapId)
 		MAP_ZONES[expansion][mapId].numQuests = numQuests
 	end
 end
-
 
 -- --- BOUNTIES --- --
 BWQ.bountyCache = {}
@@ -1854,6 +1867,7 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Items"):format("Interface\\Minimap\\Tracking\\Banker"), check = "showItems", submenu = {
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "showGear" },
 				{ text = ("|T%s$s:16:16|t  Crafting Materials"):format("1417744"), check = "showCraftingMaterials" },
+				{ text = ("|T%s$s:16:16|t  Conduits"):format("1417744"), check = "showConduits" },
 				{ text = ("|T%1$s:16:16|t  Mark Of Honor"):format("Interface\\Icons\\ability_pvp_gladiatormedallion"), check = "showMarkOfHonor" },
 				{ text = "Other", check = "showOtherItems" },
 			}
@@ -1864,13 +1878,14 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
 		{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "showWarResources" },
-		{ text = "       Legion", submenu = {
-				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
-				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
-				{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
-				{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
-				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
-			}
+		{ text = ("|T%s$s:16:16|t  Anima Item"):format("3528288"), check = "showAnima" },
+		{ text = "      Legion", submenu = {
+							{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
+							{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
+							{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
+							{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
+							{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
+						}
 		},
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },

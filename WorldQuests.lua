@@ -48,6 +48,7 @@ local MAP_ZONES = {
 		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
 		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
 		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
+		[1970] = { id = 1970, name = GetMapInfo(1970).name, quests = {}, buttons = {}, }, -- Zereth Mortis 9.2
 	},
 	[CONSTANTS.EXPANSIONS.BFA] = {
 		[863] = { id = 863, name = GetMapInfo(863).name, faction = CONSTANTS.FACTIONS.HORDE, quests = {}, buttons = {}, },  -- Nazmir
@@ -80,7 +81,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
-		1525, 1533, 1536, 1565
+		1525, 1533, 1536, 1565, 1970
 	},
 	[CONSTANTS.EXPANSIONS.BFA] = {
 		1530, 1527, 1355, 1462, 62, 14, 863, 864, 862, 895, 942, 896, 1161
@@ -96,7 +97,7 @@ local defaultConfig = {
 	attachToWorldMap = false,
 	showOnClick = false,
 	usePerCharacterSettings = false,
-	expansion = CONSTANTS.EXPANSIONS.BFA, -- TODO: set to SHADOWLANDS on launch
+	expansion = CONSTANTS.EXPANSIONS.SHADOWLANDS,
 	enableClickToOpenMap = false,
 	enableTomTomWaypointsOnClick = true,
 	alwaysShowBountyQuests = true,
@@ -192,6 +193,7 @@ local defaultConfig = {
 		alwaysShowCourtofHarvesters = false,
 		alwaysShowAvowed = false,
 		alwaysShowWildHunt = false,
+		alwaysShowEnlightened = false,
 
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
@@ -876,6 +878,7 @@ local RetrieveWorldQuests = function(mapId)
 						(C("alwaysShowCourtofHarvesters") and quest.factionId == 2413) or
 						(C("alwaysShowAvowed") and quest.factionId == 2439) or
 						(C("alwaysShowWildHunt") and quest.factionId == 2465) or
+						(C("alwaysShowEnlightened") and quest.factionId == 2478) or
 						-- bfa
 						(C("alwaysShow7thLegion") and quest.factionId == 2159) or
 						(C("alwaysShowStormsWake") and quest.factionId == 2162) or
@@ -1896,6 +1899,7 @@ function BWQ:SetupConfigMenu()
 				{ text = "Court of Harvesters", check="alwaysShowCourtofHarvesters" },
 				{ text = "The Undying Army", check="alwaysShowUndyingArmy" },
 				{ text = "The Ascended", check="alwaysShowAscended" },
+				{ text = "The Enlightened", check="alwaysShowEnlightened" },
 			}
 		},
 		{ text = "       Battle for Azeroth", submenu = {

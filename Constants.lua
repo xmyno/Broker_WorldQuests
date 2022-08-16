@@ -110,7 +110,13 @@ CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
 	[1804] = true, -- The Ascended
 	[1805] = true, -- Undying Army
 	[1806] = true, -- Wild Hunt
-	[1807] = true, -- Court of Harvesters
+	[1807] = true, -- Court of Harvesters	
+	[1884] = true, -- avowed *** (no supplies chest) ***
+	[1887] = true, -- Court of Night *** (no supplies chest) ***
+	[1880] = true, -- Venari
+	[1907] = true, -- Death
+	[1997] = true, -- The Archivists
+	[1982] = true, -- The Enlightened
 	[1877] = true, -- XP
 }
 
@@ -300,12 +306,18 @@ CONSTANTS.PARAGON_FACTIONS = {
 		[2391] = "inv_faction_rustbolt", -- rustbolt resistance
 	},
 	shadowlands = {
-		order = { 2407, 2410, 2413, 2465 },
+		order = { 2407, 2410, 2413, 2465, 2432, 2470, 2472, 2478 },
 		[2407] = "ui_sigil_kyrian", -- ascended
 		[2410] = "inv_shoulder_mail_maldraxxus_d_01", -- undying army
 		[2413] = "inv_cape_special_revendreth_d_01", -- court of harvesters
-		-- [2439] = "", -- avowed
+
 		[2465] = "inv_wand_1h_ardenweald_d_01", -- wild hunt
+		[2439] = "6bf_blackrock_nova", -- avowed *** (no supplies chest) ***
+		[2464] = "inv_legion_cache_courtoffarnodis", -- Court of Night *** (no supplies chest) ***
+		[2432] = "item_venari_paragonchest_03", -- Venari
+		[2470] = "item_korthia_paragonchest_02", -- deathsadvance
+		[2472] = "inv_archaeology_80_witch_book", -- The Archivists' Codex
+		[2478] = "inv_misc_enlightenedbrokers_paragoncache01", -- TheEnlightened
 	},
 }
 

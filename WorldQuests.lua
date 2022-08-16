@@ -44,7 +44,7 @@ local isHorde = UnitFactionGroup("player") == "Horde"
 
 local MAP_ZONES = {
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
-		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, --Revendreth 9.0
+		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, -- Revendreth 9.0
 		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
 		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
 		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
@@ -200,6 +200,7 @@ local defaultConfig = {
 		alwaysShowCourtofHarvesters = false,
 		alwaysShowAvowed = false,
 		alwaysShowWildHunt = false,
+		alwaysShowDeathsAdvance = false,
 		alwaysShowEnlightened = false,
 
 	showPetBattle = true,
@@ -900,6 +901,7 @@ local RetrieveWorldQuests = function(mapId)
 						(C("alwaysShowCourtofHarvesters") and quest.factionId == 2413) or
 						(C("alwaysShowAvowed") and quest.factionId == 2439) or
 						(C("alwaysShowWildHunt") and quest.factionId == 2465) or
+						(C("alwaysShowDeathsAdvance") and quest.factionId == 2470) or
 						(C("alwaysShowEnlightened") and quest.factionId == 2478) or
 						-- bfa
 						(C("alwaysShow7thLegion") and quest.factionId == 2159) or
@@ -1932,6 +1934,7 @@ function BWQ:SetupConfigMenu()
 				{ text = "Court of Harvesters", check="alwaysShowCourtofHarvesters" },
 				{ text = "The Undying Army", check="alwaysShowUndyingArmy" },
 				{ text = "The Ascended", check="alwaysShowAscended" },
+				{ text = "Death's Advance", check="alwaysShowDeathsAdvance" },
 				{ text = "The Enlightened", check="alwaysShowEnlightened" },
 			}
 		},

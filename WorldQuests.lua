@@ -48,7 +48,7 @@ local MAP_ZONES = {
 		[1533] = { id = 1533, name = GetMapInfo(1533).name, quests = {}, buttons = {}, }, -- Bastion 9.0
 		[1536] = { id = 1536, name = GetMapInfo(1536).name, quests = {}, buttons = {}, }, -- Maldraxxus 9.0
 		[1565] = { id = 1565, name = GetMapInfo(1565).name, quests = {}, buttons = {}, }, -- Ardenwald 9.0
-		[1543] = { id = 1543, name = GetMapInfo(1543).name, quests = {}, buttons = {}, }, -- The Maw 9.0
+		[1543] = { id = 1543, name = GetMapInfo(1543).name, quests = {}, buttons = {}, }, -- The Maw 9.1
 		[1970] = { id = 1970, name = GetMapInfo(1970).name, quests = {}, buttons = {}, }, -- Zereth Mortis 9.2
 	},
 	[CONSTANTS.EXPANSIONS.BFA] = {

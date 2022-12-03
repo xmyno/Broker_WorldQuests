@@ -107,6 +107,12 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 	[1553] = true, -- azerite
 }
 
+CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
+	[2003] = true, -- Dragon Isles Supplies
+	[2108] = true, -- Maruuk Centaur
+	[2109] = true, -- Iskaara Tuskarr
+}
+
 CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
 	[1804] = true, -- The Ascended
 	[1805] = true, -- Undying Army

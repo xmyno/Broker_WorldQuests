@@ -801,6 +801,10 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARTIFACTPOWER
 								quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
 								if C("showArtifactPower") then quest.hide = false end
+							elseif CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS[currencyId] then
+								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+								--if C("showSLReputation") then quest.hide = false end					-- TODO:  Add this with other Dragonflight options
 							elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
 								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT

@@ -33,6 +33,9 @@ local       IsWarModeDesired
 local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
 	= GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
 
+local GetAchievementInfo
+	= GetAchievementInfo
+
 local REPUTATION
 	= REPUTATION
 
@@ -345,35 +348,41 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		hasUnlockedWorldQuests = (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT and UnitLevel("player") >= 68 and IsQuestFlaggedCompleted(66221))
-			or (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS and UnitLevel("player") >= 51 and IsQuestFlaggedCompleted(57559))
-			or (expansion == CONSTANTS.EXPANSIONS.BFA and UnitLevel("player") >= 50 and
-				(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
-				or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
-			or (expansion == CONSTANTS.EXPANSIONS.LEGION and UnitLevel("player") >= 45 and
-				(IsQuestFlaggedCompleted(43341) or IsQuestFlaggedCompleted(45727))) -- broken isles
+		if (CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
+			_, _, _, hasUnlockedWorldQuests = GetAchievementInfo(16326)
+			if not hasUnlockedWorldQuests then
+				hasUnlockedWorldQuests = UnitLevel("player") >= 68 and IsQuestFlaggedCompleted(66221)
+			end
+		else
+			hasUnlockedWorldQuests = (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS and UnitLevel("player") >= 51 and IsQuestFlaggedCompleted(57559))
+				or (expansion == CONSTANTS.EXPANSIONS.BFA and UnitLevel("player") >= 50 and
+					(IsQuestFlaggedCompleted(51916) or IsQuestFlaggedCompleted(52451) -- horde
+					or IsQuestFlaggedCompleted(51918) or IsQuestFlaggedCompleted(52450))) -- alliance
+				or (expansion == CONSTANTS.EXPANSIONS.LEGION and UnitLevel("player") >= 45 and
+					(IsQuestFlaggedCompleted(43341) or IsQuestFlaggedCompleted(45727))) -- broken isles
+		end
 	end
 
 	if not hasUnlockedWorldQuests then
 		if not BWQ.errorFS then CreateErrorFS() end
 
-		local level, quest
+		local level, quest, errorText
 		if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then
-			level = "68"
-			quest = "|cffffff00|Hquest:66221:-1|h[Moving On]|h|r"
+			errorText = "You need to unlock Dragonflight World Quests\non one of your characters."
 		elseif expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then
-			level = "51" -- TODO: can we somehow find out if we have a character that reached 60?
-			quest = "|cffffff00|Hquest:57559:-1|h[UNKNOWN TITLE]|h|r" -- TODO: find the corresponding Covenant lines
+			errorText = "You need to unlock Shadowlands World Quests\non one of your characters."
 		elseif expansion == CONSTANTS.EXPANSIONS.BFA then
 			level = "50"
 			quest = isHorde and "|cffffff00|Hquest:57559:-1|h[Uniting Zandalar]|h|r" or "|cffffff00|Hquest:51918:-1|h[Uniting Kul Tiras]|h|r"
+			errorText = ("You need to reach Level %s and complete the\nquest %s to unlock World Quests."):format(level, quest)
 		else -- legion
 			level = "45"
 			quest = "|cffffff00|Hquest:43341:-1|h[Uniting the Isles]|h|r"
+			errorText = ("You need to reach Level %s and complete the\nquest %s to unlock World Quests."):format(level, quest)
 		end
 
 		BWQ:SetErrorFSPosition(offsetTop)
-		BWQ.errorFS:SetText(("You need to reach Level %s and complete the\nquest %s to unlock World Quests."):format(level, quest))
+		BWQ.errorFS:SetText(errorText)
 		BWQ:SetSize(BWQ.errorFS:GetStringWidth() + 20, BWQ.errorFS:GetStringHeight() + 45)
 		BWQ.errorFS:Show()
 

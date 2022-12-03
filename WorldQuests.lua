@@ -349,7 +349,6 @@ local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
 		if (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
-			print("TEST");
 			_, _, _, hasUnlockedWorldQuests = GetAchievementInfo(16326)
 			if not hasUnlockedWorldQuests then
 				hasUnlockedWorldQuests = UnitLevel("player") >= 68 and IsQuestFlaggedCompleted(66221)

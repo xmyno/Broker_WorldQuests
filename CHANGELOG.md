@@ -1,4 +1,9 @@
+### 10.0.2.2
+
+* Add support for Bloody Tokens (Dragonflight PVP Currency)
+
 ### 10.0.2.1
+
 * Updates for Shadowlands compatibility
 * Initial Updates for Dragonflight compatibility
 

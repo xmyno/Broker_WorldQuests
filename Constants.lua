@@ -59,6 +59,7 @@ CONSTANTS.REWARD_TYPES = {
 	ANIMA_CONTAINER = 15,
 	GRATEFUL_OFFERING = 15,
 	CYPHERS_OF_THE_FIRST_ONES = 16,
+	BLOODY_TOKEN = 17,
 }
 
 CONSTANTS.QUEST_TYPES = {
@@ -104,7 +105,8 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 	[1342] = true, -- legionfall supplies
 	[1220] = true, -- order hall (legion)
 	[1560] = true, -- war resources (bfa)
-	[1553] = true, -- azerite
+	[1553] = true, -- azerite (bfa)
+	[2123] = true, -- Bloody Tokens (dragonflight)
 }
 
 CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {

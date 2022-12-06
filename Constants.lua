@@ -114,6 +114,7 @@ CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
 	[2108] = true, -- Maruuk Centaur
 	[2109] = true, -- Iskaara Tuskarr
 	[2031] = true, -- Dragonscale Expedition
+	[2106] = true, -- Valdrakken Accord
 }
 
 CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {

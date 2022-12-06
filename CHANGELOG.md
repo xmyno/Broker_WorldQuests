@@ -1,4 +1,8 @@
-### 10.0.2.2
+### 10.0.2.4
+
+* Add support for Valdrakken Accord (Dragonflight reputation currency)
+
+### 10.0.2.3
 
 * Add support for Bloody Tokens (Dragonflight PVP Currency)
 

@@ -1,3 +1,7 @@
+### 10.0.2.1
+* Updates for Shadowlands compatibility
+* Initial Updates for Dragonflight compatibility
+
 ### 9.0.63
 
 * Bug fixes

@@ -1,3 +1,16 @@
+### 10.0.2.5
+
+Changes below submitted by ntowle (github)
+* Broker options for Dragon Isles Supplies, Bloody Tokens, Polished Pet Charms
+* Filters for Dragon Isles Supplies, Bloody Tokens
+* Split DF reputation out
+* Options for DF reputation by faction
+* Total Polished Pet Charms available
+* Total Dragon Isles Supplies available
+* Reorganize menus to move old expansion options to submenus
+* Fix Grateful Offering checkbox
+* Fix Conduits icon
+
 ### 10.0.2.4
 
 * Add support for Valdrakken Accord (Dragonflight reputation currency)

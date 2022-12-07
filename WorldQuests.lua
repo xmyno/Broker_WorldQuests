@@ -1037,8 +1037,8 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES then
 									BWQ.totalCyphersOfTheFirstOnes = BWQ.totalCyphersOfTheFirstOnes + quest.reward.cyphersOfTheFirstOnesAmount
-                				elseif rtype == CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING then
-                  					BWQ.totalGratefulOffering = BWQ.totalGratefulOffering + quest.reward.gratefulOfferingAmount
+				 				elseif rtype == CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING then
+									BWQ.totalGratefulOffering = BWQ.totalGratefulOffering + quest.reward.gratefulOfferingAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.BLOODY_TOKENS then
 									BWQ.totalBloodyTokens = BWQ.totalBloodyTokens + quest.reward.bloodyTokensAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.DRAGON_ISLES_SUPPLIES then

@@ -59,7 +59,9 @@ CONSTANTS.REWARD_TYPES = {
 	ANIMA_CONTAINER = 15,
 	GRATEFUL_OFFERING = 15,
 	CYPHERS_OF_THE_FIRST_ONES = 16,
-	BLOODY_TOKEN = 17,
+	BLOODY_TOKENS = 17,
+	DRAGON_ISLES_SUPPLIES = 18,
+	POLISHED_PET_CHARM = 19,
 }
 
 CONSTANTS.QUEST_TYPES = {
@@ -97,7 +99,6 @@ CONSTANTS.WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[260] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
 }
 
-
 CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 	[1226] = true, -- nethershard
 	[1508] = true, -- argunite
@@ -110,7 +111,6 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 }
 
 CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
-	[2003] = true, -- Dragon Isles Supplies
 	[2108] = true, -- Maruuk Centaur
 	[2109] = true, -- Iskaara Tuskarr
 	[2031] = true, -- Dragonscale Expedition

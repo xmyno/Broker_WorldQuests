@@ -39,6 +39,7 @@ CONSTANTS.WORLD_QUEST_TYPES = {
 	RAID = 8,
 }
 
+-- The name here should match the currency name in game (verified via Wowhead).  Some currencies are singular, some are plural.
 CONSTANTS.REWARD_TYPES = {
 	IRRELEVANT = -1,
 	ARTIFACTPOWER = 0,
@@ -50,10 +51,10 @@ CONSTANTS.REWARD_TYPES = {
 	HONOR = 6, 
 	NETHERSHARD = 7, 
 	ARGUNITE = 8, 
-	WAKENING_ESSENCES = 9,
+	WAKENING_ESSENCE = 9,
 	WAR_RESOURCES = 10,
 	MARK_OF_HONOR = 11,
-	SERVICE_MEDALS = 12,
+	SERVICE_MEDAL = 12,
 	PRISMATIC_MANAPEARL = 13,
 	SOULBIND_CONDUIT = 14,
 	ANIMA_CONTAINER = 15,

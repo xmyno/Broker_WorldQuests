@@ -841,7 +841,7 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.warResourceAmount = currency.amount
 								if C("showWarResources") then quest.hide = false end
 							elseif currencyId == 1716 or currencyId == 1717 then -- service medals
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDALS
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDAL
 								quest.reward.serviceMedalAmount = currency.amount
 								if C("showBFAServiceMedals") then quest.hide = false end
 							elseif currencyId == 1220 then -- order hall resources
@@ -859,7 +859,7 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARGUNITE
 								if C("showArgunite") then quest.hide = false end
 							elseif currencyId == 1533 then
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCES
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCE
 								quest.reward.wakeningEssencesAmount = currency.amount
 								if C("showWakeningEssences") then quest.hide = false end
 							elseif currencyId == 1721 then -- prismatic manapearl
@@ -1013,11 +1013,11 @@ local RetrieveWorldQuests = function(mapId)
 							for _, rtype in next, rewardType do
 								if rtype == CONSTANTS.REWARD_TYPES.ARTIFACTPOWER and quest.reward.azeriteAmount then
 									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.azeriteAmount or 0)
-								elseif rtype == CONSTANTS.REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
+								elseif rtype == CONSTANTS.REWARD_TYPES.WAKENING_ESSENCE and quest.reward.wakeningEssencesAmount then
 									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
 									BWQ.totalWarResources = BWQ.totalWarResources + quest.reward.warResourceAmount
-								elseif rtype == CONSTANTS.REWARD_TYPES.SERVICE_MEDALS and quest.reward.serviceMedalAmount then
+								elseif rtype == CONSTANTS.REWARD_TYPES.SERVICE_MEDAL and quest.reward.serviceMedalAmount then
 									BWQ.totalServiceMedals = BWQ.totalServiceMedals + quest.reward.serviceMedalAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
 									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount

@@ -1,3 +1,6 @@
+### 10.0.2.7
+* Added support for "Rustbolt Resistance" reputation currency (added in WoW v. 8.2.0.30918)
+
 ### 10.0.2.6
 * Added support for "Primalist Tomorrow" zone (Dragonflight)
 

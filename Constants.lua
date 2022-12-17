@@ -133,16 +133,17 @@ CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
 }
 
 CONSTANTS.BFA_REPUTATION_CURRENCY_IDS = {
-	[1579] = true, -- both
-	[1598] = true,
-	[1600] = true, -- alliance
-	[1595] = true,
-	[1597] = true,
-	[1596] = true,
-	[1599] = true, -- horde
-	[1593] = true,
-	[1594] = true,
-	[1592] = true,
+	[1579] = true, -- Champions of Azeroth
+	[1598] = true, -- Tortollan Seekers
+	[1600] = true, -- Honorbound
+	[1595] = true, -- Talanji's Expedition
+	[1597] = true, -- Zandalari Empire
+	[1596] = true, -- Voldunai
+	[1599] = true, -- 7th Legion
+	[1593] = true, -- Proudmoore Admiralty
+	[1594] = true, -- Storm's Wake
+	[1592] = true, -- Order of Embers
+	[1742] = true, -- Rustbolt Resistance
 }
 
 CONSTANTS.FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement

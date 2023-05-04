@@ -53,6 +53,7 @@ local MAP_ZONES = {
 		[2025] = { id = 2025, name = GetMapInfo(2025).name, quests = {}, buttons = {}, }, -- Thaldraszus 10.0
 		[2085] = { id = 2085, name = GetMapInfo(2085).name, quests = {}, buttons = {}, }, -- Primalist Tomorrow 10.0
 		[2151] = { id = 2151, name = GetMapInfo(2151).name, quests = {}, buttons = {}, }, -- The Forbidden Reach
+		[2133] = { id = 2133, name = GetMapInfo(2133).name, quests = {}, buttons = {}, }, -- Zaralek Cavern
 	},
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
 		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, -- Revendreth 9.0
@@ -93,7 +94,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
-		2022, 2023, 2024, 2025, 2085, 2151
+		2022, 2023, 2024, 2025, 2085, 2151, 2133
 	},
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
 		1525, 1533, 1536, 1565, 1543, 1970
@@ -139,12 +140,14 @@ local defaultConfig = {
 		brokerShowBloodOfSargeras = false,
 		brokerShowDragonIslesSupplies = true,
 		brokerShowElementalOverflow = true,
+		brokerShowFlightstones = true,
 		brokerShowBloodyTokens = true,
 		brokerShowPolishedPetCharm = false,
 	sortByTimeRemaining = false,
 	-- reward type
 	showDragonIslesSupplies = true,
 	showElementalOverflow = true,
+	showFlightstones = true,
 	showBloodyTokens = true,
 	showArtifactPower = true,
 	showPrismaticManapearl = true,
@@ -890,6 +893,10 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW
 								quest.reward.elementalOverflowAmount = currency.amount
 								if C("showElementalOverflow") then quest.hide = false end
+							elseif currencyId == 2245 then -- flightstones
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.FLIGHTSTONES
+								quest.reward.flightstonesAmount = currency.amount
+								if C("showFlightstones") then quest.hide = false end
 							else 
 								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
 							end
@@ -1053,6 +1060,8 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalDragonIslesSupplies = BWQ.totalDragonIslesSupplies + quest.reward.dragonIslesSuppliesAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW then
 									BWQ.totalElementalOverflow = BWQ.totalElementalOverflow + quest.reward.elementalOverflowAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.FLIGHTSTONES then
+									BWQ.totalFlightstones = BWQ.totalFlightstones + quest.reward.FlightstonesAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM then
 									BWQ.totalPolishedPetCharms = BWQ.totalPolishedPetCharms + quest.reward.polishedPetCharmAmount
 								end
@@ -1376,7 +1385,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1915,7 +1924,8 @@ function BWQ:UpdateBlock()
 		if C("brokerShowBloodOfSargeras")     	and BWQ.totalBloodOfSargeras > 0    	then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
 		if C("brokerShowBloodyTokens")        	and BWQ.totalBloodyTokens > 0       	then brokerString = string.format("%s|TInterface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2:16:16|t %d  ", brokerString, BWQ.totalBloodyTokens) end
 		if C("brokerShowDragonIslesSupplies") 	and BWQ.totalDragonIslesSupplies > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_faction_warresources:16:16|t %d  ", brokerString, BWQ.totalDragonIslesSupplies) end
-		if C("brokerShowElementalOverflow") 	and BWQ.totalElementalOverflow > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_powder_thorium:16:16|t %d  ", brokerString, BWQ.totalElementalOverflow) end
+		if C("brokerShowElementalOverflow") 	and BWQ.totalElementalOverflow > 0		then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_powder_thorium:16:16|t %d  ", brokerString, BWQ.totalElementalOverflow) end
+		if C("brokerShowFlightstones") 			and BWQ.totalFlightstones > 0			then brokerString = string.format("%s|TInterface\\Icons\\flightstone-dragonflight:16:16|t %d  ", brokerString, BWQ.totalFlightstones) end
 		if C("brokerShowPolishedPetCharm")    	and BWQ.totalPolishedPetCharms > 0  	then brokerString = string.format("%s|TInterface\\Icons\\inv_currency_petbattle:16:16|t %d  ", brokerString, BWQ.totalPolishedPetCharms) end
 
 		if brokerString and brokerString ~= "" then
@@ -1964,6 +1974,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "brokerShowBloodyTokens" },
 				{ text = ("|T%1$s:16:16|t  Dragon Isles Supplies"):format("Interface\\Icons\\inv_faction_warresources"), check = "brokerShowDragonIslesSupplies" },
 				{ text = ("|T%1$s:16:16|t  Elemental Overflow"):format("Interface\\Icons\\inv_misc_powder_thorium"), check = "brokerShowElementalOverflow" },
+				{ text = ("|T%1$s:16:16|t  Flghtstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "brokerShowFlightstones" },
 				{ text = ("|T%1$s:16:16|t  Polished Pet Charms"):format("Interface\\Icons\\inv_currency_petbattle"), check = "brokerShowPolishedPetCharm" },
 			}
 		},
@@ -1980,6 +1991,7 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showDFReputation" },
 		{ text = ("|T%1$s:16:16|t  Dragon Isles Supplies"):format("Interface\\Icons\\inv_faction_warresources"), check = "showDragonIslesSupplies" },
 		{ text = ("|T%1$s:16:16|t  Elemental Overflow"):format("Interface\\Icons\\inv_misc_powder_thorium"), check = "ShowElementalOverflow" },
+		{ text = ("|T%1$s:16:16|t  Flghtstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "showFlightstones" },
 		{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "showBloodyTokens" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },

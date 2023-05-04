@@ -1,3 +1,9 @@
+### 10.1.0
+* Added Zaralek Cavern and Flightstone currency
+
+### 10.0.7
+* Added Forbidden Reach zone and Elemental Overflow currency 
+
 ### 10.0.2.8
 * Fixed WQs not properly showing for "Primalist Tomorrow" zone (Dragonflight)
 

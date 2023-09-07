@@ -1,3 +1,6 @@
+### 10.1.7
+* TOC Bump
+
 ### 10.1.0
 * Added Zaralek Cavern and Flightstone currency
 

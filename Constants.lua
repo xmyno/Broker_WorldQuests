@@ -112,6 +112,7 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 }
 
 CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
+	[2107] = true, -- Artisan's Consortium
 	[2108] = true, -- Maruuk Centaur
 	[2109] = true, -- Iskaara Tuskarr
 	[2031] = true, -- Dragonscale Expedition

@@ -45,6 +45,7 @@ local DEBUG = true
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 
+-- When adding zones to MAP_ZONES, be sure to also add the zoneID to MAP_ZONES_SORT immediately below
 local MAP_ZONES = {
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		[2022] = { id = 2022, name = GetMapInfo(2022).name, quests = {}, buttons = {}, }, -- The Waking Shores 10.0

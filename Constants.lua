@@ -62,7 +62,14 @@ CONSTANTS.REWARD_TYPES = {
 	CYPHERS_OF_THE_FIRST_ONES = 16,
 	BLOODY_TOKENS = 17,
 	DRAGON_ISLES_SUPPLIES = 18,
-	POLISHED_PET_CHARM = 19,
+	ELEMENTAL_OVERFLOW = 19,
+	FLIGHTSTONES = 20,
+	POLISHED_PET_CHARM = 21,
+	BATTLE_PET_BANDAGE = 22,
+	WHELPLINGS_DREAMING_CREST = 23,
+	DRAKES_DREAMING_CREST = 24,
+	WYRMS_DREAMING_CREST = 25,
+	ASPECTS_DREAMING_CREST = 26,
 }
 
 CONSTANTS.QUEST_TYPES = {
@@ -117,6 +124,8 @@ CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
 	[2109] = true, -- Iskaara Tuskarr
 	[2031] = true, -- Dragonscale Expedition
 	[2106] = true, -- Valdrakken Accord
+	[2420] = true, -- Loamm Niffen
+	[2652] = true, -- Dream wardens
 }
 
 CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
@@ -345,11 +354,13 @@ CONSTANTS.PARAGON_FACTIONS = {
 		[2478] = "inv_misc_enlightenedbrokers_paragoncache01", -- TheEnlightened
 	},
 	dragonflight = {
-		order = {2507, 2503, 2511, 2510 },
+		order = {2507, 2503, 2511, 2510, 2564, 2574 },
 		[2507] = "ui_majorfaction_expedition", -- Dragonscale Expedition
 		[2503] = "ui_majorfaction_centaur", -- Maruuk Centaur
 		[2511] = "ui_majorfaction_tuskarr", -- Iskaara Tuskarr
 		[2510] = "ui_majorfaction_valdrakken", -- Valdrakken Accord
+		[2564] = "ui_majorfaction_niffen", -- Loamm Niffen
+		[2574] = "ui_majorfaction_denizens", -- Dream Wardens
 	},
 }
 

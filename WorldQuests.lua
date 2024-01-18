@@ -910,19 +910,19 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.flightstonesAmount = currency.amount
 								if C("showFlightstones") then quest.hide = false end
 							elseif currencyId == 2706 then -- Whelplings Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WhelplingsDreamingCrest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_DREAMING_CREST
 								quest.reward.WhelplingsDreamingCrestAmount = currency.amount
 								if C("showWhelplingsDreamingCrest") then quest.hide = false end
 							elseif currencyId == 2707 then -- Drakes Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DrakesDreamingCrest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_DREAMING_CREST
 								quest.reward.DrakesDreamingCrestAmount = currency.amount
 								if C("showDrakesDreamingCrest") then quest.hide = false end
 							elseif currencyId == 2708 then -- Wyrms Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WyrmsDreamingCrest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_DREAMING_CREST
 								quest.reward.WyrmsDreamingCrestAmount = currency.amount
 								if C("showWyrmsDreamingCrest") then quest.hide = false end
 							elseif currencyId == 2709 then -- Aspects Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.AspectsDreamingCrest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST
 								quest.reward.AspectsDreamingCrestAmount = currency.amount
 								if C("showAspectsDreamingCrest") then quest.hide = false end
 							else 
@@ -1092,13 +1092,13 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalElementalOverflow = BWQ.totalElementalOverflow + quest.reward.elementalOverflowAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.FLIGHTSTONES then
 									BWQ.totalFlightstones = BWQ.totalFlightstones + quest.reward.flightstonesAmount
-								elseif rtype == CONSTANTS.REWARD_TYPES.WhelplingsDreamingCrest then
+								elseif rtype == CONSTANTS.REWARD_TYPES.WHELPLINGS_DREAMING_CREST then
 									BWQ.totalWhelplingsDreamingCrest = BWQ.totalWhelplingsDreamingCrest + quest.reward.WhelplingsDreamingCrestAmount
-								elseif rtype == CONSTANTS.REWARD_TYPES.DrakesDreamingCrest then
+								elseif rtype == CONSTANTS.REWARD_TYPES.DRAKES_DREAMING_CREST then
 									BWQ.totalDrakesDreamingCrest = BWQ.totalDrakesDreamingCrest + quest.reward.DrakesDreamingCrestAmount
-								elseif rtype == CONSTANTS.REWARD_TYPES.WyrmsDreamingCrest then
+								elseif rtype == CONSTANTS.REWARD_TYPES.WYRMS_DREAMING_CREST then
 									BWQ.totalWyrmsDreamingCrest = BWQ.totalWyrmsDreamingCrest + quest.reward.WyrmsDreamingCrestAmount
-								elseif rtype == CONSTANTS.REWARD_TYPES.AspectsDreamingCrest then
+								elseif rtype == CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST then
 									BWQ.totalAspectsDreamingCrest = BWQ.totalAspectsDreamingCrest + quest.reward.AspectsDreamingCrestAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARMS then
 									BWQ.totalPolishedPetCharms = BWQ.totalPolishedPetCharms + quest.reward.polishedPetCharmsAmount

@@ -53,8 +53,9 @@ local MAP_ZONES = {
 		[2024] = { id = 2024, name = GetMapInfo(2024).name, quests = {}, buttons = {}, }, -- The Azure Span 10.0
 		[2025] = { id = 2025, name = GetMapInfo(2025).name, quests = {}, buttons = {}, }, -- Thaldraszus 10.0
 		[2085] = { id = 2085, name = GetMapInfo(2085).name, quests = {}, buttons = {}, }, -- Primalist Tomorrow 10.0
-		[2151] = { id = 2151, name = GetMapInfo(2151).name, quests = {}, buttons = {}, }, -- The Forbidden Reach
-		[2133] = { id = 2133, name = GetMapInfo(2133).name, quests = {}, buttons = {}, }, -- Zaralek Cavern
+		[2151] = { id = 2151, name = GetMapInfo(2151).name, quests = {}, buttons = {}, }, -- The Forbidden Reach 10.0.7
+		[2133] = { id = 2133, name = GetMapInfo(2133).name, quests = {}, buttons = {}, }, -- Zaralek Cavern 10.1
+		[2200] = { id = 2200, name = GetMapInfo(2200).name, quests = {}, buttons = {}, }, -- Emerald Dream 10.2
 	},
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
 		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, -- Revendreth 9.0
@@ -95,7 +96,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
-		2022, 2023, 2024, 2025, 2085, 2151, 2133
+		2022, 2023, 2024, 2025, 2085, 2151, 2133, 2200
 	},
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
 		1525, 1533, 1536, 1565, 1543, 1970
@@ -142,6 +143,10 @@ local defaultConfig = {
 		brokerShowDragonIslesSupplies = true,
 		brokerShowElementalOverflow = true,
 		brokerShowFlightstones = true,
+		brokerShowWhelplingsDreamingCrest = true,
+		brokerShowDrakesDreamingCrest = true,
+		brokerShowWyrmsDreamingCrest = true,
+		brokerShowAspectsDreamingCrest = true,
 		brokerShowBloodyTokens = true,
 		brokerShowPolishedPetCharms = false,
 	sortByTimeRemaining = false,
@@ -149,6 +154,10 @@ local defaultConfig = {
 	showDragonIslesSupplies = true,
 	showElementalOverflow = true,
 	showFlightstones = true,
+	showWhelplingsDreamingCrest = true,
+	showDrakesDreamingCrest = true,
+	showWyrmsDreamingCrest = true,
+	showAspectsDreamingCrest = true,
 	showBloodyTokens = true,
 	showArtifactPower = true,
 	showPrismaticManapearl = true,
@@ -200,6 +209,8 @@ local defaultConfig = {
 		alwaysShowIskaaraTuskarr = false,
 		alwaysShowMaruukCentaur = false,
 		alwaysShowValdrakkenAccord = false,
+		alwaysShowLoammNiffen = false,
+		alwaysShowDreamWardens = false,
 		-- Shadowlands
 		alwaysShowAscended = false,
 		alwaysShowUndyingArmy = false,
@@ -898,6 +909,22 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.FLIGHTSTONES
 								quest.reward.flightstonesAmount = currency.amount
 								if C("showFlightstones") then quest.hide = false end
+							elseif currencyId == 2706 then -- Whelplings Dreaming Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WhelplingsDreamingCrest
+								quest.reward.WhelplingsDreamingCrestAmount = currency.amount
+								if C("showWhelplingsDreamingCrest") then quest.hide = false end
+							elseif currencyId == 2707 then -- Drakes Dreaming Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DrakesDreamingCrest
+								quest.reward.DrakesDreamingCrestAmount = currency.amount
+								if C("showDrakesDreamingCrest") then quest.hide = false end
+							elseif currencyId == 2708 then -- Wyrms Dreaming Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WyrmsDreamingCrest
+								quest.reward.WyrmsDreamingCrestAmount = currency.amount
+								if C("showWyrmsDreamingCrest") then quest.hide = false end
+							elseif currencyId == 2709 then -- Aspects Dreaming Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.AspectsDreamingCrest
+								quest.reward.AspectsDreamingCrestAmount = currency.amount
+								if C("showAspectsDreamingCrest") then quest.hide = false end
 							else 
 								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
 							end
@@ -976,6 +1003,8 @@ local RetrieveWorldQuests = function(mapId)
 						(C("alwaysShowIskaaraTuskarr") and quest.factionId == 2511) or
 						(C("alwaysShowMaruukCentaur") and quest.factionId == 2503) or
 						(C("alwaysShowValdrakkenAccord") and quest.factionId == 2510) or
+						(C("alwaysShowLoammNiffen") and quest.factionId == 2564) or
+						(C("alwaysShowDreamWardens") and quest.factionId == 2574) or
 						-- Shadowlands
 						(C("alwaysShowAscended") and quest.factionId == 2407) or
 						(C("alwaysShowUndyingArmy") and quest.factionId == 2410) or
@@ -1062,7 +1091,15 @@ local RetrieveWorldQuests = function(mapId)
 								elseif rtype == CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW then
 									BWQ.totalElementalOverflow = BWQ.totalElementalOverflow + quest.reward.elementalOverflowAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.FLIGHTSTONES then
-									BWQ.totalFlightstones = BWQ.totalFlightstones + quest.reward.FlightstonesAmount
+									BWQ.totalFlightstones = BWQ.totalFlightstones + quest.reward.flightstonesAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WhelplingsDreamingCrest then
+									BWQ.totalWhelplingsDreamingCrest = BWQ.totalWhelplingsDreamingCrest + quest.reward.WhelplingsDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.DrakesDreamingCrest then
+									BWQ.totalDrakesDreamingCrest = BWQ.totalDrakesDreamingCrest + quest.reward.DrakesDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WyrmsDreamingCrest then
+									BWQ.totalWyrmsDreamingCrest = BWQ.totalWyrmsDreamingCrest + quest.reward.WyrmsDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.AspectsDreamingCrest then
+									BWQ.totalAspectsDreamingCrest = BWQ.totalAspectsDreamingCrest + quest.reward.AspectsDreamingCrestAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARMS then
 									BWQ.totalPolishedPetCharms = BWQ.totalPolishedPetCharms + quest.reward.polishedPetCharmsAmount
 								end
@@ -1386,7 +1423,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalWhelplingsDreamingCrest, BWQ.totalDrakesDreamingCrest, BWQ.totalWyrmsDreamingCrest, BWQ.totalAspectsDreamingCrest, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1927,6 +1964,10 @@ function BWQ:UpdateBlock()
 		if C("brokerShowDragonIslesSupplies") 	and BWQ.totalDragonIslesSupplies > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_faction_warresources:16:16|t %d  ", brokerString, BWQ.totalDragonIslesSupplies) end
 		if C("brokerShowElementalOverflow") 	and BWQ.totalElementalOverflow > 0		then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_powder_thorium:16:16|t %d  ", brokerString, BWQ.totalElementalOverflow) end
 		if C("brokerShowFlightstones") 			and BWQ.totalFlightstones > 0			then brokerString = string.format("%s|TInterface\\Icons\\flightstone-dragonflight:16:16|t %d  ", brokerString, BWQ.totalFlightstones) end
+		if C("brokerShowWhelplingsDreamingCrest") and BWQ.totalWhelplingsDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_whelplingsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalWhelplingsDreamingCrest) end
+		if C("brokerShowDrakesDreamingCrest") 	and BWQ.totalDrakesDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalDrakesDreamingCrest) end
+		if C("brokerShowWyrmsDreamingCrest") 	and BWQ.totalWyrmsDreamingCrest > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalWyrmsDreamingCrest) end
+		if C("brokerShowAspectsDreamingCrest") 	and BWQ.totalAspectsDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalAspectsDreamingCrest) end
 		if C("brokerShowPolishedPetCharms")    	and BWQ.totalPolishedPetCharms > 0  	then brokerString = string.format("%s|TInterface\\Icons\\inv_currency_petbattle:16:16|t %d  ", brokerString, BWQ.totalPolishedPetCharms) end
 
 		if brokerString and brokerString ~= "" then
@@ -1975,7 +2016,11 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "brokerShowBloodyTokens" },
 				{ text = ("|T%1$s:16:16|t  Dragon Isles Supplies"):format("Interface\\Icons\\inv_faction_warresources"), check = "brokerShowDragonIslesSupplies" },
 				{ text = ("|T%1$s:16:16|t  Elemental Overflow"):format("Interface\\Icons\\inv_misc_powder_thorium"), check = "brokerShowElementalOverflow" },
-				{ text = ("|T%1$s:16:16|t  Flghtstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "brokerShowFlightstones" },
+				{ text = ("|T%1$s:16:16|t  Flightstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "brokerShowFlightstones" },
+				{ text = ("|T%1$s:16:16|t  Whelplings Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsdreamingcrest"), check = "brokerShowWhelplingsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Drakes Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest"), check = "brokerShowDrakesDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Wyrms Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest"), check = "brokerShowWyrmsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Aspects Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest"), check = "brokerShowAspectsDreamingCrest" },
 				{ text = ("|T%1$s:16:16|t  Polished Pet Charms"):format("Interface\\Icons\\inv_currency_petbattle"), check = "brokerShowPolishedPetCharms" },
 			}
 		},
@@ -1992,7 +2037,11 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showDFReputation" },
 		{ text = ("|T%1$s:16:16|t  Dragon Isles Supplies"):format("Interface\\Icons\\inv_faction_warresources"), check = "showDragonIslesSupplies" },
 		{ text = ("|T%1$s:16:16|t  Elemental Overflow"):format("Interface\\Icons\\inv_misc_powder_thorium"), check = "ShowElementalOverflow" },
-		{ text = ("|T%1$s:16:16|t  Flghtstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "showFlightstones" },
+		{ text = ("|T%1$s:16:16|t  Flightstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "showFlightstones" },
+		{ text = ("|T%1$s:16:16|t  Whelplings Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsdreamingcrest"), check = "showWhelplingsDreamingCrest" },
+		{ text = ("|T%1$s:16:16|t  Drakes Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest"), check = "showDrakesDreamingCrest" },
+		{ text = ("|T%1$s:16:16|t  Wyrms Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest"), check = "showWyrmsDreamingCrest" },
+		{ text = ("|T%1$s:16:16|t  Aspects Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest"), check = "showAspectsDreamingCrest" },
 		{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "showBloodyTokens" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
@@ -2058,6 +2107,8 @@ function BWQ:SetupConfigMenu()
 				{ text = "Iskaara Tuskarr", check="alwaysShowIskaaraTuskarr" },
 				{ text = "Maruuk Centaur", check="alwaysShowMaruukCentaur" },
 				{ text = "Valdrakken Accord", check="alwaysShowValdrakkenAccord" },
+				{ text = "Loamm Niffen", check="alwaysShowLoammNiffen" },
+				{ text = "Dream Wardens", check="alwaysShowDreamWardens" },
 			}
 		},
 		{ text = "       Shadowlands", submenu = {

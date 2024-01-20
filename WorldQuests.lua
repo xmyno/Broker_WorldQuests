@@ -789,9 +789,9 @@ local RetrieveWorldQuests = function(mapId)
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MARK_OF_HONOR
 								if C("showItems") and C("showMarkOfHonor") then quest.hide = false end
-							elseif itemId == 163036 then -- polished pet charms
+							elseif itemId == 163036 then -- polished pet charm
 								quest.reward.polishedPetCharmsAmount = quest.reward.itemQuantity
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARMS
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM
 							else
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
@@ -1108,7 +1108,7 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalAspectsDreamingCrest = BWQ.totalAspectsDreamingCrest + quest.reward.AspectsDreamingCrestAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT then
 									BWQ.totalMysteriousFragment = BWQ.totalMysteriousFragment + quest.reward.MysteriousFragmentAmount
-								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARMS then
+								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM then
 									BWQ.totalPolishedPetCharms = BWQ.totalPolishedPetCharms + quest.reward.polishedPetCharmsAmount
 								end
 							end

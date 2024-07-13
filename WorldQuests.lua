@@ -147,6 +147,10 @@ local defaultConfig = {
 		brokerShowDrakesDreamingCrest = true,
 		brokerShowWyrmsDreamingCrest = true,
 		brokerShowAspectsDreamingCrest = true,
+		brokerShowWhelplingsAwakenedCrest = true,
+		brokerShowDrakesAwakenedCrest = true,
+		brokerShowWyrmsAwakenedCrest = true,
+		brokerShowAspectsAwakenedCrest = true,
 		brokerShowMysteriousFragment = true,
 		brokerShowBloodyTokens = true,
 		brokerShowPolishedPetCharms = false,
@@ -159,6 +163,10 @@ local defaultConfig = {
 	showDrakesDreamingCrest = true,
 	showWyrmsDreamingCrest = true,
 	showAspectsDreamingCrest = true,
+	showWhelplingsAwakenedCrest = true,
+	showDrakesAwakenedCrest = true,
+	showWyrmsAwakenedCrest = true,
+	showAspectsAwakenedCrest = true,
 	showMysteriousFragment = true,
 	showBloodyTokens = true,
 	showArtifactPower = true,
@@ -927,6 +935,22 @@ local RetrieveWorldQuests = function(mapId)
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST
 								quest.reward.AspectsDreamingCrestAmount = currency.amount
 								if C("showAspectsDreamingCrest") then quest.hide = false end
+							elseif currencyId == 2806 then -- Whelplings Awakened Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_Awakened_CREST
+								quest.reward.WhelplingsAwakenedCrestAmount = currency.amount
+								if C("showWhelplingsAwakenedCrest") then quest.hide = false end
+							elseif currencyId == 2807 then -- Drakes Awakened Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_Awakened_CREST
+								quest.reward.DrakesAwakenedCrestAmount = currency.amount
+								if C("showDrakesAwakenedCrest") then quest.hide = false end
+							elseif currencyId == 2809 then -- Wyrms Awakened Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_Awakened_CREST
+								quest.reward.WyrmsAwakenedCrestAmount = currency.amount
+								if C("showWyrmsAwakenedCrest") then quest.hide = false end
+							elseif currencyId == 2812 then -- Aspects Awakened Crest
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_Awakened_CREST
+								quest.reward.AspectsAwakenedCrestAmount = currency.amount
+								if C("showAspectsAwakenedCrest") then quest.hide = false end
 							elseif currencyId == 2657 then -- Mysterious Fragment
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT
 								quest.reward.MysteriousFragmentAmount = currency.amount
@@ -1106,6 +1130,14 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalWyrmsDreamingCrest = BWQ.totalWyrmsDreamingCrest + quest.reward.WyrmsDreamingCrestAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST then
 									BWQ.totalAspectsDreamingCrest = BWQ.totalAspectsDreamingCrest + quest.reward.AspectsDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WHELPLINGS_Awakened_CREST then
+									BWQ.totalWhelplingsAwakenedCrest = BWQ.totalWhelplingsAwakenedCrest + quest.reward.WhelplingsAwakenedCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.DRAKES_Awakened_CREST then
+									BWQ.totalDrakesAwakenedCrest = BWQ.totalDrakesAwakenedCrest + quest.reward.DrakesAwakenedCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WYRMS_Awakened_CREST then
+									BWQ.totalWyrmsAwakenedCrest = BWQ.totalWyrmsAwakenedCrest + quest.reward.WyrmsAwakenedCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.ASPECTS_Awakened_CREST then
+									BWQ.totalAspectsAwakenedCrest = BWQ.totalAspectsAwakenedCrest + quest.reward.AspectsAwakenedCrestAmount	
 								elseif rtype == CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT then
 									BWQ.totalMysteriousFragment = BWQ.totalMysteriousFragment + quest.reward.MysteriousFragmentAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM then
@@ -1431,7 +1463,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalWhelplingsDreamingCrest, BWQ.totalDrakesDreamingCrest, BWQ.totalWyrmsDreamingCrest, BWQ.totalAspectsDreamingCrest, BWQ.totalMysteriousFragment, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalWhelplingsDreamingCrest, BWQ.totalDrakesDreamingCrest, BWQ.totalWyrmsDreamingCrest, BWQ.totalAspectsDreamingCrest, BWQ.totalWhelplingsAwakenedCrest, BWQ.totalDrakesAwakenedCrest, BWQ.totalWyrmsAwakenedCrest, BWQ.totalAspectsAwakenedCrest, BWQ.totalMysteriousFragment, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1976,6 +2008,10 @@ function BWQ:UpdateBlock()
 		if C("brokerShowDrakesDreamingCrest") 	and BWQ.totalDrakesDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalDrakesDreamingCrest) end
 		if C("brokerShowWyrmsDreamingCrest") 	and BWQ.totalWyrmsDreamingCrest > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalWyrmsDreamingCrest) end
 		if C("brokerShowAspectsDreamingCrest") 	and BWQ.totalAspectsDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalAspectsDreamingCrest) end
+		if C("brokerShowWhelplingsAwakenedCrest") and BWQ.totalWhelplingsAwakenedCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_10_gearupgrade_whelplingsawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalWhelplingsAwakenedCrest) end
+		if C("brokerShowDrakesAwakenedCrest") 	and BWQ.totalDrakesAwakenedCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_10_gearupgrade_drakesawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalDrakesAwakenedCrest) end
+		if C("brokerShowWyrmsAwakenedCrest") 	and BWQ.totalWyrmsAwakenedCrest > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_wyrmsawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalWyrmsAwakenedCrest) end
+		if C("brokerShowAspectsAwakenedCrest") 	and BWQ.totalAspectsAwakenedCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_aspectsawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalAspectsAwakenedCrest) end
 		if C("brokerShowMysteriousFragment") 	and BWQ.totalMysteriousFragment > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_7_0raid_trinket_05a:16:16|t %d  ", brokerString, BWQ.totalMysteriousFragment) end
 		if C("brokerShowPolishedPetCharms")    	and BWQ.totalPolishedPetCharms > 0  	then brokerString = string.format("%s|TInterface\\Icons\\inv_currency_petbattle:16:16|t %d  ", brokerString, BWQ.totalPolishedPetCharms) end
 
@@ -2030,6 +2066,10 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Drakes Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest"), check = "brokerShowDrakesDreamingCrest" },
 				{ text = ("|T%1$s:16:16|t  Wyrms Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest"), check = "brokerShowWyrmsDreamingCrest" },
 				{ text = ("|T%1$s:16:16|t  Aspects Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest"), check = "brokerShowAspectsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Whelplings Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsAwakenedcrest"), check = "brokerShowWhelplingsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Drakes Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesAwakenedcrest"), check = "brokerShowDrakesAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Wyrms Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsAwakenedcrest"), check = "brokerShowWyrmsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Aspects Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsAwakenedcrest"), check = "brokerShowAspectsAwakenedCrest" },
 				{ text = ("|T%1$s:16:16|t  Mysterious Fragment"):format("Interface\\Icons\\Inv_7_0raid_trinket_05a"), check = "brokerShowMysteriousFragment" },
 				{ text = ("|T%1$s:16:16|t  Polished Pet Charms"):format("Interface\\Icons\\inv_currency_petbattle"), check = "brokerShowPolishedPetCharms" },
 			}
@@ -2052,6 +2092,10 @@ function BWQ:SetupConfigMenu()
 		{ text = ("|T%1$s:16:16|t  Drakes Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest"), check = "showDrakesDreamingCrest" },
 		{ text = ("|T%1$s:16:16|t  Wyrms Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest"), check = "showWyrmsDreamingCrest" },
 		{ text = ("|T%1$s:16:16|t  Aspects Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest"), check = "showAspectsDreamingCrest" },
+		{ text = ("|T%1$s:16:16|t  Whelplings Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsAwakenedcrest"), check = "showWhelplingsAwakenedCrest" },
+		{ text = ("|T%1$s:16:16|t  Drakes Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesAwakenedcrest"), check = "showDrakesAwakenedCrest" },
+		{ text = ("|T%1$s:16:16|t  Wyrms Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsAwakenedcrest"), check = "showWyrmsAwakenedCrest" },
+		{ text = ("|T%1$s:16:16|t  Aspects Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsAwakenedcrest"), check = "showAspectsAwakenedCrest" },
 		{ text = ("|T%1$s:16:16|t  Mysterious Fragment"):format("Interface\\Icons\\Inv_7_0raid_trinket_05a"), check = "showMysteriousFragment" },
 		{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "showBloodyTokens" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },

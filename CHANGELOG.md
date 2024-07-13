@@ -1,3 +1,6 @@
+### 10.2.7.0
+* Updates for Dragonflight 10.2.7
+
 ### 10.2.5.1
 * Fixed an issue affecting Polished Pet Charms (thanks tflo for catching it.)
 

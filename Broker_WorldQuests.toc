@@ -1,7 +1,7 @@
-## Interface: 100205
-## Author: myno (original author; up through 8.x), Amadeus (maintainer: 9.x and 10.x)
+## Interface: 100207
+## Author: myno (original author; up through 8.x), Amadeus (maintainer since 9.0)
 ## Title: Broker_WorldQuests
-## Version: 10.2.5.1
+## Version: 10.2.7.0
 ## SavedVariables: BWQcfg
 ## SavedVariablesPerCharacter: BWQcache, BWQcfgPerCharacter
 ## Notes: Broker plugin to display world quests as a list.

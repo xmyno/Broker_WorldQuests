@@ -1,3 +1,6 @@
+### 11.0.0.1
+* Updates for WoW version 11.0.0
+
 ### 10.2.7.0
 * Updates for Dragonflight 10.2.7
 

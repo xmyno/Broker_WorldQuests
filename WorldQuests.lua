@@ -30,8 +30,34 @@ local       GetBestMapForUnit,       GetMapInfo
 local       IsWarModeDesired
 	= C_PvP.IsWarModeDesired
 
-local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
-	= GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
+local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, HaveQuestData
+= C_Reputation.GetFactionDataByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, HaveQuestData
+
+local GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo = GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
+if not GetNumQuestLogRewardCurrencies then
+	local reward_cache = {}
+	local function GetData(questID)
+		local data = reward_cache[questID]
+		local t = GetTime()
+		if not data or t > data.expTime then
+			data = C_QuestLog.GetQuestRewardCurrencies(questID)
+			data.expTime = t + 5
+		end
+		return data
+	end
+	function GetNumQuestLogRewardCurrencies(questID)
+		local data = GetData(questID)
+		return #data
+	end
+	function GetQuestLogRewardCurrencyInfo(i, questID)
+		local data = GetData(questID)[i]
+		if not data then
+			return
+		end
+		return data.name, data.texture, data.baseRewardAmount, data.currencyID
+		--data.totalRewardAmount
+	end
+end
 
 local GetAchievementInfo
 	= GetAchievementInfo
@@ -1910,7 +1936,7 @@ function BWQ:UpdateBlock()
 			if bountyWidth > bountyMaxWidth then bountyMaxWidth = bountyWidth end
 
 			if not C("hideFactionColumn") then
-				button.factionFS:SetText(button.quest.faction)
+				button.factionFS:SetText(button.quest.factionID)
 				local factionWidth = button.factionFS:GetStringWidth()
 				if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
 			else

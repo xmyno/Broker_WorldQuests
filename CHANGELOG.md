@@ -1,3 +1,6 @@
+### 11.0.0.2
+* Updates to Faction related calls due to API changes with 11.0.0
+
 ### 11.0.0.1
 * Updates for WoW version 11.0.0
 

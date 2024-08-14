@@ -2458,7 +2458,7 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 			BWQcache = BWQcache or {}
 			BWQ:SwitchExpansion(C("expansion"))
 
-			if IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
+			if C_AddOns.IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
 				BWQ:AddFlightMapHook()
 				BWQ:UnregisterEvent("ADDON_LOADED")
 			end

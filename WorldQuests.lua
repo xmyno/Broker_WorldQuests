@@ -2,10 +2,10 @@
 --
 -- Broker_WorldQuests
 --
--- World of Warcraft addon to display Legion world quests in convenient list form.
--- Doesn't do anything on its own; requires a data broker addon!
+-- World of Warcraft addon to display world quests in convenient list form.
+-- It doesn't do anything on its own; requires a data broker addon!
 --
--- Author: myno
+-- Original Author: myno
 --
 --]]----
 
@@ -73,6 +73,9 @@ local isHorde = UnitFactionGroup("player") == "Horde"
 
 -- When adding zones to MAP_ZONES, be sure to also add the zoneID to MAP_ZONES_SORT immediately below
 local MAP_ZONES = {
+	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
+		-- TODO
+	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		[2022] = { id = 2022, name = GetMapInfo(2022).name, quests = {}, buttons = {}, }, -- The Waking Shores 10.0
 		[2023] = { id = 2023, name = GetMapInfo(2023).name, quests = {}, buttons = {}, }, -- Ohn'ahran Plains 10.0
@@ -121,6 +124,9 @@ local MAP_ZONES = {
 	},
 }
 local MAP_ZONES_SORT = {
+	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
+		-- TODO
+	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		2022, 2023, 2024, 2025, 2085, 2151, 2133, 2200
 	},
@@ -141,7 +147,7 @@ local defaultConfig = {
 	attachToWorldMap = false,
 	showOnClick = false,
 	usePerCharacterSettings = false,
-	expansion = CONSTANTS.EXPANSIONS.DRAGONFLIGHT,
+	expansion = CONSTANTS.EXPANSIONS.DRAGONFLIGHT,		-- TODO
 	enableClickToOpenMap = false,
 	enableTomTomWaypointsOnClick = true,
 	alwaysShowBountyQuests = true,
@@ -311,6 +317,17 @@ BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
+BWQ.buttonTheWarWithin = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
+BWQ.buttonTheWarWithin:SetSize(20, 15)
+BWQ.buttonTheWarWithin:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -146, -8)
+BWQ.buttonTheWarWithin:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+BWQ.buttonTheWarWithin:SetBackdropColor(0.1, 0.1, 0.1)
+BWQ.buttonTheWarWithin.texture = BWQ.buttonTheWarWithin:CreateTexture(nil, "OVERLAY")
+BWQ.buttonTheWarWithin.texture:SetPoint("TOPLEFT", 1, -1)
+BWQ.buttonTheWarWithin.texture:SetPoint("BOTTOMRIGHT", -1, 1)
+BWQ.buttonTheWarWithin.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendTheWarWithinStart")		-- Use https://github.com/Marlamin/wow.tools.local to find textures
+BWQ.buttonTheWarWithin.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
+
 BWQ.buttonDragonflight = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 BWQ.buttonDragonflight:SetSize(20, 15)
 BWQ.buttonDragonflight:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -119, -8)
@@ -319,7 +336,7 @@ BWQ.buttonDragonflight:SetBackdropColor(0.1, 0.1, 0.1)
 BWQ.buttonDragonflight.texture = BWQ.buttonDragonflight:CreateTexture(nil, "OVERLAY")
 BWQ.buttonDragonflight.texture:SetPoint("TOPLEFT", 1, -1)
 BWQ.buttonDragonflight.texture:SetPoint("BOTTOMRIGHT", -1, 1)
-BWQ.buttonDragonflight.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_dragonflightstart")		-- Search with https://wow.tools/files to find textures
+BWQ.buttonDragonflight.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_dragonflightstart")
 BWQ.buttonDragonflight.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
 BWQ.buttonShadowlands = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
@@ -355,6 +372,7 @@ BWQ.buttonLegion.texture:SetPoint("BOTTOMRIGHT", -1, 1)
 BWQ.buttonLegion.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendLegionStart")
 BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
+BWQ.buttonTheWarWithin:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.THEWARWITHIN) end)
 BWQ.buttonDragonflight:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.DRAGONFLIGHT) end)
 BWQ.buttonShadowlands:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.SHADOWLANDS) end)
 BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.BFA) end)
@@ -414,7 +432,9 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		if (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
+		if (expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN) then
+			hasUnlockedWorldQuests = UnitLevel("player") >= 78 and IsQuestFlaggedCompleted(84022) and IsQuestFlaggedCompleted(80592)	-- https://www.wowhead.com/beta/quest=84022/uniting-severed-threads and https://www.wowhead.com/quest=80592/forge-a-pact
+		elseif (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
 			_, _, _, hasUnlockedWorldQuests = GetAchievementInfo(16326)
 			if not hasUnlockedWorldQuests then
 				hasUnlockedWorldQuests = UnitLevel("player") >= 68 and IsQuestFlaggedCompleted(66221)
@@ -433,7 +453,9 @@ function BWQ:WorldQuestsUnlocked()
 		if not BWQ.errorFS then CreateErrorFS() end
 
 		local level, quest, errorText
-		if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then
+		if expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN then
+			errorText = "You need to unlock The War Within World Quests\non one of your characters."
+		elseif expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then
 			errorText = "You need to unlock Dragonflight World Quests\non one of your characters."
 		elseif expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then
 			errorText = "You need to unlock Shadowlands World Quests\non one of your characters."
@@ -474,7 +496,7 @@ function BWQ:ShowNoWorldQuestsInfo()
 end
 
 function BWQ:SetErrorFSPosition(offsetTop)
-	if (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS or expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then  -- TODO:  We are not supporting bounty quests for these expansions atm, so the ErrorFS position should be at the top of BWQ
+	if (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS or expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT or expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN) then  -- TODO:  We are not supporting bounty quests for these expansions atm, so the ErrorFS position should be at the top of BWQ
 		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
 	else
 		if BWQ.factionDisplay:IsShown() then
@@ -1203,6 +1225,13 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
+	if expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN then -- TODO: get map id for retrieving bounties
+		BWQ.bountyDisplay:Hide()
+		for i, item in pairs(BWQ.bountyCache) do
+			item.button:Hide()
+		end
+		return
+	end
 	if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then -- TODO: get map id for retrieving bounties
 		BWQ.bountyDisplay:Hide()
 		for i, item in pairs(BWQ.bountyCache) do
@@ -1335,7 +1364,9 @@ local factionIncreaseString2 = FACTION_STANDING_INCREASED_ACH_BONUS:gsub("%%d", 
 local factionIncreaseString3 = FACTION_STANDING_INCREASED_GENERIC:gsub("%%s", "(.*)"):gsub(" %(%+.*%)" ,"")
 
 function BWQ:SetParagonFactionsByActiveExpansion()
-	if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then 
+	if expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN then 
+		paragonFactions = CONSTANTS.PARAGON_FACTIONS.thewarwithin
+	elseif expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then 
 		paragonFactions = CONSTANTS.PARAGON_FACTIONS.dragonflight
 	elseif expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then 
 		paragonFactions = CONSTANTS.PARAGON_FACTIONS.shadowlands
@@ -1628,6 +1659,7 @@ function BWQ:SwitchExpansion(expac)
 	end
 	BWQ:SetParagonFactionsByActiveExpansion()
 
+	BWQ.buttonTheWarWithin:SetAlpha(expac == CONSTANTS.EXPANSIONS.THEWARWITHIN and 1 or 0.4)
 	BWQ.buttonDragonflight:SetAlpha(expac == CONSTANTS.EXPANSIONS.DRAGONFLIGHT and 1 or 0.4)
 	BWQ.buttonShadowlands:SetAlpha(expac == CONSTANTS.EXPANSIONS.SHADOWLANDS and 1 or 0.4)
 	BWQ.buttonBFA:SetAlpha(expac == CONSTANTS.EXPANSIONS.BFA and 1 or 0.4)

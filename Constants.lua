@@ -1,12 +1,12 @@
 local _, addon = ...
 local CONSTANTS = {}
 
-
 CONSTANTS.EXPANSIONS = {
 	LEGION = "LEGION",
 	BFA = "BFA",
 	SHADOWLANDS = "SHADOWLANDS",
 	DRAGONFLIGHT = "DRAGONFLIGHT",
+	THEWARWITHIN = "THEWARWITHIN"
 }
 CONSTANTS.FACTIONS = {
 	NEUTRAL = 0,
@@ -123,6 +123,10 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 	[2123] = true, -- Bloody Tokens (dragonflight)
 }
 
+CONSTANTS.THEWARWITHIN_REPUTATION_CURRENCY_IDS = {
+-- TODO
+}
+
 CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
 	[2107] = true, -- Artisan's Consortium
 	[2108] = true, -- Maruuk Centaur
@@ -181,6 +185,7 @@ CONSTANTS.FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 
 CONSTANTS.ACHIEVEMENT_IDS = {
 	PET_BATTLE_WQ = {
+		[CONSTANTS.EXPANSIONS.THEWARWITHIN] = 0,					-- TODO
 		[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = 16464,
 		[CONSTANTS.EXPANSIONS.SHADOWLANDS] = 14625,
 		[CONSTANTS.EXPANSIONS.BFA] = 12936,
@@ -366,6 +371,9 @@ CONSTANTS.PARAGON_FACTIONS = {
 		[2510] = "ui_majorfaction_valdrakken", -- Valdrakken Accord
 		[2564] = "ui_majorfaction_niffen", -- Loamm Niffen
 		[2574] = "ui_majorfaction_denizens", -- Dream Wardens
+	},
+	thewarwithin = {			-- TODO
+		order = {},
 	},
 }
 

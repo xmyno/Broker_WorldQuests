@@ -9,6 +9,18 @@
 --
 --]]----
 
+local GetAchievementInfo
+	= GetAchievementInfo
+
+local REPUTATION
+	= REPUTATION
+
+local _, addon = ...
+local CONSTANTS = addon.CONSTANTS
+local DEBUG = true
+
+local isHorde = UnitFactionGroup("player") == "Horde"
+
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 	= ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 
@@ -58,18 +70,6 @@ if not GetNumQuestLogRewardCurrencies then
 		--data.totalRewardAmount
 	end
 end
-
-local GetAchievementInfo
-	= GetAchievementInfo
-
-local REPUTATION
-	= REPUTATION
-
-local _, addon = ...
-local CONSTANTS = addon.CONSTANTS
-local DEBUG = true
-
-local isHorde = UnitFactionGroup("player") == "Horde"
 
 -- When adding zones to MAP_ZONES, be sure to also add the zoneID to MAP_ZONES_SORT immediately below
 local MAP_ZONES = {
@@ -147,7 +147,6 @@ local defaultConfig = {
 	attachToWorldMap = false,
 	showOnClick = false,
 	usePerCharacterSettings = false,
-	expansion = CONSTANTS.EXPANSIONS.DRAGONFLIGHT,		-- TODO
 	enableClickToOpenMap = false,
 	enableTomTomWaypointsOnClick = true,
 	alwaysShowBountyQuests = true,
@@ -2488,7 +2487,21 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 				if BWQcfgPerCharacter[i] == nil then BWQcfgPerCharacter[i] = v end
 			end
 			BWQcache = BWQcache or {}
-			BWQ:SwitchExpansion(C("expansion"))
+			if not C("expansion") then
+				if UnitLevel("player") >= 71 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.THEWARWITHIN)	
+				elseif UnitLevel("player") >= 61 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.DRAGONFLIGHT)	
+				elseif UnitLevel("player") >= 51 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.SHADOWLANDS)
+				elseif UnitLevel("player") >= 41 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.BFA)	
+				else
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.LEGION)	
+				end
+			else
+				BWQ:SwitchExpansion(C("expansion"))
+			end	
 
 			if C_AddOns.IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
 				BWQ:AddFlightMapHook()

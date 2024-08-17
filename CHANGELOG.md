@@ -1,3 +1,8 @@
+### 11.0.2.1
+* Initial updates required for The War Within
+* New users will be set to the expansion appropriate to their current level instead of defaulting
+  to the latest expansion.
+
 ### 11.0.2.0
 * Fixed deprecated call to IsAddonLoaded()
 

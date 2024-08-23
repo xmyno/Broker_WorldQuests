@@ -72,9 +72,13 @@ if not GetNumQuestLogRewardCurrencies then
 end
 
 -- When adding zones to MAP_ZONES, be sure to also add the zoneID to MAP_ZONES_SORT immediately below
+-- The simplest way to get the MapID for the zone you are currently in is to enter "/dump C_Map.GetBestMapForUnit("player")"
 local MAP_ZONES = {
 	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
-		-- TODO
+		[2248] = { id = 2248, name = GetMapInfo(2248).name, quests = {}, buttons = {}, }, -- Isle of Dorn 11.0
+		[2214] = { id = 2214, name = GetMapInfo(2214).name, quests = {}, buttons = {}, }, -- The Ringing Deeps 11.0
+		[2215] = { id = 2215, name = GetMapInfo(2215).name, quests = {}, buttons = {}, }, -- Hallowfall 11.0
+		[2255] = { id = 2255, name = GetMapInfo(2255).name, quests = {}, buttons = {}, }, -- Azj-Kahet 11.0
 	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		[2022] = { id = 2022, name = GetMapInfo(2022).name, quests = {}, buttons = {}, }, -- The Waking Shores 10.0
@@ -125,7 +129,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
-		-- TODO
+		2248, 2214, 2215, 2255
 	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		2022, 2023, 2024, 2025, 2085, 2151, 2133, 2200
@@ -1395,8 +1399,10 @@ function BWQ:OnFactionUpdate(msg)
 	local factionData
 	for i = 1, C_Reputation.GetNumFactions() do
 		factionData = C_Reputation.GetFactionDataByIndex(i)
-		if faction == factionData.name and paragonFactions[factionData.factionId] then
-			BWQ:UpdateParagonData()
+		if factionData then
+			if faction == factionData.name and paragonFactions[factionData.factionId] then
+				BWQ:UpdateParagonData()
+			end
 		end
 	end
 end

@@ -1,3 +1,8 @@
+### 11.0.2.2
+* Fixed criteria for unlocking World Quests in The War Within
+* Added support for currency:  Resonance Crystals
+* Added support for currency:  The Assembly of the Deeps
+
 ### 11.0.2.1
 * Initial updates required for The War Within
 * New users will be set to the expansion appropriate to their current level instead of defaulting

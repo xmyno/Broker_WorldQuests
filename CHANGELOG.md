@@ -1,3 +1,6 @@
+### 11.0.2.3
+* Disabled text notification for unhandled currency.  This is intended for developers.
+
 ### 11.0.2.2
 * Fixed criteria for unlocking World Quests in The War Within
 * Added support for currency:  Resonance Crystals

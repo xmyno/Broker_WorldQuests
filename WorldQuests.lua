@@ -436,7 +436,7 @@ local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
 		if (expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN) then
-			hasUnlockedWorldQuests = UnitLevel("player") >= 78 and IsQuestFlaggedCompleted(84022) and IsQuestFlaggedCompleted(80592)	-- https://www.wowhead.com/beta/quest=84022/uniting-severed-threads and https://www.wowhead.com/quest=80592/forge-a-pact
+			hasUnlockedWorldQuests = IsQuestFlaggedCompleted(79197) -- https://www.wowhead.com/quest=79197/surface-bound
 		elseif (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
 			_, _, _, hasUnlockedWorldQuests = GetAchievementInfo(16326)
 			if not hasUnlockedWorldQuests then

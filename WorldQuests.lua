@@ -441,7 +441,7 @@ local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
 		if (expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN) then
-			hasUnlockedWorldQuests = IsQuestFlaggedCompleted(79197) -- https://www.wowhead.com/quest=79197/surface-bound
+			hasUnlockedWorldQuests = IsQuestFlaggedCompleted(79573) -- See effect #1 under https://www.wowhead.com/spell=434027/world-quests-adventure-mode
 		elseif (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
 			_, _, _, hasUnlockedWorldQuests = GetAchievementInfo(16326)
 			if not hasUnlockedWorldQuests then

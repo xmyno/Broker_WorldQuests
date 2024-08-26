@@ -1,3 +1,6 @@
+### 11.0.2.4
+* World Quests will now properly unlock for all appropriate characters in The War Within
+
 ### 11.0.2.3
 * Disabled text notification for unhandled currency.  This is intended for developers.
 

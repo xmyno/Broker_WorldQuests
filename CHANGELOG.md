@@ -1,3 +1,6 @@
+### 11.0.2.5
+* Added support for Hallowfall Arathi currency
+
 ### 11.0.2.4
 * World Quests will now properly unlock for all appropriate characters in The War Within
 

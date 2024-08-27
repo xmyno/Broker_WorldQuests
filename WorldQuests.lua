@@ -188,6 +188,7 @@ local defaultConfig = {
 		brokerShowMysteriousFragment = true,
 		brokerShowResonanceCrystals = true,
 		brokerShowTheAssemblyoftheDeeps = true,
+		brokerShowHallowfallArathi = true,
 		brokerShowBloodyTokens = true,
 		brokerShowPolishedPetCharms = false,
 	sortByTimeRemaining = false,
@@ -206,6 +207,7 @@ local defaultConfig = {
 	showMysteriousFragment = true,
 	showResonanceCrystals = true,
 	showTheAssemblyoftheDeeps = true,
+	showHallowfallArathi = true,
 	showBloodyTokens = true,
 	showArtifactPower = true,
 	showPrismaticManapearl = true,
@@ -1020,8 +1022,12 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showResonanceCrystals") then quest.hide = false end
 							elseif currencyId == 2902 then -- The Assembly of the Deeps
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.THE_ASSEMBLY_OF_THE_DEEPS
-								quest.TheAssemblyoftheDeepsAmount = currency.amount
+								quest.reward.TheAssemblyoftheDeepsAmount = currency.amount
 								if C("showTheAssemblyoftheDeeps") then quest.hide = false end
+							elseif currencyId == 2899 then -- Hallowfall Arathi
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.HALLOWFALL_ARATHI
+								quest.reward.HallowfallArathiAmount = currency.amount
+								if C("showHallowfallArathi") then quest.hide = false end
 							else 
 								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
 							end
@@ -1211,6 +1217,8 @@ local RetrieveWorldQuests = function(mapId)
 									BWQ.totalResonanceCrystals = BWQ.totalResonanceCrystals + quest.reward.ResonanceCrystalsAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.THE_ASSEMBLY_OF_THE_DEEPS then
 									BWQ.totalTheAssemblyOfTheDeeps = BWQ.totalTheAssemblyOfTheDeeps + quest.reward.TheAssemblyoftheDeepsAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.HALLOWFALL_ARATHI then
+									BWQ.totalHallowfallArathi = BWQ.totalHallowfallArathi + quest.reward.HallowfallArathiAmount
 								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM then
 									BWQ.totalPolishedPetCharms = BWQ.totalPolishedPetCharms + quest.reward.polishedPetCharmsAmount
 								end
@@ -1546,7 +1554,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalWhelplingsDreamingCrest, BWQ.totalDrakesDreamingCrest, BWQ.totalWyrmsDreamingCrest, BWQ.totalAspectsDreamingCrest, BWQ.totalWhelplingsAwakenedCrest, BWQ.totalDrakesAwakenedCrest, BWQ.totalWyrmsAwakenedCrest, BWQ.totalAspectsAwakenedCrest, BWQ.totalMysteriousFragment, BWQ.totalResonanceCrystals, BWQ.totalTheAssemblyOfTheDeeps, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalWhelplingsDreamingCrest, BWQ.totalDrakesDreamingCrest, BWQ.totalWyrmsDreamingCrest, BWQ.totalAspectsDreamingCrest, BWQ.totalWhelplingsAwakenedCrest, BWQ.totalDrakesAwakenedCrest, BWQ.totalWyrmsAwakenedCrest, BWQ.totalAspectsAwakenedCrest, BWQ.totalMysteriousFragment, BWQ.totalResonanceCrystals, BWQ.totalTheAssemblyOfTheDeeps, BWQ.totalHallowfallArathi, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -2099,6 +2107,7 @@ function BWQ:UpdateBlock()
 		if C("brokerShowMysteriousFragment") 	and BWQ.totalMysteriousFragment > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_7_0raid_trinket_05a:16:16|t %d  ", brokerString, BWQ.totalMysteriousFragment) end
 		if C("brokerShowResonanceCrystals") 	and BWQ.totalResonanceCrystals > 0		then brokerString = string.format("%s|TInterface\\Icons\\spell_azerite_essence14:16:16|t %d  ", brokerString, BWQ.totalResonanceCrystals) end
 		if C("brokerShowTheAssemblyoftheDeeps") and BWQ.totalTheAssemblyOfTheDeeps > 0	then brokerString = string.format("%s|TInterface\\Icons\\ui_majorfactions_candle:16:16|t %d  ", brokerString, BWQ.totalTheAssemblyOfTheDeeps) end
+		if C("brokerShowHallowfallArathi") 		and BWQ.totalHallowfallArathi > 0		then brokerString = string.format("%s|TInterface\\Icons\\ui_majorfactions_flame:16:16|t %d  ", brokerString, BWQ.totalHallowfallArathi) end
 		if C("brokerShowPolishedPetCharms")    	and BWQ.totalPolishedPetCharms > 0  	then brokerString = string.format("%s|TInterface\\Icons\\inv_currency_petbattle:16:16|t %d  ", brokerString, BWQ.totalPolishedPetCharms) end
 
 		if brokerString and brokerString ~= "" then
@@ -2159,6 +2168,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Mysterious Fragment"):format("Interface\\Icons\\Inv_7_0raid_trinket_05a"), check = "brokerShowMysteriousFragment" },
 				{ text = ("|T%1$s:16:16|t  Resonance Crystals"):format("Interface\\Icons\\spell_azerite_essence14"), check = "brokerShowResonanceCrystals" },
 				{ text = ("|T%1$s:16:16|t  The Assembly of the Deeps"):format("Interface\\Icons\\ui_majorfactions_candle"), check = "brokerShowTheAssemblyoftheDeeps" },
+				{ text = ("|T%1$s:16:16|t  Hallowfall Arathi"):format("Interface\\Icons\\ui_majorfactions_flame"), check = "brokerShowHallowfallArathi" },
 				{ text = ("|T%1$s:16:16|t  Polished Pet Charms"):format("Interface\\Icons\\inv_currency_petbattle"), check = "brokerShowPolishedPetCharms" },
 			}
 		},
@@ -2180,6 +2190,7 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showTWWReputation" },
 				{ text = ("|T%s$s:16:16|t  Resonance Crystals"):format("Interface\\Icons\\spell_azerite_essence14"), check = "showResonanceCrystals" },
 				{ text = ("|T%s$s:16:16|t  The Assembly of the Deeps"):format("Interface\\Icons\\ui_majorfactions_candle"), check = "showTheAssemblyoftheDeeps" },
+				{ text = ("|T%s$s:16:16|t  Hallowfall Arathi"):format("Interface\\Icons\\ui_majorfactions_flame"), check = "showHallowfallArathi" },
 			}
 		},
 		{ text = "      Dragonflight", submenu = {

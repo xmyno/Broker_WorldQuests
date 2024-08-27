@@ -77,6 +77,7 @@ CONSTANTS.REWARD_TYPES = {
 	MYSTERIOUS_FRAGMENT = 31,
 	RESONANCE_CRYSTALS = 32,
 	THE_ASSEMBLY_OF_THE_DEEPS = 33,
+	HALLOWFALL_ARATHI = 34,
 }
 
 CONSTANTS.QUEST_TYPES = {
@@ -127,6 +128,7 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 
 CONSTANTS.THEWARWITHIN_REPUTATION_CURRENCY_IDS = {
 	[2902] = true, -- The Assembly of the Deeps
+	[2899] = true, -- Hallowfall Arathi
 }
 
 CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
@@ -374,8 +376,10 @@ CONSTANTS.PARAGON_FACTIONS = {
 		[2564] = "ui_majorfaction_niffen", -- Loamm Niffen
 		[2574] = "ui_majorfaction_denizens", -- Dream Wardens
 	},
-	thewarwithin = {			-- TODO
-		order = {},
+	thewarwithin = {
+		order = {2902, 2899 },
+		[2902] = "ui_majorfactions_candle", -- The Assembly of the Deeps
+		[2899] = "ui_majorfactions_flame", -- Hallowfall Arathi
 	},
 }
 

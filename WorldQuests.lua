@@ -17,7 +17,7 @@ local REPUTATION
 
 local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
-local DEBUG = false
+local WQB_DEBUG = false
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 
@@ -1036,7 +1036,7 @@ local RetrieveWorldQuests = function(mapId)
 								quest.reward.ValorstonesAmount = currency.amount
 								if C("showValorstones") then quest.hide = false end
 							else 
-								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
+								if WQB_DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
 							end
 							quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
@@ -1048,7 +1048,7 @@ local RetrieveWorldQuests = function(mapId)
 						end
 					end
 
-					if DEBUG and not hasReward and not HaveQuestData(quest.questId) then
+					if WQB_DEBUG and not hasReward and not HaveQuestData(quest.questId) then
 						print(string.format("[BWQ] Quest with no reward found: ID %s (%s)", quest.questId, quest.title))
 					end
 					if not hasReward then needsRefresh = true end -- in most cases no reward means api returned incomplete data

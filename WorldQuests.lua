@@ -17,7 +17,7 @@ local REPUTATION
 
 local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
-local DEBUG = false
+local DEBUG = true
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 
@@ -78,6 +78,7 @@ local MAP_ZONES = {
 		[2248] = { id = 2248, name = GetMapInfo(2248).name, quests = {}, buttons = {}, }, -- Isle of Dorn 11.0
 		[2214] = { id = 2214, name = GetMapInfo(2214).name, quests = {}, buttons = {}, }, -- The Ringing Deeps 11.0
 		[2215] = { id = 2215, name = GetMapInfo(2215).name, quests = {}, buttons = {}, }, -- Hallowfall 11.0
+		[2255] = { id = 2255, name = GetMapInfo(2255).name, quests = {}, buttons = {}, }, -- Azj-Kahet 11.0
 	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		[2022] = { id = 2022, name = GetMapInfo(2022).name, quests = {}, buttons = {}, }, -- The Waking Shores 10.0
@@ -128,7 +129,7 @@ local MAP_ZONES = {
 }
 local MAP_ZONES_SORT = {
 	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
-		2248, 2214, 2215
+		2248, 2214, 2215, 2255
 	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		2022, 2023, 2024, 2025, 2085, 2151, 2133, 2200

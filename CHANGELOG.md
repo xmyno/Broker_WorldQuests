@@ -1,3 +1,6 @@
+### 11.0.2.6
+* Added support for Azj-Kahet
+
 ### 11.0.2.5
 * Added support for Hallowfall Arathi currency
 

@@ -1,3 +1,6 @@
+### 11.0.2.7
+* Added support for Valorstones currency
+
 ### 11.0.2.6
 * Added support for Azj-Kahet
 

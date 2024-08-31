@@ -1,3 +1,6 @@
+### 11.0.2.8
+* Added support for Kej currency
+
 ### 11.0.2.7
 * Added support for Valorstones currency
 

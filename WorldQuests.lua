@@ -17,7 +17,7 @@ local REPUTATION
 
 local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
-local WQB_DEBUG = false
+local WQB_DEBUG = true
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 
@@ -44,32 +44,6 @@ local       IsWarModeDesired
 
 local GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, HaveQuestData
 = GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, HaveQuestData
-
-local GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo = GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo
-if not GetNumQuestLogRewardCurrencies then
-	local reward_cache = {}
-	local function GetData(questID)
-		local data = reward_cache[questID]
-		local t = GetTime()
-		if not data or t > data.expTime then
-			data = C_QuestLog.GetQuestRewardCurrencies(questID)
-			data.expTime = t + 5
-		end
-		return data
-	end
-	function GetNumQuestLogRewardCurrencies(questID)
-		local data = GetData(questID)
-		return #data
-	end
-	function GetQuestLogRewardCurrencyInfo(i, questID)
-		local data = GetData(questID)[i]
-		if not data then
-			return
-		end
-		return data.name, data.texture, data.baseRewardAmount, data.currencyID
-		--data.totalRewardAmount
-	end
-end
 
 -- When adding zones to MAP_ZONES, be sure to also add the zoneID to MAP_ZONES_SORT immediately below
 -- The simplest way to get the MapID for the zone you are currently in is to enter "/dump C_Map.GetBestMapForUnit("player")"
@@ -657,7 +631,7 @@ end
 
 -- super track map ping
 local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapFrame:GetCanvas())
-mapTextures:SetSize(200,200)
+mapTextures:SetSize(400,400)
 mapTextures:SetFrameStrata("DIALOG")
 mapTextures:SetFrameLevel(2001)
 local highlightArrow = mapTextures:CreateTexture("highlightArrow")
@@ -721,7 +695,7 @@ local Row_OnClick = function(row)
 			if row.quest.x and row.quest.y then
 				local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
 				local scale = WorldMapFrame:GetCanvasScale()
-				local size = 30 / scale
+				local size = 30 / scale * 1.35
 				BWQ.mapTextures:ClearAllPoints()
 				BWQ.mapTextures.highlightArrow:SetSize(size, size)
 				BWQ.mapTextures:SetPoint("CENTER", WorldMapFrame:GetCanvas(), "TOPLEFT", x, y + 25 + (scale < 0.5 and 50 or 0))
@@ -893,163 +867,169 @@ local RetrieveWorldQuests = function(mapId)
 						if C("showHonor") then quest.hide = false end
 					end
 					-- currency reward
-					local numQuestCurrencies = GetNumQuestLogRewardCurrencies(quest.questId)
-					quest.reward.currencies = {}
-					for i = 1, numQuestCurrencies do
-						local name, texture, numItems, currencyId = GetQuestLogRewardCurrencyInfo(i, quest.questId)
-						if name then
-							hasReward = true
-							local currency = {}
-							if CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
-								currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
-							else
-								currency.amount = numItems
-							end
-							currency.name = string.format("%d %s", currency.amount, name)
-							currency.texture = texture
+					local rewardCurrencies = C_QuestInfoSystem.GetQuestRewardCurrencies(quest.questId)	
+					if rewardCurrencies then
+						quest.reward.currencies = {}
+						for i, currencyInfo in ipairs(rewardCurrencies) do
+							local name = currencyInfo.name
+							local texture = currencyInfo.texture
+							local numItems = currencyInfo.totalRewardAmount
+							local currencyId = currencyInfo.currencyID
+							--print(string.format("[BWQ] currencyInfo: %d - %s - %d - %d - %d", i, name, texture, numItems, currencyId))	-- Debugging
+							if name then
+								hasReward = true
+								local currency = {}
+								if CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
+									currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+								else
+									currency.amount = numItems
+								end
+								currency.name = string.format("%d %s", currency.amount, name)
+								currency.texture = texture
 
-							--print(string.format("[BWQ] Quest %s - %s - %s - %s - %s - %s - %s", quest.questId, quest.title, name, currencyId, currency.name, currency.texture, currency.amount))    -- for debugging
+								--print(string.format("[BWQ] Quest %s - %s - %s - %s - %s - %s - %s", quest.questId, quest.title, name, currencyId, currency.name, currency.texture, currency.amount))    -- for debugging
 
-							if currencyId == 1553 then -- azerite
-								currency.name = string.format("|cffe5cc80[%d %s]|r", currency.amount, name)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARTIFACTPOWER
-								quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
-								if C("showArtifactPower") then quest.hide = false end
-							elseif CONSTANTS.THEWARWITHIN_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								if C("showTWWReputation") then quest.hide = false end
-							elseif CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								if C("showDFReputation") then quest.hide = false end
-							elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								if C("showSLReputation") then quest.hide = false end
-							elseif CONSTANTS.BFA_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								if C("showBFAReputation") then quest.hide = false end
-							elseif currencyId == 1560 then -- war resources
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAR_RESOURCES
-								quest.reward.warResourceAmount = currency.amount
-								if C("showWarResources") then quest.hide = false end
-							elseif currencyId == 1716 or currencyId == 1717 then -- service medals
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDAL
-								quest.reward.serviceMedalAmount = currency.amount
-								if C("showBFAServiceMedals") then quest.hide = false end
-							elseif currencyId == 1220 then -- order hall resources
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESOURCES
-								quest.reward.resourceAmount = currency.amount
-								if C("showResources") then quest.hide = false end
-							elseif currencyId == 1342 then -- legionfall supplies
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES
-								quest.reward.legionfallSuppliesAmount = currency.amount
-								if C("showLegionfallSupplies") then quest.hide = false end
-							elseif currencyId == 1226 then -- nethershard
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.NETHERSHARD
-								if C("showNethershards") then quest.hide = false end
-							elseif currencyId == 1508 then -- argunite
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARGUNITE
-								if C("showArgunite") then quest.hide = false end
-							elseif currencyId == 1533 then
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCE
-								quest.reward.wakeningEssencesAmount = currency.amount
-								if C("showWakeningEssences") then quest.hide = false end
-							elseif currencyId == 1721 then -- prismatic manapearl
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL
-								quest.reward.prismaticManapearlAmount = currency.amount
-								if C("showPrismaticManapearl") then quest.hide = false end
-							elseif currencyId == 1979 then -- cyphers of the first ones (Zereth Mortis - 9.2)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES
-								quest.reward.cyphersOfTheFirstOnesAmount = currency.amount
-								if C("showCyphersOfTheFirstOnes") then quest.hide = false end
-							elseif currencyId == 1885 then -- grateful offering
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING
-								quest.reward.gratefulOfferingAmount = currency.amount
-								if C("showGratefulOffering") then quest.hide = false end
-							elseif currencyId == 2123 then -- bloody tokens
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.BLOODY_TOKENS
-								quest.reward.bloodyTokensAmount = currency.amount
-								if C("showBloodyTokens") then quest.hide = false end
-							elseif currencyId == 2003 then -- dragon isles supplies
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAGON_ISLES_SUPPLIES
-								quest.reward.dragonIslesSuppliesAmount = currency.amount
-								if C("showDragonIslesSupplies") then quest.hide = false end
-							elseif currencyId == 2118 then -- elemental overflow
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW
-								quest.reward.elementalOverflowAmount = currency.amount
-								if C("showElementalOverflow") then quest.hide = false end
-							elseif currencyId == 2245 then -- flightstones
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.FLIGHTSTONES
-								quest.reward.flightstonesAmount = currency.amount
-								if C("showFlightstones") then quest.hide = false end
-							elseif currencyId == 2706 then -- Whelplings Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_DREAMING_CREST
-								quest.reward.WhelplingsDreamingCrestAmount = currency.amount
-								if C("showWhelplingsDreamingCrest") then quest.hide = false end
-							elseif currencyId == 2707 then -- Drakes Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_DREAMING_CREST
-								quest.reward.DrakesDreamingCrestAmount = currency.amount
-								if C("showDrakesDreamingCrest") then quest.hide = false end
-							elseif currencyId == 2708 then -- Wyrms Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_DREAMING_CREST
-								quest.reward.WyrmsDreamingCrestAmount = currency.amount
-								if C("showWyrmsDreamingCrest") then quest.hide = false end
-							elseif currencyId == 2709 then -- Aspects Dreaming Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST
-								quest.reward.AspectsDreamingCrestAmount = currency.amount
-								if C("showAspectsDreamingCrest") then quest.hide = false end
-							elseif currencyId == 2806 then -- Whelplings Awakened Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_Awakened_CREST
-								quest.reward.WhelplingsAwakenedCrestAmount = currency.amount
-								if C("showWhelplingsAwakenedCrest") then quest.hide = false end
-							elseif currencyId == 2807 then -- Drakes Awakened Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_Awakened_CREST
-								quest.reward.DrakesAwakenedCrestAmount = currency.amount
-								if C("showDrakesAwakenedCrest") then quest.hide = false end
-							elseif currencyId == 2809 then -- Wyrms Awakened Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_Awakened_CREST
-								quest.reward.WyrmsAwakenedCrestAmount = currency.amount
-								if C("showWyrmsAwakenedCrest") then quest.hide = false end
-							elseif currencyId == 2812 then -- Aspects Awakened Crest
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_Awakened_CREST
-								quest.reward.AspectsAwakenedCrestAmount = currency.amount
-								if C("showAspectsAwakenedCrest") then quest.hide = false end
-							elseif currencyId == 2657 then -- Mysterious Fragment
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT
-								quest.reward.MysteriousFragmentAmount = currency.amount
-								if C("showMysteriousFragment") then quest.hide = false end
-							elseif currencyId == 2815 then -- Resonance Crystals
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESONANCE_CRYSTALS
-								quest.reward.ResonanceCrystalsAmount = currency.amount
-								if C("showResonanceCrystals") then quest.hide = false end
-							elseif currencyId == 2902 then -- The Assembly of the Deeps
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.THE_ASSEMBLY_OF_THE_DEEPS
-								quest.reward.TheAssemblyoftheDeepsAmount = currency.amount
-								if C("showTheAssemblyoftheDeeps") then quest.hide = false end
-							elseif currencyId == 2899 then -- Hallowfall Arathi
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.HALLOWFALL_ARATHI
-								quest.reward.HallowfallArathiAmount = currency.amount
-								if C("showHallowfallArathi") then quest.hide = false end
-							elseif currencyId == 3008 then -- Valorstones
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.VALORSTONES
-								quest.reward.ValorstonesAmount = currency.amount
-								if C("showValorstones") then quest.hide = false end
-							elseif currencyId == 3056 then -- Kej
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.KEJ
-								quest.reward.KejAmount = currency.amount
-								if C("showKej") then quest.hide = false end
-							else 
-								if WQB_DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
-							end
-							quest.reward.currencies[#quest.reward.currencies + 1] = currency
+								if currencyId == 1553 then -- azerite
+									currency.name = string.format("|cffe5cc80[%d %s]|r", currency.amount, name)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARTIFACTPOWER
+									quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
+									if C("showArtifactPower") then quest.hide = false end
+								elseif CONSTANTS.THEWARWITHIN_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showTWWReputation") then quest.hide = false end
+								elseif CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showDFReputation") then quest.hide = false end
+								elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showSLReputation") then quest.hide = false end
+								elseif CONSTANTS.BFA_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showBFAReputation") then quest.hide = false end
+								elseif currencyId == 1560 then -- war resources
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAR_RESOURCES
+									quest.reward.warResourceAmount = currency.amount
+									if C("showWarResources") then quest.hide = false end
+								elseif currencyId == 1716 or currencyId == 1717 then -- service medals
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDAL
+									quest.reward.serviceMedalAmount = currency.amount
+									if C("showBFAServiceMedals") then quest.hide = false end
+								elseif currencyId == 1220 then -- order hall resources
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESOURCES
+									quest.reward.resourceAmount = currency.amount
+									if C("showResources") then quest.hide = false end
+								elseif currencyId == 1342 then -- legionfall supplies
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES
+									quest.reward.legionfallSuppliesAmount = currency.amount
+									if C("showLegionfallSupplies") then quest.hide = false end
+								elseif currencyId == 1226 then -- nethershard
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.NETHERSHARD
+									if C("showNethershards") then quest.hide = false end
+								elseif currencyId == 1508 then -- argunite
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARGUNITE
+									if C("showArgunite") then quest.hide = false end
+								elseif currencyId == 1533 then
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCE
+									quest.reward.wakeningEssencesAmount = currency.amount
+									if C("showWakeningEssences") then quest.hide = false end
+								elseif currencyId == 1721 then -- prismatic manapearl
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL
+									quest.reward.prismaticManapearlAmount = currency.amount
+									if C("showPrismaticManapearl") then quest.hide = false end
+								elseif currencyId == 1979 then -- cyphers of the first ones (Zereth Mortis - 9.2)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES
+									quest.reward.cyphersOfTheFirstOnesAmount = currency.amount
+									if C("showCyphersOfTheFirstOnes") then quest.hide = false end
+								elseif currencyId == 1885 then -- grateful offering
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING
+									quest.reward.gratefulOfferingAmount = currency.amount
+									if C("showGratefulOffering") then quest.hide = false end
+								elseif currencyId == 2123 then -- bloody tokens
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.BLOODY_TOKENS
+									quest.reward.bloodyTokensAmount = currency.amount
+									if C("showBloodyTokens") then quest.hide = false end
+								elseif currencyId == 2003 then -- dragon isles supplies
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAGON_ISLES_SUPPLIES
+									quest.reward.dragonIslesSuppliesAmount = currency.amount
+									if C("showDragonIslesSupplies") then quest.hide = false end
+								elseif currencyId == 2118 then -- elemental overflow
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW
+									quest.reward.elementalOverflowAmount = currency.amount
+									if C("showElementalOverflow") then quest.hide = false end
+								elseif currencyId == 2245 then -- flightstones
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.FLIGHTSTONES
+									quest.reward.flightstonesAmount = currency.amount
+									if C("showFlightstones") then quest.hide = false end
+								elseif currencyId == 2706 then -- Whelplings Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_DREAMING_CREST
+									quest.reward.WhelplingsDreamingCrestAmount = currency.amount
+									if C("showWhelplingsDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2707 then -- Drakes Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_DREAMING_CREST
+									quest.reward.DrakesDreamingCrestAmount = currency.amount
+									if C("showDrakesDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2708 then -- Wyrms Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_DREAMING_CREST
+									quest.reward.WyrmsDreamingCrestAmount = currency.amount
+									if C("showWyrmsDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2709 then -- Aspects Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST
+									quest.reward.AspectsDreamingCrestAmount = currency.amount
+									if C("showAspectsDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2806 then -- Whelplings Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_Awakened_CREST
+									quest.reward.WhelplingsAwakenedCrestAmount = currency.amount
+									if C("showWhelplingsAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2807 then -- Drakes Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_Awakened_CREST
+									quest.reward.DrakesAwakenedCrestAmount = currency.amount
+									if C("showDrakesAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2809 then -- Wyrms Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_Awakened_CREST
+									quest.reward.WyrmsAwakenedCrestAmount = currency.amount
+									if C("showWyrmsAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2812 then -- Aspects Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_Awakened_CREST
+									quest.reward.AspectsAwakenedCrestAmount = currency.amount
+									if C("showAspectsAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2657 then -- Mysterious Fragment
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT
+									quest.reward.MysteriousFragmentAmount = currency.amount
+									if C("showMysteriousFragment") then quest.hide = false end
+								elseif currencyId == 2815 then -- Resonance Crystals
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESONANCE_CRYSTALS
+									quest.reward.ResonanceCrystalsAmount = currency.amount
+									if C("showResonanceCrystals") then quest.hide = false end
+								elseif currencyId == 2902 then -- The Assembly of the Deeps
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.THE_ASSEMBLY_OF_THE_DEEPS
+									quest.reward.TheAssemblyoftheDeepsAmount = currency.amount
+									if C("showTheAssemblyoftheDeeps") then quest.hide = false end
+								elseif currencyId == 2899 then -- Hallowfall Arathi
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.HALLOWFALL_ARATHI
+									quest.reward.HallowfallArathiAmount = currency.amount
+									if C("showHallowfallArathi") then quest.hide = false end
+								elseif currencyId == 3008 then -- Valorstones
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.VALORSTONES
+									quest.reward.ValorstonesAmount = currency.amount
+									if C("showValorstones") then quest.hide = false end
+								elseif currencyId == 3056 then -- Kej
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.KEJ
+									quest.reward.KejAmount = currency.amount
+									if C("showKej") then quest.hide = false end
+								else 
+									if WQB_DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
+								end
+								quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
-							if currencyId == 1553 then
-								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ARTIFACTPOWER and quest.sort or CONSTANTS.SORT_ORDER.ARTIFACTPOWER
-							else
-								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.RESOURCES and quest.sort or CONSTANTS.SORT_ORDER.RESOURCES
+								if currencyId == 1553 then
+									quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ARTIFACTPOWER and quest.sort or CONSTANTS.SORT_ORDER.ARTIFACTPOWER
+								else
+									quest.sort = quest.sort > CONSTANTS.SORT_ORDER.RESOURCES and quest.sort or CONSTANTS.SORT_ORDER.RESOURCES
+								end
 							end
 						end
 					end
@@ -1767,8 +1747,6 @@ function BWQ:UpdateBlock()
 		return
 	end
 
-	
-
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do
 		local buttonIndex = 1
@@ -1976,13 +1954,13 @@ function BWQ:UpdateBlock()
 			if button.quest.reward.currencies then
 				for _, currency in next, button.quest.reward.currencies do
 					local currencyText = string.format("|T%1$s:14:14|t %s", currency.texture, currency.name)
-
 					rewardText = string.format(
 						"%s%s%s",
 						rewardText,
 						rewardText ~= "" and "   " or "", -- insert some space between rewards
 						currencyText
 					)
+					
 				end
 			end
 
@@ -2052,8 +2030,8 @@ function BWQ:UpdateBlock()
 	end
 	end -- maps loop
 
-	titleMaxWidth = 125
-	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 250 and 250 or rewardMaxWidth
+	titleMaxWidth = 300
+	rewardMaxWidth = rewardMaxWidth < 225 and 225 or rewardMaxWidth > 375 and 375 or rewardMaxWidth
 	factionMaxWidth = C("hideFactionColumn") and 0 or factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 80

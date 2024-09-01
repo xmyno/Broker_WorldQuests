@@ -1,3 +1,9 @@
+### 11.0.2.9
+* Fixed currencies being incorrect or showing as zero.
+* Increased the max width of the BWQ window.
+* Increased the size of the red highlight arrow (that appears on the map
+  when you click on a WQ in the addon) by 35%.
+
 ### 11.0.2.8
 * Added support for Kej currency
 

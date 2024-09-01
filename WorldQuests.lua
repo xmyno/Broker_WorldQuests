@@ -17,7 +17,7 @@ local REPUTATION
 
 local _, addon = ...
 local CONSTANTS = addon.CONSTANTS
-local WQB_DEBUG = true
+local WQB_DEBUG = false
 
 local isHorde = UnitFactionGroup("player") == "Horde"
 

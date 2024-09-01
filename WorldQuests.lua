@@ -1960,7 +1960,8 @@ function BWQ:UpdateBlock()
 						rewardText ~= "" and "   " or "", -- insert some space between rewards
 						currencyText
 					)
-					
+					-- Replace "Reputation" with "Rep." to shorten strings
+					rewardText = rewardText:gsub("Reputation", "Rep.")
 				end
 			end
 

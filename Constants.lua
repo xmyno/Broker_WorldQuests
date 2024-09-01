@@ -1,12 +1,12 @@
 local _, addon = ...
 local CONSTANTS = {}
 
-
 CONSTANTS.EXPANSIONS = {
 	LEGION = "LEGION",
 	BFA = "BFA",
 	SHADOWLANDS = "SHADOWLANDS",
 	DRAGONFLIGHT = "DRAGONFLIGHT",
+	THEWARWITHIN = "THEWARWITHIN"
 }
 CONSTANTS.FACTIONS = {
 	NEUTRAL = 0,
@@ -39,6 +39,7 @@ CONSTANTS.WORLD_QUEST_TYPES = {
 	RAID = 8,
 }
 
+-- The name here should match the currency name in game (verified via Wowhead).  Some currencies are singular, some are plural.
 CONSTANTS.REWARD_TYPES = {
 	IRRELEVANT = -1,
 	ARTIFACTPOWER = 0,
@@ -50,15 +51,35 @@ CONSTANTS.REWARD_TYPES = {
 	HONOR = 6, 
 	NETHERSHARD = 7, 
 	ARGUNITE = 8, 
-	WAKENING_ESSENCES = 9,
+	WAKENING_ESSENCE = 9,
 	WAR_RESOURCES = 10,
 	MARK_OF_HONOR = 11,
-	SERVICE_MEDALS = 12,
+	SERVICE_MEDAL = 12,
 	PRISMATIC_MANAPEARL = 13,
 	SOULBIND_CONDUIT = 14,
 	ANIMA_CONTAINER = 15,
 	GRATEFUL_OFFERING = 15,
 	CYPHERS_OF_THE_FIRST_ONES = 16,
+	BLOODY_TOKENS = 17,
+	DRAGON_ISLES_SUPPLIES = 18,
+	ELEMENTAL_OVERFLOW = 19,
+	FLIGHTSTONES = 20,
+	POLISHED_PET_CHARM = 21,
+	BATTLE_PET_BANDAGE = 22,
+	WHELPLINGS_DREAMING_CREST = 23,
+	DRAKES_DREAMING_CREST = 24,
+	WYRMS_DREAMING_CREST = 25,
+	ASPECTS_DREAMING_CREST = 26,
+	WHELPLINGS_AWAKENED_CREST = 27,
+	DRAKES_AWAKENED_CREST = 28,
+	WYRMS_AWAKENED_CREST = 29,
+	ASPECTS_AWAKENED_CREST = 30,
+	MYSTERIOUS_FRAGMENT = 31,
+	RESONANCE_CRYSTALS = 32,
+	THE_ASSEMBLY_OF_THE_DEEPS = 33,
+	HALLOWFALL_ARATHI = 34,
+	VALORSTONES = 35,
+	KEJ = 36,
 }
 
 CONSTANTS.QUEST_TYPES = {
@@ -96,7 +117,6 @@ CONSTANTS.WORLD_QUEST_ICONS_BY_TAG_ID = {
 	[260] = isHorde and "worldquest-icon-horde" or "worldquest-icon-alliance",
 }
 
-
 CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 	[1226] = true, -- nethershard
 	[1508] = true, -- argunite
@@ -104,14 +124,23 @@ CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE = {
 	[1342] = true, -- legionfall supplies
 	[1220] = true, -- order hall (legion)
 	[1560] = true, -- war resources (bfa)
-	[1553] = true, -- azerite
+	[1553] = true, -- azerite (bfa)
+	[2123] = true, -- Bloody Tokens (dragonflight)
+}
+
+CONSTANTS.THEWARWITHIN_REPUTATION_CURRENCY_IDS = {
+	[2902] = true, -- The Assembly of the Deeps
+	[2899] = true, -- Hallowfall Arathi
 }
 
 CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS = {
-	[2003] = true, -- Dragon Isles Supplies
+	[2107] = true, -- Artisan's Consortium
 	[2108] = true, -- Maruuk Centaur
 	[2109] = true, -- Iskaara Tuskarr
 	[2031] = true, -- Dragonscale Expedition
+	[2106] = true, -- Valdrakken Accord
+	[2420] = true, -- Loamm Niffen
+	[2652] = true, -- Dream wardens
 }
 
 CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
@@ -129,16 +158,17 @@ CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS = {
 }
 
 CONSTANTS.BFA_REPUTATION_CURRENCY_IDS = {
-	[1579] = true, -- both
-	[1598] = true,
-	[1600] = true, -- alliance
-	[1595] = true,
-	[1597] = true,
-	[1596] = true,
-	[1599] = true, -- horde
-	[1593] = true,
-	[1594] = true,
-	[1592] = true,
+	[1579] = true, -- Champions of Azeroth
+	[1598] = true, -- Tortollan Seekers
+	[1600] = true, -- Honorbound
+	[1595] = true, -- Talanji's Expedition
+	[1597] = true, -- Zandalari Empire
+	[1596] = true, -- Voldunai
+	[1599] = true, -- 7th Legion
+	[1593] = true, -- Proudmoore Admiralty
+	[1594] = true, -- Storm's Wake
+	[1592] = true, -- Order of Embers
+	[1742] = true, -- Rustbolt Resistance
 }
 
 CONSTANTS.FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
@@ -161,6 +191,7 @@ CONSTANTS.FAMILY_FAMILIAR_QUEST_IDS = { -- WQ pet battle achievement
 
 CONSTANTS.ACHIEVEMENT_IDS = {
 	PET_BATTLE_WQ = {
+		[CONSTANTS.EXPANSIONS.THEWARWITHIN] = 40153,
 		[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = 16464,
 		[CONSTANTS.EXPANSIONS.SHADOWLANDS] = 14625,
 		[CONSTANTS.EXPANSIONS.BFA] = 12936,
@@ -339,11 +370,18 @@ CONSTANTS.PARAGON_FACTIONS = {
 		[2478] = "inv_misc_enlightenedbrokers_paragoncache01", -- TheEnlightened
 	},
 	dragonflight = {
-		order = {2507, 2503, 2511, 2510 },
+		order = {2507, 2503, 2511, 2510, 2564, 2574 },
 		[2507] = "ui_majorfaction_expedition", -- Dragonscale Expedition
 		[2503] = "ui_majorfaction_centaur", -- Maruuk Centaur
 		[2511] = "ui_majorfaction_tuskarr", -- Iskaara Tuskarr
 		[2510] = "ui_majorfaction_valdrakken", -- Valdrakken Accord
+		[2564] = "ui_majorfaction_niffen", -- Loamm Niffen
+		[2574] = "ui_majorfaction_denizens", -- Dream Wardens
+	},
+	thewarwithin = {
+		order = {2902, 2899 },
+		[2902] = "ui_majorfactions_candle", -- The Assembly of the Deeps
+		[2899] = "ui_majorfactions_flame", -- Hallowfall Arathi
 	},
 }
 

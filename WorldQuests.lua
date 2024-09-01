@@ -2,12 +2,24 @@
 --
 -- Broker_WorldQuests
 --
--- World of Warcraft addon to display Legion world quests in convenient list form.
--- Doesn't do anything on its own; requires a data broker addon!
+-- World of Warcraft addon to display world quests in convenient list form.
+-- It doesn't do anything on its own; requires a data broker addon!
 --
--- Author: myno
+-- Original Author: myno
 --
 --]]----
+
+local GetAchievementInfo
+	= GetAchievementInfo
+
+local REPUTATION
+	= REPUTATION
+
+local _, addon = ...
+local CONSTANTS = addon.CONSTANTS
+local WQB_DEBUG = false
+
+local isHorde = UnitFactionGroup("player") == "Horde"
 
 local ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
 	= ITEM_QUALITY_COLORS, WORLD_QUEST_QUALITY_COLORS, UnitLevel
@@ -30,27 +42,27 @@ local       GetBestMapForUnit,       GetMapInfo
 local       IsWarModeDesired
 	= C_PvP.IsWarModeDesired
 
-local GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
-	= GetFactionInfoByID, GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, GetNumQuestLogRewardCurrencies, GetQuestLogRewardCurrencyInfo, HaveQuestData
+local GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, HaveQuestData
+= GetQuestObjectiveInfo, GetNumQuestLogRewards, GetQuestLogRewardInfo, GetQuestLogRewardMoney, HaveQuestData
 
-local GetAchievementInfo
-	= GetAchievementInfo
-
-local REPUTATION
-	= REPUTATION
-
-local _, addon = ...
-local CONSTANTS = addon.CONSTANTS
-local DEBUG = true
-
-local isHorde = UnitFactionGroup("player") == "Horde"
-
+-- When adding zones to MAP_ZONES, be sure to also add the zoneID to MAP_ZONES_SORT immediately below
+-- The simplest way to get the MapID for the zone you are currently in is to enter "/dump C_Map.GetBestMapForUnit("player")"
 local MAP_ZONES = {
+	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
+		[2248] = { id = 2248, name = GetMapInfo(2248).name, quests = {}, buttons = {}, }, -- Isle of Dorn 11.0
+		[2214] = { id = 2214, name = GetMapInfo(2214).name, quests = {}, buttons = {}, }, -- The Ringing Deeps 11.0
+		[2215] = { id = 2215, name = GetMapInfo(2215).name, quests = {}, buttons = {}, }, -- Hallowfall 11.0
+		[2255] = { id = 2255, name = GetMapInfo(2255).name, quests = {}, buttons = {}, }, -- Azj-Kahet 11.0
+	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
 		[2022] = { id = 2022, name = GetMapInfo(2022).name, quests = {}, buttons = {}, }, -- The Waking Shores 10.0
 		[2023] = { id = 2023, name = GetMapInfo(2023).name, quests = {}, buttons = {}, }, -- Ohn'ahran Plains 10.0
 		[2024] = { id = 2024, name = GetMapInfo(2024).name, quests = {}, buttons = {}, }, -- The Azure Span 10.0
 		[2025] = { id = 2025, name = GetMapInfo(2025).name, quests = {}, buttons = {}, }, -- Thaldraszus 10.0
+		[2085] = { id = 2085, name = GetMapInfo(2085).name, quests = {}, buttons = {}, }, -- Primalist Tomorrow 10.0
+		[2151] = { id = 2151, name = GetMapInfo(2151).name, quests = {}, buttons = {}, }, -- The Forbidden Reach 10.0.7
+		[2133] = { id = 2133, name = GetMapInfo(2133).name, quests = {}, buttons = {}, }, -- Zaralek Cavern 10.1
+		[2200] = { id = 2200, name = GetMapInfo(2200).name, quests = {}, buttons = {}, }, -- Emerald Dream 10.2
 	},
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
 		[1525] = { id = 1525, name = GetMapInfo(1525).name, quests = {}, buttons = {}, }, -- Revendreth 9.0
@@ -90,8 +102,11 @@ local MAP_ZONES = {
 	},
 }
 local MAP_ZONES_SORT = {
+	[CONSTANTS.EXPANSIONS.THEWARWITHIN] = {
+		2248, 2214, 2215, 2255
+	},
 	[CONSTANTS.EXPANSIONS.DRAGONFLIGHT] = {
-		2022, 2023, 2024, 2025
+		2022, 2023, 2024, 2025, 2085, 2151, 2133, 2200
 	},
 	[CONSTANTS.EXPANSIONS.SHADOWLANDS] = {
 		1525, 1533, 1536, 1565, 1543, 1970
@@ -110,7 +125,6 @@ local defaultConfig = {
 	attachToWorldMap = false,
 	showOnClick = false,
 	usePerCharacterSettings = false,
-	expansion = CONSTANTS.EXPANSIONS.DRAGONFLIGHT,
 	enableClickToOpenMap = false,
 	enableTomTomWaypointsOnClick = true,
 	alwaysShowBountyQuests = true,
@@ -135,8 +149,45 @@ local defaultConfig = {
 		brokerShowFishing = false,
 		brokerShowSkinning = false,
 		brokerShowBloodOfSargeras = false,
+		brokerShowDragonIslesSupplies = true,
+		brokerShowElementalOverflow = true,
+		brokerShowFlightstones = true,
+		brokerShowWhelplingsDreamingCrest = true,
+		brokerShowDrakesDreamingCrest = true,
+		brokerShowWyrmsDreamingCrest = true,
+		brokerShowAspectsDreamingCrest = true,
+		brokerShowWhelplingsAwakenedCrest = true,
+		brokerShowDrakesAwakenedCrest = true,
+		brokerShowWyrmsAwakenedCrest = true,
+		brokerShowAspectsAwakenedCrest = true,
+		brokerShowMysteriousFragment = true,
+		brokerShowResonanceCrystals = true,
+		brokerShowTheAssemblyoftheDeeps = true,
+		brokerShowValorstones = true,
+		brokerShowKej = true,
+		brokerShowHallowfallArathi = true,
+		brokerShowBloodyTokens = true,
+		brokerShowPolishedPetCharms = false,
 	sortByTimeRemaining = false,
 	-- reward type
+	showDragonIslesSupplies = true,
+	showElementalOverflow = true,
+	showFlightstones = true,
+	showWhelplingsDreamingCrest = true,
+	showDrakesDreamingCrest = true,
+	showWyrmsDreamingCrest = true,
+	showAspectsDreamingCrest = true,
+	showWhelplingsAwakenedCrest = true,
+	showDrakesAwakenedCrest = true,
+	showWyrmsAwakenedCrest = true,
+	showAspectsAwakenedCrest = true,
+	showMysteriousFragment = true,
+	showResonanceCrystals = true,
+	showTheAssemblyoftheDeeps = true,
+	showHallowfallArathi = true,
+	showValorstones = true,
+	showKej = true,
+	showBloodyTokens = true,
 	showArtifactPower = true,
 	showPrismaticManapearl = true,
 	showCyphersOfTheFirstOnes = true,
@@ -148,6 +199,8 @@ local defaultConfig = {
 		showConduits = true,
 		showMarkOfHonor = true,
 		showOtherItems = true,
+	showTWWReputation = true,
+	showDFReputation = true,
 	showSLReputation = true,
 	showBFAReputation = true,
 	showBFAServiceMedals = true,
@@ -181,20 +234,35 @@ local defaultConfig = {
 	showPvP = true,
 	hideFactionColumn = false,
 	hideFactionParagonBars = false,
-	-- BFA
-	alwaysShow7thLegion = false,
-	alwaysShowStormsWake = false,
-	alwaysShowOrderOfEmbers = false,
-	alwaysShowProudmooreAdmiralty = false,
-	alwaysShowWavebladeAnkoan = false,
-	alwaysShowTheHonorbound = false,
-	alwaysShowZandalariEmpire = false,
-	alwaysShowTalanjisExpedition = false,
-	alwaysShowVoldunai = false,
-	alwaysShowTheUnshackled = false,
-	alwaysShowRustboltResistance = false,
-	alwaysShowTortollanSeekers = false,
-	alwaysShowChampionsOfAzeroth = false,
+		-- Dragonflight
+		alwaysShowDragonscaleExpedition = false,
+		alwaysShowIskaaraTuskarr = false,
+		alwaysShowMaruukCentaur = false,
+		alwaysShowValdrakkenAccord = false,
+		alwaysShowLoammNiffen = false,
+		alwaysShowDreamWardens = false,
+		-- Shadowlands
+		alwaysShowAscended = false,
+		alwaysShowUndyingArmy = false,
+		alwaysShowCourtofHarvesters = false,
+		alwaysShowAvowed = false,
+		alwaysShowWildHunt = false,
+		alwaysShowDeathsAdvance = false,
+		alwaysShowEnlightened = false,
+		-- BFA
+		alwaysShow7thLegion = false,
+		alwaysShowStormsWake = false,
+		alwaysShowOrderOfEmbers = false,
+		alwaysShowProudmooreAdmiralty = false,
+		alwaysShowWavebladeAnkoan = false,
+		alwaysShowTheHonorbound = false,
+		alwaysShowZandalariEmpire = false,
+		alwaysShowTalanjisExpedition = false,
+		alwaysShowVoldunai = false,
+		alwaysShowTheUnshackled = false,
+		alwaysShowRustboltResistance = false,
+		alwaysShowTortollanSeekers = false,
+		alwaysShowChampionsOfAzeroth = false,
 		-- Legion
 		alwaysShowCourtOfFarondis = false,
 		alwaysShowDreamweavers = false,
@@ -205,14 +273,6 @@ local defaultConfig = {
 		alwaysShowArmiesOfLegionfall = false,
 		alwaysShowArmyOfTheLight = false,
 		alwaysShowArgussianReach = false,
-		-- Shadowlands
-		alwaysShowAscended = false,
-		alwaysShowUndyingArmy = false,
-		alwaysShowCourtofHarvesters = false,
-		alwaysShowAvowed = false,
-		alwaysShowWildHunt = false,
-		alwaysShowDeathsAdvance = false,
-		alwaysShowEnlightened = false,
 	showPetBattle = true,
 	hidePetBattleBountyQuests = false,
 	alwaysShowPetBattleFamilyFamiliar = true,
@@ -245,6 +305,17 @@ BWQ:SetBackdropBorderColor(0, 0, 0, 1)
 BWQ:SetClampedToScreen(true)
 BWQ:Hide()
 
+BWQ.buttonTheWarWithin = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
+BWQ.buttonTheWarWithin:SetSize(20, 15)
+BWQ.buttonTheWarWithin:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -146, -8)
+BWQ.buttonTheWarWithin:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = false, tileSize = 0, edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }, })
+BWQ.buttonTheWarWithin:SetBackdropColor(0.1, 0.1, 0.1)
+BWQ.buttonTheWarWithin.texture = BWQ.buttonTheWarWithin:CreateTexture(nil, "OVERLAY")
+BWQ.buttonTheWarWithin.texture:SetPoint("TOPLEFT", 1, -1)
+BWQ.buttonTheWarWithin.texture:SetPoint("BOTTOMRIGHT", -1, 1)
+BWQ.buttonTheWarWithin.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendTheWarWithinStart")		-- Use https://github.com/Marlamin/wow.tools.local to find textures
+BWQ.buttonTheWarWithin.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
+
 BWQ.buttonDragonflight = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
 BWQ.buttonDragonflight:SetSize(20, 15)
 BWQ.buttonDragonflight:SetPoint("TOPRIGHT", BWQ, "TOPRIGHT", -119, -8)
@@ -253,7 +324,7 @@ BWQ.buttonDragonflight:SetBackdropColor(0.1, 0.1, 0.1)
 BWQ.buttonDragonflight.texture = BWQ.buttonDragonflight:CreateTexture(nil, "OVERLAY")
 BWQ.buttonDragonflight.texture:SetPoint("TOPLEFT", 1, -1)
 BWQ.buttonDragonflight.texture:SetPoint("BOTTOMRIGHT", -1, 1)
-BWQ.buttonDragonflight.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_dragonflightstart")		-- Search with https://wow.tools/files to find textures
+BWQ.buttonDragonflight.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_dragonflightstart")
 BWQ.buttonDragonflight.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
 BWQ.buttonShadowlands = CreateFrame("Button", nil, BWQ, "BackdropTemplate")
@@ -289,6 +360,7 @@ BWQ.buttonLegion.texture:SetPoint("BOTTOMRIGHT", -1, 1)
 BWQ.buttonLegion.texture:SetTexture("Interface\\Calendar\\Holidays\\Calendar_WeekendLegionStart")
 BWQ.buttonLegion.texture:SetTexCoord(0.15, 0.55, 0.23, 0.47)
 
+BWQ.buttonTheWarWithin:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.THEWARWITHIN) end)
 BWQ.buttonDragonflight:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.DRAGONFLIGHT) end)
 BWQ.buttonShadowlands:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.SHADOWLANDS) end)
 BWQ.buttonBFA:SetScript("OnClick", function(self) BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.BFA) end)
@@ -348,7 +420,9 @@ end
 local hasUnlockedWorldQuests
 function BWQ:WorldQuestsUnlocked()
 	if not hasUnlockedWorldQuests then
-		if (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
+		if (expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN) then
+			hasUnlockedWorldQuests = IsQuestFlaggedCompleted(79573) -- See effect #1 under https://www.wowhead.com/spell=434027/world-quests-adventure-mode
+		elseif (expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then
 			_, _, _, hasUnlockedWorldQuests = GetAchievementInfo(16326)
 			if not hasUnlockedWorldQuests then
 				hasUnlockedWorldQuests = UnitLevel("player") >= 68 and IsQuestFlaggedCompleted(66221)
@@ -367,7 +441,9 @@ function BWQ:WorldQuestsUnlocked()
 		if not BWQ.errorFS then CreateErrorFS() end
 
 		local level, quest, errorText
-		if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then
+		if expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN then
+			errorText = "You need to unlock The War Within World Quests\non one of your characters."
+		elseif expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then
 			errorText = "You need to unlock Dragonflight World Quests\non one of your characters."
 		elseif expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then
 			errorText = "You need to unlock Shadowlands World Quests\non one of your characters."
@@ -408,7 +484,7 @@ function BWQ:ShowNoWorldQuestsInfo()
 end
 
 function BWQ:SetErrorFSPosition(offsetTop)
-	if (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS or expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT) then  -- TODO:  We are not supporting bounty quests for these expansions atm, so the ErrorFS position should be at the top of BWQ
+	if (expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS or expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT or expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN) then  -- TODO:  We are not supporting bounty quests for these expansions atm, so the ErrorFS position should be at the top of BWQ
 		BWQ.errorFS:SetPoint("TOP", BWQ, "TOP", 0, offsetTop)
 	else
 		if BWQ.factionDisplay:IsShown() then
@@ -555,7 +631,7 @@ end
 
 -- super track map ping
 local mapTextures = CreateFrame("Frame", "BWQ_MapTextures", WorldMapFrame:GetCanvas())
-mapTextures:SetSize(200,200)
+mapTextures:SetSize(400,400)
 mapTextures:SetFrameStrata("DIALOG")
 mapTextures:SetFrameLevel(2001)
 local highlightArrow = mapTextures:CreateTexture("highlightArrow")
@@ -619,7 +695,7 @@ local Row_OnClick = function(row)
 			if row.quest.x and row.quest.y then
 				local x, y = BWQ:CalculateMapPosition(row.quest.x, row.quest.y)
 				local scale = WorldMapFrame:GetCanvasScale()
-				local size = 30 / scale
+				local size = 30 / scale * 1.35
 				BWQ.mapTextures:ClearAllPoints()
 				BWQ.mapTextures.highlightArrow:SetSize(size, size)
 				BWQ.mapTextures:SetPoint("CENTER", WorldMapFrame:GetCanvas(), "TOPLEFT", x, y + 25 + (scale < 0.5 and 50 or 0))
@@ -715,7 +791,7 @@ local RetrieveWorldQuests = function(mapId)
 					quest.title = title
 					quest.factionId = factionId
 					if factionId then
-						quest.faction = GetFactionInfoByID(factionId)
+						quest.faction = C_Reputation.GetFactionDataByID(factionId).name
 					end
 					quest.timeLeft = timeLeft
 					quest.bounties = {}
@@ -753,10 +829,13 @@ local RetrieveWorldQuests = function(mapId)
 								if C("showConduits") then quest.hide = false end
 							elseif C_Item.IsAnimaItemByID(itemId) == true then
 								if C("showAnima") then quest.hide = false end
-							elseif itemId == 137642 then
+							elseif itemId == 137642 then -- mark of honor
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MARK_OF_HONOR
 								if C("showItems") and C("showMarkOfHonor") then quest.hide = false end
+							elseif itemId == 163036 then -- polished pet charm
+								quest.reward.polishedPetCharmsAmount = quest.reward.itemQuantity
+								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM
 							else
 								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ITEM and quest.sort or CONSTANTS.SORT_ORDER.ITEM
 								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
@@ -788,93 +867,174 @@ local RetrieveWorldQuests = function(mapId)
 						if C("showHonor") then quest.hide = false end
 					end
 					-- currency reward
-					local numQuestCurrencies = GetNumQuestLogRewardCurrencies(quest.questId)
-					quest.reward.currencies = {}
-					for i = 1, numQuestCurrencies do
-						local name, texture, numItems, currencyId = GetQuestLogRewardCurrencyInfo(i, quest.questId)
-						if name then
-							hasReward = true
-							local currency = {}
-							if CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
-								currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
-							else
-								currency.amount = numItems
-							end
-							currency.name = string.format("%d %s", currency.amount, name)
-							currency.texture = texture
+					local rewardCurrencies = C_QuestInfoSystem.GetQuestRewardCurrencies(quest.questId)	
+					if rewardCurrencies then
+						quest.reward.currencies = {}
+						for i, currencyInfo in ipairs(rewardCurrencies) do
+							local name = currencyInfo.name
+							local texture = currencyInfo.texture
+							local numItems = currencyInfo.totalRewardAmount
+							local currencyId = currencyInfo.currencyID
+							--print(string.format("[BWQ] currencyInfo: %d - %s - %d - %d - %d", i, name, texture, numItems, currencyId))	-- Debugging
+							if name then
+								hasReward = true
+								local currency = {}
+								if CONSTANTS.CURRENCIES_AFFECTED_BY_WARMODE[currencyId] then
+									currency.amount = BWQ:ValueWithWarModeBonus(quest.questId, numItems)
+								else
+									currency.amount = numItems
+								end
+								currency.name = string.format("%d %s", currency.amount, name)
+								currency.texture = texture
 
-							--print(string.format("[BWQ] Quest %s - %s - %s - %s - %s - %s - %s", quest.questId, quest.title, name, currencyId, currency.name, currency.texture, currency.amount))    -- for debugging
+								--print(string.format("[BWQ] Quest %s - %s - %s - %s - %s - %s - %s", quest.questId, quest.title, name, currencyId, currency.name, currency.texture, currency.amount))    -- for debugging
 
-							if currencyId == 1553 then -- azerite
-								currency.name = string.format("|cffe5cc80[%d %s]|r", currency.amount, name)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARTIFACTPOWER
-								quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
-								if C("showArtifactPower") then quest.hide = false end
-							elseif CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								--if C("showSLReputation") then quest.hide = false end					-- TODO:  Add this with other Dragonflight options
-							elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								if C("showSLReputation") then quest.hide = false end
-							elseif CONSTANTS.BFA_REPUTATION_CURRENCY_IDS[currencyId] then
-								currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
-								if C("showBFAReputation") then quest.hide = false end
-							elseif currencyId == 1560 then -- war resources
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAR_RESOURCES
-								quest.reward.warResourceAmount = currency.amount
-								if C("showWarResources") then quest.hide = false end
-							elseif currencyId == 1716 or currencyId == 1717 then -- service medals
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDALS
-								quest.reward.serviceMedalAmount = currency.amount
-								if C("showBFAServiceMedals") then quest.hide = false end
-							elseif currencyId == 1220 then -- order hall resources
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESOURCES
-								quest.reward.resourceAmount = currency.amount
-								if C("showResources") then quest.hide = false end
-							elseif currencyId == 1342 then -- legionfall supplies
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES
-								quest.reward.legionfallSuppliesAmount = currency.amount
-								if C("showLegionfallSupplies") then quest.hide = false end
-							elseif currencyId == 1226 then -- nethershard
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.NETHERSHARD
-								if C("showNethershards") then quest.hide = false end
-							elseif currencyId == 1508 then -- argunite
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARGUNITE
-								if C("showArgunite") then quest.hide = false end
-							elseif currencyId == 1533 then
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCES
-								quest.reward.wakeningEssencesAmount = currency.amount
-								if C("showWakeningEssences") then quest.hide = false end
-							elseif currencyId == 1721 then -- prismatic manapearl
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL
-								quest.reward.prismaticManapearlAmount = currency.amount
-								if C("showPrismaticManapearl") then quest.hide = false end
-							elseif currencyId == 1979 then -- cyphers of the first ones (Zereth Mortis - 9.2)
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES
-								quest.reward.cyphersOfTheFirstOnesAmount = currency.amount
-								if C("showCyphersOfTheFirstOnes") then quest.hide = false end
-							elseif currencyId == 1885 then -- grateful offering
-								rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING
-								quest.reward.gratefulOfferingAmount = currency.amount
-								if C("ShowGratefulOffering") then quest.hide = false end
-							else 
-								if DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
-							end
-							quest.reward.currencies[#quest.reward.currencies + 1] = currency
+								if currencyId == 1553 then -- azerite
+									currency.name = string.format("|cffe5cc80[%d %s]|r", currency.amount, name)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARTIFACTPOWER
+									quest.reward.azeriteAmount = currency.amount -- todo: improve broker text values?
+									if C("showArtifactPower") then quest.hide = false end
+								elseif CONSTANTS.THEWARWITHIN_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showTWWReputation") then quest.hide = false end
+								elseif CONSTANTS.DRAGONFLIGHT_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showDFReputation") then quest.hide = false end
+								elseif CONSTANTS.SHADOWLANDS_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showSLReputation") then quest.hide = false end
+								elseif CONSTANTS.BFA_REPUTATION_CURRENCY_IDS[currencyId] then
+									currency.name = string.format("%s: %d %s", name, currency.amount, REPUTATION)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.IRRELEVANT
+									if C("showBFAReputation") then quest.hide = false end
+								elseif currencyId == 1560 then -- war resources
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAR_RESOURCES
+									quest.reward.warResourceAmount = currency.amount
+									if C("showWarResources") then quest.hide = false end
+								elseif currencyId == 1716 or currencyId == 1717 then -- service medals
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.SERVICE_MEDAL
+									quest.reward.serviceMedalAmount = currency.amount
+									if C("showBFAServiceMedals") then quest.hide = false end
+								elseif currencyId == 1220 then -- order hall resources
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESOURCES
+									quest.reward.resourceAmount = currency.amount
+									if C("showResources") then quest.hide = false end
+								elseif currencyId == 1342 then -- legionfall supplies
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES
+									quest.reward.legionfallSuppliesAmount = currency.amount
+									if C("showLegionfallSupplies") then quest.hide = false end
+								elseif currencyId == 1226 then -- nethershard
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.NETHERSHARD
+									if C("showNethershards") then quest.hide = false end
+								elseif currencyId == 1508 then -- argunite
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ARGUNITE
+									if C("showArgunite") then quest.hide = false end
+								elseif currencyId == 1533 then
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WAKENING_ESSENCE
+									quest.reward.wakeningEssencesAmount = currency.amount
+									if C("showWakeningEssences") then quest.hide = false end
+								elseif currencyId == 1721 then -- prismatic manapearl
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL
+									quest.reward.prismaticManapearlAmount = currency.amount
+									if C("showPrismaticManapearl") then quest.hide = false end
+								elseif currencyId == 1979 then -- cyphers of the first ones (Zereth Mortis - 9.2)
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES
+									quest.reward.cyphersOfTheFirstOnesAmount = currency.amount
+									if C("showCyphersOfTheFirstOnes") then quest.hide = false end
+								elseif currencyId == 1885 then -- grateful offering
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING
+									quest.reward.gratefulOfferingAmount = currency.amount
+									if C("showGratefulOffering") then quest.hide = false end
+								elseif currencyId == 2123 then -- bloody tokens
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.BLOODY_TOKENS
+									quest.reward.bloodyTokensAmount = currency.amount
+									if C("showBloodyTokens") then quest.hide = false end
+								elseif currencyId == 2003 then -- dragon isles supplies
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAGON_ISLES_SUPPLIES
+									quest.reward.dragonIslesSuppliesAmount = currency.amount
+									if C("showDragonIslesSupplies") then quest.hide = false end
+								elseif currencyId == 2118 then -- elemental overflow
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW
+									quest.reward.elementalOverflowAmount = currency.amount
+									if C("showElementalOverflow") then quest.hide = false end
+								elseif currencyId == 2245 then -- flightstones
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.FLIGHTSTONES
+									quest.reward.flightstonesAmount = currency.amount
+									if C("showFlightstones") then quest.hide = false end
+								elseif currencyId == 2706 then -- Whelplings Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_DREAMING_CREST
+									quest.reward.WhelplingsDreamingCrestAmount = currency.amount
+									if C("showWhelplingsDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2707 then -- Drakes Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_DREAMING_CREST
+									quest.reward.DrakesDreamingCrestAmount = currency.amount
+									if C("showDrakesDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2708 then -- Wyrms Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_DREAMING_CREST
+									quest.reward.WyrmsDreamingCrestAmount = currency.amount
+									if C("showWyrmsDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2709 then -- Aspects Dreaming Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST
+									quest.reward.AspectsDreamingCrestAmount = currency.amount
+									if C("showAspectsDreamingCrest") then quest.hide = false end
+								elseif currencyId == 2806 then -- Whelplings Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WHELPLINGS_Awakened_CREST
+									quest.reward.WhelplingsAwakenedCrestAmount = currency.amount
+									if C("showWhelplingsAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2807 then -- Drakes Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.DRAKES_Awakened_CREST
+									quest.reward.DrakesAwakenedCrestAmount = currency.amount
+									if C("showDrakesAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2809 then -- Wyrms Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.WYRMS_Awakened_CREST
+									quest.reward.WyrmsAwakenedCrestAmount = currency.amount
+									if C("showWyrmsAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2812 then -- Aspects Awakened Crest
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.ASPECTS_Awakened_CREST
+									quest.reward.AspectsAwakenedCrestAmount = currency.amount
+									if C("showAspectsAwakenedCrest") then quest.hide = false end
+								elseif currencyId == 2657 then -- Mysterious Fragment
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT
+									quest.reward.MysteriousFragmentAmount = currency.amount
+									if C("showMysteriousFragment") then quest.hide = false end
+								elseif currencyId == 2815 then -- Resonance Crystals
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.RESONANCE_CRYSTALS
+									quest.reward.ResonanceCrystalsAmount = currency.amount
+									if C("showResonanceCrystals") then quest.hide = false end
+								elseif currencyId == 2902 then -- The Assembly of the Deeps
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.THE_ASSEMBLY_OF_THE_DEEPS
+									quest.reward.TheAssemblyoftheDeepsAmount = currency.amount
+									if C("showTheAssemblyoftheDeeps") then quest.hide = false end
+								elseif currencyId == 2899 then -- Hallowfall Arathi
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.HALLOWFALL_ARATHI
+									quest.reward.HallowfallArathiAmount = currency.amount
+									if C("showHallowfallArathi") then quest.hide = false end
+								elseif currencyId == 3008 then -- Valorstones
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.VALORSTONES
+									quest.reward.ValorstonesAmount = currency.amount
+									if C("showValorstones") then quest.hide = false end
+								elseif currencyId == 3056 then -- Kej
+									rewardType[#rewardType+1] = CONSTANTS.REWARD_TYPES.KEJ
+									quest.reward.KejAmount = currency.amount
+									if C("showKej") then quest.hide = false end
+								else 
+									if WQB_DEBUG then print(string.format("[BWQ] Unhandled currency: ID %s", currencyId)) end
+								end
+								quest.reward.currencies[#quest.reward.currencies + 1] = currency
 
-							if currencyId == 1553 then
-								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ARTIFACTPOWER and quest.sort or CONSTANTS.SORT_ORDER.ARTIFACTPOWER
-							else
-								quest.sort = quest.sort > CONSTANTS.SORT_ORDER.RESOURCES and quest.sort or CONSTANTS.SORT_ORDER.RESOURCES
+								if currencyId == 1553 then
+									quest.sort = quest.sort > CONSTANTS.SORT_ORDER.ARTIFACTPOWER and quest.sort or CONSTANTS.SORT_ORDER.ARTIFACTPOWER
+								else
+									quest.sort = quest.sort > CONSTANTS.SORT_ORDER.RESOURCES and quest.sort or CONSTANTS.SORT_ORDER.RESOURCES
+								end
 							end
-							
 						end
 					end
 
-					if DEBUG and not hasReward and not HaveQuestData(quest.questId) then
+					if WQB_DEBUG and not hasReward and not HaveQuestData(quest.questId) then
 						print(string.format("[BWQ] Quest with no reward found: ID %s (%s)", quest.questId, quest.title))
 					end
 					if not hasReward then needsRefresh = true end -- in most cases no reward means api returned incomplete data
@@ -934,6 +1094,13 @@ local RetrieveWorldQuests = function(mapId)
 
 					-- always show bounty quests or reputation for faction filter
 					if (C("alwaysShowBountyQuests") and #quest.bounties > 0) or
+						-- Dragonflight
+						(C("alwaysShowDragonscaleExpedition") and quest.factionId == 2507) or
+						(C("alwaysShowIskaaraTuskarr") and quest.factionId == 2511) or
+						(C("alwaysShowMaruukCentaur") and quest.factionId == 2503) or
+						(C("alwaysShowValdrakkenAccord") and quest.factionId == 2510) or
+						(C("alwaysShowLoammNiffen") and quest.factionId == 2564) or
+						(C("alwaysShowDreamWardens") and quest.factionId == 2574) or
 						-- Shadowlands
 						(C("alwaysShowAscended") and quest.factionId == 2407) or
 						(C("alwaysShowUndyingArmy") and quest.factionId == 2410) or
@@ -986,45 +1153,85 @@ local RetrieveWorldQuests = function(mapId)
 						if rewardType then
 							for _, rtype in next, rewardType do
 								if rtype == CONSTANTS.REWARD_TYPES.ARTIFACTPOWER and quest.reward.azeriteAmount then
-									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.azeriteAmount or 0) end
-								if rtype == CONSTANTS.REWARD_TYPES.WAKENING_ESSENCES and quest.reward.wakeningEssencesAmount then
-									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount end
-								if rtype == CONSTANTS.REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
-									BWQ.totalWarResources = BWQ.totalWarResources + quest.reward.warResourceAmount end
-								if rtype == CONSTANTS.REWARD_TYPES.SERVICE_MEDALS and quest.reward.serviceMedalAmount then
-									BWQ.totalServiceMedals = BWQ.totalServiceMedals + quest.reward.serviceMedalAmount end
-								if rtype == CONSTANTS.REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
-									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount end
-								if rtype == CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
-									BWQ.totalLegionfallSupplies = BWQ.totalLegionfallSupplies + quest.reward.legionfallSuppliesAmount end
-								if rtype == CONSTANTS.REWARD_TYPES.HONOR and quest.reward.honor then
-									BWQ.totalHonor = BWQ.totalHonor + quest.reward.honor end
-								if rtype == CONSTANTS.REWARD_TYPES.MONEY and quest.reward.money then
-									BWQ.totalGold = BWQ.totalGold + quest.reward.money end
-								if rtype == CONSTANTS.REWARD_TYPES.BLOODOFSARGERAS and quest.reward.itemQuantity then
-									BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity end
-								if rtype == CONSTANTS.REWARD_TYPES.GEAR then
-									BWQ.totalGear = BWQ.totalGear + 1 end
-								if rtype == CONSTANTS.REWARD_TYPES.MARK_OF_HONOR then
-									BWQ.totalMarkOfHonor = BWQ.totalMarkOfHonor + quest.reward.itemQuantity end
-								if rtype == CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL then
-									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount end
-								if rtype == CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES then
-									BWQ.totalCyphersOfTheFirstOnes = BWQ.totalCyphersOfTheFirstOnes + quest.reward.cyphersOfTheFirstOnesAmount end
-                				if rtype == CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING then
-                  					BWQ.totalGratefulOffering = BWQ.totalGratefulOffering + quest.reward.gratefulOfferingAmount end
+									BWQ.totalArtifactPower = BWQ.totalArtifactPower + (quest.reward.azeriteAmount or 0)
+								elseif rtype == CONSTANTS.REWARD_TYPES.WAKENING_ESSENCE and quest.reward.wakeningEssencesAmount then
+									BWQ.totalWakeningEssences = BWQ.totalWakeningEssences + quest.reward.wakeningEssencesAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WAR_RESOURCES and quest.reward.warResourceAmount then
+									BWQ.totalWarResources = BWQ.totalWarResources + quest.reward.warResourceAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.SERVICE_MEDAL and quest.reward.serviceMedalAmount then
+									BWQ.totalServiceMedals = BWQ.totalServiceMedals + quest.reward.serviceMedalAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.RESOURCES and quest.reward.resourceAmount then
+									BWQ.totalResources = BWQ.totalResources + quest.reward.resourceAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.LEGIONFALL_SUPPLIES and quest.reward.legionfallSuppliesAmount then
+									BWQ.totalLegionfallSupplies = BWQ.totalLegionfallSupplies + quest.reward.legionfallSuppliesAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.HONOR and quest.reward.honor then
+									BWQ.totalHonor = BWQ.totalHonor + quest.reward.honor
+								elseif rtype == CONSTANTS.REWARD_TYPES.MONEY and quest.reward.money then
+									BWQ.totalGold = BWQ.totalGold + quest.reward.money
+								elseif rtype == CONSTANTS.REWARD_TYPES.BLOODOFSARGERAS and quest.reward.itemQuantity then
+									BWQ.totalBloodOfSargeras = BWQ.totalBloodOfSargeras + quest.reward.itemQuantity
+								elseif rtype == CONSTANTS.REWARD_TYPES.GEAR then
+									BWQ.totalGear = BWQ.totalGear + 1
+								elseif rtype == CONSTANTS.REWARD_TYPES.MARK_OF_HONOR then
+									BWQ.totalMarkOfHonor = BWQ.totalMarkOfHonor + quest.reward.itemQuantity
+								elseif rtype == CONSTANTS.REWARD_TYPES.PRISMATIC_MANAPEARL then
+									BWQ.totalPrismaticManapearl = BWQ.totalPrismaticManapearl + quest.reward.prismaticManapearlAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.CYPHERS_OF_THE_FIRST_ONES then
+									BWQ.totalCyphersOfTheFirstOnes = BWQ.totalCyphersOfTheFirstOnes + quest.reward.cyphersOfTheFirstOnesAmount
+				 				elseif rtype == CONSTANTS.REWARD_TYPES.GRATEFUL_OFFERING then
+									BWQ.totalGratefulOffering = BWQ.totalGratefulOffering + quest.reward.gratefulOfferingAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.BLOODY_TOKENS then
+									BWQ.totalBloodyTokens = BWQ.totalBloodyTokens + quest.reward.bloodyTokensAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.DRAGON_ISLES_SUPPLIES then
+									BWQ.totalDragonIslesSupplies = BWQ.totalDragonIslesSupplies + quest.reward.dragonIslesSuppliesAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.ELEMENTAL_OVERFLOW then
+									BWQ.totalElementalOverflow = BWQ.totalElementalOverflow + quest.reward.elementalOverflowAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.FLIGHTSTONES then
+									BWQ.totalFlightstones = BWQ.totalFlightstones + quest.reward.flightstonesAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WHELPLINGS_DREAMING_CREST then
+									BWQ.totalWhelplingsDreamingCrest = BWQ.totalWhelplingsDreamingCrest + quest.reward.WhelplingsDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.DRAKES_DREAMING_CREST then
+									BWQ.totalDrakesDreamingCrest = BWQ.totalDrakesDreamingCrest + quest.reward.DrakesDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WYRMS_DREAMING_CREST then
+									BWQ.totalWyrmsDreamingCrest = BWQ.totalWyrmsDreamingCrest + quest.reward.WyrmsDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.ASPECTS_DREAMING_CREST then
+									BWQ.totalAspectsDreamingCrest = BWQ.totalAspectsDreamingCrest + quest.reward.AspectsDreamingCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WHELPLINGS_Awakened_CREST then
+									BWQ.totalWhelplingsAwakenedCrest = BWQ.totalWhelplingsAwakenedCrest + quest.reward.WhelplingsAwakenedCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.DRAKES_Awakened_CREST then
+									BWQ.totalDrakesAwakenedCrest = BWQ.totalDrakesAwakenedCrest + quest.reward.DrakesAwakenedCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.WYRMS_Awakened_CREST then
+									BWQ.totalWyrmsAwakenedCrest = BWQ.totalWyrmsAwakenedCrest + quest.reward.WyrmsAwakenedCrestAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.ASPECTS_Awakened_CREST then
+									BWQ.totalAspectsAwakenedCrest = BWQ.totalAspectsAwakenedCrest + quest.reward.AspectsAwakenedCrestAmount	
+								elseif rtype == CONSTANTS.REWARD_TYPES.MYSTERIOUS_FRAGMENT then
+									BWQ.totalMysteriousFragment = BWQ.totalMysteriousFragment + quest.reward.MysteriousFragmentAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.RESONANCE_CRYSTALS then
+									BWQ.totalResonanceCrystals = BWQ.totalResonanceCrystals + quest.reward.ResonanceCrystalsAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.THE_ASSEMBLY_OF_THE_DEEPS then
+									BWQ.totalTheAssemblyOfTheDeeps = BWQ.totalTheAssemblyOfTheDeeps + quest.reward.TheAssemblyoftheDeepsAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.HALLOWFALL_ARATHI then
+									BWQ.totalHallowfallArathi = BWQ.totalHallowfallArathi + quest.reward.HallowfallArathiAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.VALORSTONES then
+									BWQ.totalValorstones = BWQ.totalValorstones + quest.reward.ValorstonesAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.KEJ then
+									BWQ.totalKej = BWQ.totalKej + quest.reward.KejAmount
+								elseif rtype == CONSTANTS.REWARD_TYPES.POLISHED_PET_CHARM then
+									BWQ.totalPolishedPetCharms = BWQ.totalPolishedPetCharms + quest.reward.polishedPetCharmsAmount
+								end
 							end
 						end
 						if questType then
 							for _, qtype in next, questType do
 								if qtype == CONSTANTS.QUEST_TYPES.HERBALISM then
-									BWQ.totalHerbalism = BWQ.totalHerbalism + 1 end
-								if qtype == CONSTANTS.QUEST_TYPES.MINING then
-									BWQ.totalMining = BWQ.totalMining + 1 end
-								if qtype == CONSTANTS.QUEST_TYPES.FISHING then
-									BWQ.totalFishing = BWQ.totalFishing + 1 end
-								if qtype == CONSTANTS.QUEST_TYPES.SKINNING then
-									BWQ.totalSkinning = BWQ.totalSkinning + 1 end
+									BWQ.totalHerbalism = BWQ.totalHerbalism + 1
+								elseif qtype == CONSTANTS.QUEST_TYPES.MINING then
+									BWQ.totalMining = BWQ.totalMining + 1
+								elseif qtype == CONSTANTS.QUEST_TYPES.FISHING then
+									BWQ.totalFishing = BWQ.totalFishing + 1
+								elseif qtype == CONSTANTS.QUEST_TYPES.SKINNING then
+									BWQ.totalSkinning = BWQ.totalSkinning + 1
+								end
 							end
 						end
 					end
@@ -1046,6 +1253,13 @@ end
 BWQ.bountyCache = {}
 BWQ.bountyDisplay = CreateFrame("Frame", "BWQ_BountyDisplay", BWQ)
 function BWQ:UpdateBountyData()
+	if expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN then -- TODO: get map id for retrieving bounties
+		BWQ.bountyDisplay:Hide()
+		for i, item in pairs(BWQ.bountyCache) do
+			item.button:Hide()
+		end
+		return
+	end
 	if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then -- TODO: get map id for retrieving bounties
 		BWQ.bountyDisplay:Hide()
 		for i, item in pairs(BWQ.bountyCache) do
@@ -1178,7 +1392,9 @@ local factionIncreaseString2 = FACTION_STANDING_INCREASED_ACH_BONUS:gsub("%%d", 
 local factionIncreaseString3 = FACTION_STANDING_INCREASED_GENERIC:gsub("%%s", "(.*)"):gsub(" %(%+.*%)" ,"")
 
 function BWQ:SetParagonFactionsByActiveExpansion()
-	if expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then 
+	if expansion == CONSTANTS.EXPANSIONS.THEWARWITHIN then 
+		paragonFactions = CONSTANTS.PARAGON_FACTIONS.thewarwithin
+	elseif expansion == CONSTANTS.EXPANSIONS.DRAGONFLIGHT then 
 		paragonFactions = CONSTANTS.PARAGON_FACTIONS.dragonflight
 	elseif expansion == CONSTANTS.EXPANSIONS.SHADOWLANDS then 
 		paragonFactions = CONSTANTS.PARAGON_FACTIONS.shadowlands
@@ -1205,11 +1421,13 @@ function BWQ:OnFactionUpdate(msg)
 		end
 	end
 
-	local name, factionId
-	for i = 1, GetNumFactions() do
-		name, _, _, _, _, _, _, _, _, _, _, _, _, factionId = GetFactionInfo(i)
-		if faction == name and paragonFactions[factionId] then
-			BWQ:UpdateParagonData()
+	local factionData
+	for i = 1, C_Reputation.GetNumFactions() do
+		factionData = C_Reputation.GetFactionDataByIndex(i)
+		if factionData then
+			if faction == factionData.name and paragonFactions[factionData.factionId] then
+				BWQ:UpdateParagonData()
+			end
 		end
 	end
 end
@@ -1222,6 +1440,7 @@ function BWQ:UpdateParagonData()
 	local rowIndex = 0
 	
 	local row
+	local factionId
 	for _, factionId in next, paragonFactions.order do
 		if IsFactionParagon(factionId) then
 			
@@ -1265,7 +1484,7 @@ function BWQ:UpdateParagonData()
 			else row:SetPoint("TOP", BWQ.factionFramePool.rows[rowIndex - 1], "BOTTOM", 0, -5) end
 			row:Show()
 
-			local name = GetFactionInfoByID(factionId)
+			local name = C_Reputation.GetFactionDataByID(factionId).name
 			local current, threshold, rewardQuestId, hasRewardPending = GetFactionParagonInfo(factionId)
 			
 			local progress = 0
@@ -1332,7 +1551,7 @@ end
 local originalMap, originalContinent, originalDungeonLevel
 function BWQ:UpdateQuestData()
 	questIds = BWQcache.questIds or {}
-	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	BWQ.totalArtifactPower, BWQ.totalGold, BWQ.totalWarResources, BWQ.totalServiceMedals, BWQ.totalResources, BWQ.totalLegionfallSupplies, BWQ.totalHonor, BWQ.totalGear, BWQ.totalHerbalism, BWQ.totalMining, BWQ.totalFishing, BWQ.totalSkinning, BWQ.totalBloodOfSargeras, BWQ.totalWakeningEssences, BWQ.totalMarkOfHonor, BWQ.totalPrismaticManapearl, BWQ.totalCyphersOfTheFirstOnes, BWQ.totalGratefulOffering, BWQ.totalBloodyTokens, BWQ.totalDragonIslesSupplies, BWQ.totalElementalOverflow, BWQ.totalFlightstones, BWQ.totalWhelplingsDreamingCrest, BWQ.totalDrakesDreamingCrest, BWQ.totalWyrmsDreamingCrest, BWQ.totalAspectsDreamingCrest, BWQ.totalWhelplingsAwakenedCrest, BWQ.totalDrakesAwakenedCrest, BWQ.totalWyrmsAwakenedCrest, BWQ.totalAspectsAwakenedCrest, BWQ.totalMysteriousFragment, BWQ.totalResonanceCrystals, BWQ.totalTheAssemblyOfTheDeeps, BWQ.totalHallowfallArathi, BWQ.totalValorstones, BWQ.totalKej, BWQ.totalPolishedPetCharms = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for mapId in next, MAP_ZONES[expansion] do
 		RetrieveWorldQuests(mapId)
@@ -1470,6 +1689,7 @@ function BWQ:SwitchExpansion(expac)
 	end
 	BWQ:SetParagonFactionsByActiveExpansion()
 
+	BWQ.buttonTheWarWithin:SetAlpha(expac == CONSTANTS.EXPANSIONS.THEWARWITHIN and 1 or 0.4)
 	BWQ.buttonDragonflight:SetAlpha(expac == CONSTANTS.EXPANSIONS.DRAGONFLIGHT and 1 or 0.4)
 	BWQ.buttonShadowlands:SetAlpha(expac == CONSTANTS.EXPANSIONS.SHADOWLANDS and 1 or 0.4)
 	BWQ.buttonBFA:SetAlpha(expac == CONSTANTS.EXPANSIONS.BFA and 1 or 0.4)
@@ -1526,8 +1746,6 @@ function BWQ:UpdateBlock()
 		needsRefresh = false
 		return
 	end
-
-	
 
 	local titleMaxWidth, bountyMaxWidth, factionMaxWidth, rewardMaxWidth, timeLeftMaxWidth = 0, 0, 0, 0, 0
 	for mapId in next, MAP_ZONES[expansion] do
@@ -1736,13 +1954,14 @@ function BWQ:UpdateBlock()
 			if button.quest.reward.currencies then
 				for _, currency in next, button.quest.reward.currencies do
 					local currencyText = string.format("|T%1$s:14:14|t %s", currency.texture, currency.name)
-
 					rewardText = string.format(
 						"%s%s%s",
 						rewardText,
 						rewardText ~= "" and "   " or "", -- insert some space between rewards
 						currencyText
 					)
+					-- Replace "Reputation" with "Rep." to shorten strings
+					rewardText = rewardText:gsub("Reputation", "Rep.")
 				end
 			end
 
@@ -1779,7 +1998,7 @@ function BWQ:UpdateBlock()
 			if bountyWidth > bountyMaxWidth then bountyMaxWidth = bountyWidth end
 
 			if not C("hideFactionColumn") then
-				button.factionFS:SetText(button.quest.faction)
+				button.factionFS:SetText(button.quest.factionID)
 				local factionWidth = button.factionFS:GetStringWidth()
 				if factionWidth > factionMaxWidth then factionMaxWidth = factionWidth end
 			else
@@ -1812,8 +2031,8 @@ function BWQ:UpdateBlock()
 	end
 	end -- maps loop
 
-	titleMaxWidth = 125
-	rewardMaxWidth = rewardMaxWidth < 100 and 100 or rewardMaxWidth > 250 and 250 or rewardMaxWidth
+	titleMaxWidth = 300
+	rewardMaxWidth = rewardMaxWidth < 225 and 225 or rewardMaxWidth > 375 and 375 or rewardMaxWidth
 	factionMaxWidth = C("hideFactionColumn") and 0 or factionMaxWidth < 100 and 100 or factionMaxWidth
 	timeLeftMaxWidth = 65
 	totalWidth = titleMaxWidth + bountyMaxWidth + factionMaxWidth + rewardMaxWidth + timeLeftMaxWidth + 80
@@ -1851,24 +2070,43 @@ function BWQ:UpdateBlock()
 
 	if C("showTotalsInBrokerText") then
 		local brokerString = ""
-		if C("brokerShowAP")                  and BWQ.totalArtifactPower > 0      then brokerString = string.format("%s|TInterface\\Icons\\inv_smallazeriteshard:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
-		if C("brokerShowServiceMedals")       and BWQ.totalServiceMedals > 0      then brokerString = string.format("%s|T%s:16:16|t %s  ", brokerString, isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal", BWQ.totalServiceMedals) end
-		if C("brokerShowWakeningEssences")    and BWQ.totalWakeningEssences > 0   then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
-		if C("brokerShowWarResources")        and BWQ.totalWarResources > 0       then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
-		if C("brokerShowPrismaticManapearl")  and BWQ.totalPrismaticManapearl > 0 then brokerString = string.format("%s|TInterface\\Icons\\Inv_misc_enchantedpearlf:16:16|t %d  ", brokerString, BWQ.totalPrismaticManapearl) end
-		if C("brokerShowCyphersOfTheFirstOnes") and BWQ.totalCyphersOfTheFirstOnes > 0 then brokerString = string.format("%s|TInterface\\Icons\\inv_trinket_progenitorraid_02_blue:16:16|t %d  ", brokerString, BWQ.totalCyphersOfTheFirstOnes) end	
-		if C("brokerShowGratefulOffering") and BWQ.totalGratefulOffering > 0 then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_ornatebox:16:16|t %d  ", brokerString, BWQ.totalGratefulOffering) end		
-		if C("brokerShowResources")           and BWQ.totalResources > 0          then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
-		if C("brokerShowLegionfallSupplies")  and BWQ.totalLegionfallSupplies > 0 then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
-		if C("brokerShowHonor")               and BWQ.totalHonor > 0              then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end
-		if C("brokerShowGold")                and BWQ.totalGold > 0               then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
-		if C("brokerShowGear")                and BWQ.totalGear > 0               then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
-		if C("brokerShowMarkOfHonor")         and BWQ.totalMarkOfHonor > 0        then brokerString = string.format("%s|TInterface\\Icons\\ability_pvp_gladiatormedallion:16:16|t %d  ", brokerString, BWQ.totalMarkOfHonor) end
-		if C("brokerShowHerbalism")           and BWQ.totalHerbalism > 0          then brokerString = string.format("%s|TInterface\\Icons\\Trade_Herbalism:16:16|t %d  ", brokerString, BWQ.totalHerbalism) end
-		if C("brokerShowMining")              and BWQ.totalMining > 0             then brokerString = string.format("%s|TInterface\\Icons\\Trade_Mining:16:16|t %d  ", brokerString, BWQ.totalMining) end
-		if C("brokerShowFishing")             and BWQ.totalFishing > 0            then brokerString = string.format("%s|TInterface\\Icons\\Trade_Fishing:16:16|t %d  ", brokerString, BWQ.totalFishing) end
-		if C("brokerShowSkinning")            and BWQ.totalSkinning > 0           then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_pelt_wolf_01:16:16|t %d  ", brokerString, BWQ.totalSkinning) end
-		if C("brokerShowBloodOfSargeras")     and BWQ.totalBloodOfSargeras > 0    then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
+		if C("brokerShowAP")                  	and BWQ.totalArtifactPower > 0      	then brokerString = string.format("%s|TInterface\\Icons\\inv_smallazeriteshard:16:16|t %s  ", brokerString, AbbreviateNumber(BWQ.totalArtifactPower)) end
+		if C("brokerShowServiceMedals")       	and BWQ.totalServiceMedals > 0      	then brokerString = string.format("%s|T%s:16:16|t %s  ", brokerString, isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal", BWQ.totalServiceMedals) end
+		if C("brokerShowWakeningEssences")    	and BWQ.totalWakeningEssences > 0   	then brokerString = string.format("%s|TInterface\\Icons\\achievement_dungeon_ulduar80_25man:16:16|t %s  ", brokerString, BWQ.totalWakeningEssences) end
+		if C("brokerShowWarResources")        	and BWQ.totalWarResources > 0       	then brokerString = string.format("%s|TInterface\\Icons\\inv__faction_warresources:16:16|t %d  ", brokerString, BWQ.totalWarResources) end
+		if C("brokerShowPrismaticManapearl")  	and BWQ.totalPrismaticManapearl > 0 	then brokerString = string.format("%s|TInterface\\Icons\\Inv_misc_enchantedpearlf:16:16|t %d  ", brokerString, BWQ.totalPrismaticManapearl) end
+		if C("brokerShowCyphersOfTheFirstOnes")	and BWQ.totalCyphersOfTheFirstOnes > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_trinket_progenitorraid_02_blue:16:16|t %d  ", brokerString, BWQ.totalCyphersOfTheFirstOnes) end	
+		if C("brokerShowGratefulOffering")    	and BWQ.totalGratefulOffering > 0   	then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_ornatebox:16:16|t %d  ", brokerString, BWQ.totalGratefulOffering) end
+		if C("brokerShowResources")           	and BWQ.totalResources > 0          	then brokerString = string.format("%s|TInterface\\Icons\\inv_orderhall_orderresources:16:16|t %d  ", brokerString, BWQ.totalResources) end
+		if C("brokerShowLegionfallSupplies")  	and BWQ.totalLegionfallSupplies > 0 	then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_summonable_boss_token:16:16|t %d  ", brokerString, BWQ.totalLegionfallSupplies) end
+		if C("brokerShowHonor")               	and BWQ.totalHonor > 0              	then brokerString = string.format("%s|TInterface\\Icons\\Achievement_LegionPVPTier4:16:16|t %d  ", brokerString, BWQ.totalHonor) end
+		if C("brokerShowGold")                	and BWQ.totalGold > 0               	then brokerString = string.format("%s|TInterface\\GossipFrame\\auctioneerGossipIcon:16:16|t %d  ", brokerString, math.floor(BWQ.totalGold / 10000)) end
+		if C("brokerShowGear")                	and BWQ.totalGear > 0               	then brokerString = string.format("%s|TInterface\\Icons\\Inv_chest_plate_legionendgame_c_01:16:16|t %d  ", brokerString, BWQ.totalGear) end
+		if C("brokerShowMarkOfHonor")         	and BWQ.totalMarkOfHonor > 0        	then brokerString = string.format("%s|TInterface\\Icons\\ability_pvp_gladiatormedallion:16:16|t %d  ", brokerString, BWQ.totalMarkOfHonor) end
+		if C("brokerShowHerbalism")           	and BWQ.totalHerbalism > 0          	then brokerString = string.format("%s|TInterface\\Icons\\Trade_Herbalism:16:16|t %d  ", brokerString, BWQ.totalHerbalism) end
+		if C("brokerShowMining")              	and BWQ.totalMining > 0             	then brokerString = string.format("%s|TInterface\\Icons\\Trade_Mining:16:16|t %d  ", brokerString, BWQ.totalMining) end
+		if C("brokerShowFishing")             	and BWQ.totalFishing > 0            	then brokerString = string.format("%s|TInterface\\Icons\\Trade_Fishing:16:16|t %d  ", brokerString, BWQ.totalFishing) end
+		if C("brokerShowSkinning")            	and BWQ.totalSkinning > 0           	then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_pelt_wolf_01:16:16|t %d  ", brokerString, BWQ.totalSkinning) end
+		if C("brokerShowBloodOfSargeras")     	and BWQ.totalBloodOfSargeras > 0    	then brokerString = string.format("%s|T1417744:16:16|t %d", brokerString, BWQ.totalBloodOfSargeras) end
+		if C("brokerShowBloodyTokens")        	and BWQ.totalBloodyTokens > 0       	then brokerString = string.format("%s|TInterface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2:16:16|t %d  ", brokerString, BWQ.totalBloodyTokens) end
+		if C("brokerShowDragonIslesSupplies") 	and BWQ.totalDragonIslesSupplies > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_faction_warresources:16:16|t %d  ", brokerString, BWQ.totalDragonIslesSupplies) end
+		if C("brokerShowElementalOverflow") 	and BWQ.totalElementalOverflow > 0		then brokerString = string.format("%s|TInterface\\Icons\\inv_misc_powder_thorium:16:16|t %d  ", brokerString, BWQ.totalElementalOverflow) end
+		if C("brokerShowFlightstones") 			and BWQ.totalFlightstones > 0			then brokerString = string.format("%s|TInterface\\Icons\\flightstone-dragonflight:16:16|t %d  ", brokerString, BWQ.totalFlightstones) end
+		if C("brokerShowWhelplingsDreamingCrest") and BWQ.totalWhelplingsDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_whelplingsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalWhelplingsDreamingCrest) end
+		if C("brokerShowDrakesDreamingCrest") 	and BWQ.totalDrakesDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalDrakesDreamingCrest) end
+		if C("brokerShowWyrmsDreamingCrest") 	and BWQ.totalWyrmsDreamingCrest > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalWyrmsDreamingCrest) end
+		if C("brokerShowAspectsDreamingCrest") 	and BWQ.totalAspectsDreamingCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest:16:16|t %d  ", brokerString, BWQ.totalAspectsDreamingCrest) end
+		if C("brokerShowWhelplingsAwakenedCrest") and BWQ.totalWhelplingsAwakenedCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_10_gearupgrade_whelplingsawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalWhelplingsAwakenedCrest) end
+		if C("brokerShowDrakesAwakenedCrest") 	and BWQ.totalDrakesAwakenedCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\inv_10_gearupgrade_drakesawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalDrakesAwakenedCrest) end
+		if C("brokerShowWyrmsAwakenedCrest") 	and BWQ.totalWyrmsAwakenedCrest > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_wyrmsawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalWyrmsAwakenedCrest) end
+		if C("brokerShowAspectsAwakenedCrest") 	and BWQ.totalAspectsAwakenedCrest > 0	then brokerString = string.format("%s|TInterface\\Icons\\Inv_10_gearupgrade_aspectsawakenedcrest:16:16|t %d  ", brokerString, BWQ.totalAspectsAwakenedCrest) end
+		if C("brokerShowMysteriousFragment") 	and BWQ.totalMysteriousFragment > 0		then brokerString = string.format("%s|TInterface\\Icons\\Inv_7_0raid_trinket_05a:16:16|t %d  ", brokerString, BWQ.totalMysteriousFragment) end
+		if C("brokerShowResonanceCrystals") 	and BWQ.totalResonanceCrystals > 0		then brokerString = string.format("%s|TInterface\\Icons\\spell_azerite_essence14:16:16|t %d  ", brokerString, BWQ.totalResonanceCrystals) end
+		if C("brokerShowTheAssemblyoftheDeeps") and BWQ.totalTheAssemblyOfTheDeeps > 0	then brokerString = string.format("%s|TInterface\\Icons\\ui_majorfactions_candle:16:16|t %d  ", brokerString, BWQ.totalTheAssemblyOfTheDeeps) end
+		if C("brokerShowHallowfallArathi") 		and BWQ.totalHallowfallArathi > 0		then brokerString = string.format("%s|TInterface\\Icons\\ui_majorfactions_flame:16:16|t %d  ", brokerString, BWQ.totalHallowfallArathi) end
+		if C("brokerShowValorstones") 			and BWQ.totalValorstones > 0			then brokerString = string.format("%s|TInterface\\Icons\\inv_valorstone_base:16:16|t %d  ", brokerString, BWQ.totalValorstones) end
+		if C("brokerShowKej") 					and BWQ.totalKej > 0					then brokerString = string.format("%s|TInterface\\Icons\\inv_10_tailoring_silkrare_color3:16:16|t %d  ", brokerString, BWQ.totalKej) end
+		if C("brokerShowPolishedPetCharms")    	and BWQ.totalPolishedPetCharms > 0  	then brokerString = string.format("%s|TInterface\\Icons\\inv_currency_petbattle:16:16|t %d  ", brokerString, BWQ.totalPolishedPetCharms) end
 
 		if brokerString and brokerString ~= "" then
 			BWQ.WorldQuestsBroker.text = brokerString
@@ -1899,8 +2137,8 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Service Medals"):format(isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "brokerShowServiceMedals" },
 				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "brokerShowWakeningEssences" },
 				{ text = ("|T%1$s:16:16|t  Prismatic Manapearls"):format("Interface\\Icons\\Inv_misc_enchantedpearlf"), check = "brokerShowPrismaticManapearl" },
-				{ text = ("|T%1$s:16:16|t  Cyphers of the First Ones"):format("Interface\\Icons\\inv_trinket_progenitorraid_02_blue"), check = "brokerShowCyphersOfTheFirstOnes" },	
-				{ text = ("|T%1$s:16:16|t  Grateful Offerings"):format("Interface\\Icons\\inv_misc_ornatebox"), check = "brokerShowGratefulOffering" },	
+				{ text = ("|T%1$s:16:16|t  Cyphers of the First Ones"):format("Interface\\Icons\\inv_trinket_progenitorraid_02_blue"), check = "brokerShowCyphersOfTheFirstOnes" },
+				{ text = ("|T%1$s:16:16|t  Grateful Offerings"):format("Interface\\Icons\\inv_misc_ornatebox"), check = "brokerShowGratefulOffering" },
 				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "brokerShowWarResources" },
 				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "brokerShowResources" },
 				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "brokerShowLegionfallSupplies" },
@@ -1913,37 +2151,89 @@ function BWQ:SetupConfigMenu()
 				{ text = ("|T%1$s:16:16|t  Fishing Quests"):format("Interface\\Icons\\Trade_Fishing"), check = "brokerShowFishing" },
 				{ text = ("|T%1$s:16:16|t  Skinning Quests"):format("Interface\\Icons\\inv_misc_pelt_wolf_01"), check = "brokerShowSkinning" },
 				{ text = ("|T%s$s:16:16|t  Blood of Sargeras"):format("1417744"), check = "brokerShowBloodOfSargeras" },
+				{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "brokerShowBloodyTokens" },
+				{ text = ("|T%1$s:16:16|t  Dragon Isles Supplies"):format("Interface\\Icons\\inv_faction_warresources"), check = "brokerShowDragonIslesSupplies" },
+				{ text = ("|T%1$s:16:16|t  Elemental Overflow"):format("Interface\\Icons\\inv_misc_powder_thorium"), check = "brokerShowElementalOverflow" },
+				{ text = ("|T%1$s:16:16|t  Flightstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "brokerShowFlightstones" },
+				{ text = ("|T%1$s:16:16|t  Whelplings Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsdreamingcrest"), check = "brokerShowWhelplingsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Drakes Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest"), check = "brokerShowDrakesDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Wyrms Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest"), check = "brokerShowWyrmsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Aspects Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest"), check = "brokerShowAspectsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Whelplings Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsAwakenedcrest"), check = "brokerShowWhelplingsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Drakes Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesAwakenedcrest"), check = "brokerShowDrakesAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Wyrms Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsAwakenedcrest"), check = "brokerShowWyrmsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Aspects Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsAwakenedcrest"), check = "brokerShowAspectsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Mysterious Fragment"):format("Interface\\Icons\\Inv_7_0raid_trinket_05a"), check = "brokerShowMysteriousFragment" },
+				{ text = ("|T%1$s:16:16|t  Resonance Crystals"):format("Interface\\Icons\\spell_azerite_essence14"), check = "brokerShowResonanceCrystals" },
+				{ text = ("|T%1$s:16:16|t  The Assembly of the Deeps"):format("Interface\\Icons\\ui_majorfactions_candle"), check = "brokerShowTheAssemblyoftheDeeps" },
+				{ text = ("|T%1$s:16:16|t  Hallowfall Arathi"):format("Interface\\Icons\\ui_majorfactions_flame"), check = "brokerShowHallowfallArathi" },
+				{ text = ("|T%1$s:16:16|t  Valorstones"):format("Interface\\Icons\\inv_valorstone_base"), check = "brokerShowValorstones" },
+				{ text = ("|T%1$s:16:16|t  Kej"):format("Interface\\Icons\\inv_10_tailoring_silkrare_color3"), check = "brokerShowKej" },
+				{ text = ("|T%1$s:16:16|t  Polished Pet Charms"):format("Interface\\Icons\\inv_currency_petbattle"), check = "brokerShowPolishedPetCharms" },
 			}
 		},
 		{ text = "Sort list by time remaining instead of reward type", check = "sortByTimeRemaining" },
 		{ text = "" },
 		{ text = "Filter by reward...", isTitle = true },
-		{ text = ("|T%1$s:16:16|t  Azerite"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "showArtifactPower" },
-		{ text = ("|T%1$s:16:16|t  Prismatic Manapearl"):format("Interface\\Icons\\Inv_misc_enchantedpearlf"), check = "showPrismaticManapearl" },
-		{ text = ("|T%1$s:16:16|t  Cyphers of the First Ones"):format("Interface\\Icons\\inv_trinket_progenitorraid_02_blue"), check = "showCyphersOfTheFirstOnes" },
-		{ text = ("|T%1$s:16:16|t  Grateful Offerings"):format("Interface\\Icons\\inv_misc_ornatebox"), check = "showGratefulOffering" },	
 		{ text = ("|T%1$s:16:16|t  Items"):format("Interface\\Minimap\\Tracking\\Banker"), check = "showItems", submenu = {
 				{ text = ("|T%1$s:16:16|t  Gear"):format("Interface\\Icons\\Inv_chest_plate_legionendgame_c_01"), check = "showGear" },
 				{ text = ("|T%s$s:16:16|t  Crafting Materials"):format("1417744"), check = "showCraftingMaterials" },
-				{ text = ("|T%s$s:16:16|t  Conduits"):format("1417744"), check = "showConduits" },
 				{ text = ("|T%1$s:16:16|t  Mark Of Honor"):format("Interface\\Icons\\ability_pvp_gladiatormedallion"), check = "showMarkOfHonor" },
 				{ text = "Other", check = "showOtherItems" },
 			}
 		},
-		{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showBFAReputation" },
-		{ text = ("|T%1$s:16:16|t  Service Medals"):format(isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "showBFAServiceMedals" },
+		{ text = ("|T%1$s:16:16|t  Bloody Tokens"):format("Interface\\Icons\\inv_10_dungeonjewelry_titan_trinket_2_color2"), check = "showBloodyTokens" },
 		{ text = ("|T%1$s:16:16|t  Honor"):format("Interface\\Icons\\Achievement_LegionPVPTier4"), check = "showHonor" },
 		{ text = ("|T%1$s:16:16|t  Low gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showLowGold" },
 		{ text = ("|T%1$s:16:16|t  High gold reward"):format("Interface\\GossipFrame\\auctioneerGossipIcon"), check = "showHighGold" },
-		{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "showWarResources" },
-		{ text = ("|T%s$s:16:16|t  Anima Item"):format("3528288"), check = "showAnima" },
+		{ text = "      The War Within", submenu = {
+				{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showTWWReputation" },
+				{ text = ("|T%s$s:16:16|t  Resonance Crystals"):format("Interface\\Icons\\spell_azerite_essence14"), check = "showResonanceCrystals" },
+				{ text = ("|T%s$s:16:16|t  The Assembly of the Deeps"):format("Interface\\Icons\\ui_majorfactions_candle"), check = "showTheAssemblyoftheDeeps" },
+				{ text = ("|T%s$s:16:16|t  Hallowfall Arathi"):format("Interface\\Icons\\ui_majorfactions_flame"), check = "showHallowfallArathi" },
+				{ text = ("|T%1$s:16:16|t  Valorstones"):format("Interface\\Icons\\inv_valorstone_base"), check = "brokerShowValorstones" },
+				{ text = ("|T%1$s:16:16|t  Kej"):format("Interface\\Icons\\inv_10_tailoring_silkrare_color3"), check = "brokerShowKej" },
+			}
+		},
+		{ text = "      Dragonflight", submenu = {
+				{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showDFReputation" },
+				{ text = ("|T%1$s:16:16|t  Dragon Isles Supplies"):format("Interface\\Icons\\inv_faction_warresources"), check = "showDragonIslesSupplies" },
+				{ text = ("|T%1$s:16:16|t  Elemental Overflow"):format("Interface\\Icons\\inv_misc_powder_thorium"), check = "ShowElementalOverflow" },
+				{ text = ("|T%1$s:16:16|t  Flightstones"):format("Interface\\Icons\\flightstone-dragonflight"), check = "showFlightstones" },
+				{ text = ("|T%1$s:16:16|t  Whelplings Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsdreamingcrest"), check = "showWhelplingsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Drakes Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesdreamingcrest"), check = "showDrakesDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Wyrms Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsdreamingcrest"), check = "showWyrmsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Aspects Dreaming Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsdreamingcrest"), check = "showAspectsDreamingCrest" },
+				{ text = ("|T%1$s:16:16|t  Whelplings Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_whelplingsAwakenedcrest"), check = "showWhelplingsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Drakes Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_drakesAwakenedcrest"), check = "showDrakesAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Wyrms Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_wyrmsAwakenedcrest"), check = "showWyrmsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Aspects Awakened Crest"):format("Interface\\Icons\\Inv_10_gearupgrade_aspectsAwakenedcrest"), check = "showAspectsAwakenedCrest" },
+				{ text = ("|T%1$s:16:16|t  Mysterious Fragment"):format("Interface\\Icons\\Inv_7_0raid_trinket_05a"), check = "showMysteriousFragment" },
+			}
+		},
+		{ text = "      Shadowlands", submenu = {
+				{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showSLReputation" },
+				{ text = ("|T%s$s:16:16|t  Anima Item"):format("3528288"), check = "showAnima" },
+				{ text = ("|T%s$s:16:16|t  Conduits"):format("3586269"), check = "showConduits" },
+				{ text = ("|T%1$s:16:16|t  Cyphers of the First Ones"):format("Interface\\Icons\\inv_trinket_progenitorraid_02_blue"), check = "showCyphersOfTheFirstOnes" },
+				{ text = ("|T%1$s:16:16|t  Grateful Offerings"):format("Interface\\Icons\\inv_misc_ornatebox"), check = "showGratefulOffering" },
+			}
+		},
+		{ text = "      Battle for Azeroth", submenu = {
+				{ text = ("|T%1$s:16:16|t  Reputation Tokens"):format("Interface\\Icons\\inv_scroll_11"), check = "showBFAReputation" },
+				{ text = ("|T%1$s:16:16|t  War Resources"):format("Interface\\Icons\\inv__faction_warresources"), check = "showWarResources" },
+				{ text = ("|T%1$s:16:16|t  Azerite"):format("Interface\\Icons\\inv_smallazeriteshard"), check = "showArtifactPower" },
+				{ text = ("|T%1$s:16:16|t  Service Medals"):format(isHorde and "Interface\\Icons\\ui_horde_honorboundmedal" or "Interface\\Icons\\ui_alliance_7legionmedal"), check = "showBFAServiceMedals" },
+				{ text = ("|T%1$s:16:16|t  Prismatic Manapearl"):format("Interface\\Icons\\Inv_misc_enchantedpearlf"), check = "showPrismaticManapearl" },
+			}
+		},
 		{ text = "      Legion", submenu = {
-							{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
-							{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
-							{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
-							{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
-							{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
-						}
+				{ text = ("|T%1$s:16:16|t  Order Hall Resources"):format("Interface\\Icons\\inv_orderhall_orderresources"), check = "showResources" },
+				{ text = ("|T%1$s:16:16|t  Legionfall War Supplies"):format("Interface\\Icons\\inv_misc_summonable_boss_token"), check = "showLegionfallSupplies" },
+				{ text = ("|T%1$s:16:16|t  Nethershard"):format("Interface\\Icons\\inv_datacrystal01"), check = "showNethershards" },
+				{ text = ("|T%1$s:16:16|t  Veiled Argunite"):format("Interface\\Icons\\oshugun_crystalfragments"), check = "showArgunite" },
+				{ text = ("|T%1$s:16:16|t  Wakening Essences"):format("Interface\\Icons\\achievement_dungeon_ulduar80_25man"), check = "showWakeningEssences" },
+			}
 		},
 		{ text = "" },
 		{ text = "Filter by type...", isTitle = true },
@@ -1976,7 +2266,16 @@ function BWQ:SetupConfigMenu()
 		{ text = "" },
 		{ text = "Hide faction column", check="hideFactionColumn" },
 		{ text = "Hide faction paragon bars", check="hideFactionParagonBars" },
-		{ text = "Always show quests for faction...", isTitle = true },		
+		{ text = "Always show quests for faction...", isTitle = true },
+		{ text = "       Dragonflight", submenu = {
+				{ text = "Dragonscale Expedition", check="alwaysShowDragonscaleExpedition" },
+				{ text = "Iskaara Tuskarr", check="alwaysShowIskaaraTuskarr" },
+				{ text = "Maruuk Centaur", check="alwaysShowMaruukCentaur" },
+				{ text = "Valdrakken Accord", check="alwaysShowValdrakkenAccord" },
+				{ text = "Loamm Niffen", check="alwaysShowLoammNiffen" },
+				{ text = "Dream Wardens", check="alwaysShowDreamWardens" },
+			}
+		},
 		{ text = "       Shadowlands", submenu = {
 				{ text = "The Avowed", check="alwaysShowAvowed" },
 				{ text = "The Wild Hunt", check="alwaysShowWildHunt" },
@@ -2240,9 +2539,23 @@ BWQ:SetScript("OnEvent", function(self, event, arg1)
 				if BWQcfgPerCharacter[i] == nil then BWQcfgPerCharacter[i] = v end
 			end
 			BWQcache = BWQcache or {}
-			BWQ:SwitchExpansion(C("expansion"))
+			if not C("expansion") then
+				if UnitLevel("player") >= 71 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.THEWARWITHIN)	
+				elseif UnitLevel("player") >= 61 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.DRAGONFLIGHT)	
+				elseif UnitLevel("player") >= 51 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.SHADOWLANDS)
+				elseif UnitLevel("player") >= 41 then
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.BFA)	
+				else
+					BWQ:SwitchExpansion(CONSTANTS.EXPANSIONS.LEGION)	
+				end
+			else
+				BWQ:SwitchExpansion(C("expansion"))
+			end	
 
-			if IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
+			if C_AddOns.IsAddOnLoaded('Blizzard_SharedMapDataProviders') then
 				BWQ:AddFlightMapHook()
 				BWQ:UnregisterEvent("ADDON_LOADED")
 			end
